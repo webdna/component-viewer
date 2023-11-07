@@ -1,0 +1,72 @@
+<div x-data class="w-full flex flex-1 flex-col gap-y-2 pl-{{ (level-1) * 3 }} {{ level > 1 ? 'border-t border-white/10' }}">
+    <div x-disclosure class="">
+        <button
+            x-disclosure:button
+            class="w-full justify-between text-white group flex gap-x-3 rounded-md p-2 text-sm leading-6 {{ level == 1 ? 'font-bold uppercase' }}"
+        >
+            <span>{{ componentKey|capitalize }}</span>
+ 
+            <span x-show="$disclosure.isOpen" x-cloak aria-hidden="true" class="ml-4">&minus;</span>
+            <span x-show="! $disclosure.isOpen" aria-hidden="true" class="ml-4">&plus;</span>
+        </button>
+ 
+        <div x-disclosure:panel x-collapse>
+            {% for key, component in components %}
+            {% if component.error is defined %}
+                        <p>This component errored: {{ component.path }}</p>
+                        <pre>
+                            <code>
+            Message: {{ component.error.message }}
+            Code: {{ component.error.code }}
+            Line: {{ component.error.line }}
+                            </code>
+                        </pre>
+                    {% elseif component.components is defined %}
+                        {# Component Groups #}
+                        {% include 'component-library/component-viewer/component-tree.twig' with {
+                            components: component.components,
+                            componentKey: key,
+                            level: level + 1,
+                        } %}
+                    {% elseif component.handle is defined %}
+                        {# Component Name #}
+                        {% if component.buttonVariants|first.buttons|length > 1 %}
+                            {% include 'component-library/component-viewer/component-tree.twig' with {
+                                components: component.buttonVariants,
+                                componentKey: key,
+                                level: level + 1,
+                            } %}
+                        {% else %}
+                            <div class="component-variants flex flex-col text-white items-start pl-3 font-light divide-y divide-white/10 items-start text-sm leading-6 border-t border-white/10">
+                                {% include 'component-library/component-viewer/left-panel-btn.twig' with {
+                                    handle: component.buttonVariants|first.componentId,
+                                    variant: 0,
+                                    name: component.buttonVariants|first.buttons|first.label,
+                                } %}
+                            </div>
+                        {% endif %}
+                    {% elseif component.buttons is defined %}
+                        {# Component Details - Single and Multiple Variants #}
+                        <div class="component-variants flex flex-col text-white items-start pl-6 font-light divide-y divide-white/10 items-start text-sm leading-6 border-t border-white/10">
+                            {% for variant in component.buttons %}
+                                {% include 'component-library/component-viewer/left-panel-btn.twig' with {
+                                    handle: component.componentId,
+                                    variant: loop.index0,
+                                    name: variant.label,
+                                } %}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {# Headers #}
+                        {% include 'component-library/component-viewer/component-tree.twig' with {
+                            components: component,
+                            componentKey: key,
+                            level: level + 1,
+                        } %}
+                    {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+ 
+</div>
+

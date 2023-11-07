@@ -1,0 +1,10 @@
+<div>
+	<dl class="divide-y divide-gray-100">
+	{% for key in ['title', 'handle', 'status'] %}
+	  <div class="bg-gray-{{ loop.index is odd ? '50' }} px-4 py-3 sm:grid sm:grid-cols-3">
+		<dt class="text-xs font-medium leading-6 text-gray-900">{{ key|upper }}</dt>
+		<dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ config[key] }}</dd>
+	  </div>
+	{% endfor %}
+	</dl>
+</div>
