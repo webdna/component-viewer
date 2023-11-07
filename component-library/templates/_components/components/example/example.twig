@@ -1,0 +1,10 @@
+{% switch size %}
+	{% case 'sm' %}
+		{% set style = 'px-3 py-1.5 text-xs' %}
+	{% case 'md' %}
+		{% set style = 'px-6 py-3 text-sm' %}
+	{% case 'lg' %}
+		{% set style = 'px-10 py-5 text-xl' %}
+{% endswitch %}
+
+<a href="{{ href }}" class="{{ style }} inline-flex rounded-sm bg-{{ color }}-700 text-white">{{ label }}</a>

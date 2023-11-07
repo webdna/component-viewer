@@ -1,0 +1,16 @@
+#sideNav button.selected::before {
+    content:'';
+    display: block;
+    width: calc(100% + 24px);
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-top: 1px solid rgba(255, 255, 255, 1);
+    border-bottom: 1px solid rgba(255, 255, 255, 1);
+}
+
+#bottomPanel nav button.selected {
+    border-color: #2563eb;
+    color: #2563eb;
+}

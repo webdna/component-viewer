@@ -1,0 +1,13 @@
+<button
+    class="w-full p-2 text-left relative"
+    data-component="left-panel-btn"
+    data-component-id="@{{ handle }}"
+    data-variant="{{ variant }}"
+    data-search-data="{{ name }} - {{ handle }}"
+    data-original-text="{{ name }}"
+    {% if craft.app.request.getParam('componentId') == '@'~handle %}
+        x-init="$parent = $el.closest('[x-disclosure]'); indexes = [0]; if($parent._x_dataStack.length == 5){indexes.push(2)}; indexes.forEach((i) => {$parent._x_dataStack[i].__isOpen = true;});"
+    {% endif %}
+>
+    {{ name|title }}
+</button>

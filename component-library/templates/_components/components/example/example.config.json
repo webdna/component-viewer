@@ -1,0 +1,60 @@
+{{ raw({
+	title: "Example",
+	label: "Example",
+	handle: "component:example",
+	status: "ready",
+	context: {
+		label: "Button",
+		href: "#",
+		color: "red",
+		size: 'md',
+	},
+	variables: {
+		label: "string",
+		color: {
+			type:'select', 
+			options:[
+				{value:'red', label:'Red'},
+				{value:'blue', label:'Blue'},
+				{value:'green', label:'Green'}
+			]
+		},
+		size: {
+			type:'select', 
+			options:[
+				{value:'sm', label:'Small'},
+				{value:'md', label:'Medium'},
+				{value:'lg', label:'Large'}
+			]
+		},
+	}
+}|json_encode) }}
+
+
+{# {{ raw({
+	title: "Example",
+	label: "Example",
+	handle: "component:example",
+	status: "ready",
+	context: {
+		label: "Button",
+		href: "#",
+		color: "red"
+	},
+	variants: [
+		{
+			name: "default",
+			label: "Primary link",
+			context: {
+				
+			}
+		},
+		{
+			name: "blue",
+			label: "Click me!",
+			context: {
+				color: "blue"
+			}
+		}
+	]
+}|json_encode) }} #}

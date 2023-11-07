@@ -1,0 +1,11 @@
+{
+	"title": "Buttons",
+	"label": "Buttons",
+	"handle": "modules:btns",
+	"status": "ready",
+	"context": {
+		"label": "Button",
+		"href": "#",
+		"style": "default"
+	}
+}
