@@ -184,10 +184,13 @@ const rightPanel = {
             const bottomPanelButtons = document.querySelectorAll('div[id=bottomPanel] nav button');
             for (let i = 0; i < bottomPanelButtons.length; i++) {
                 bottomPanelButtons[i].addEventListener('click', function() {
+                    const wasActive = this.classList.contains('selected');
                     rightPanel.bottom.sections.hideAll();
-                    this.classList.add('selected');
-                    const section = document.querySelector(`div[id=bottomPanel] section.component-${this.dataset.id}`);
-                    section.classList.remove('hidden');
+                    if (wasActive === false) {
+                        this.classList.add('selected');
+                        const section = document.querySelector(`div[id=bottomPanel] section.component-${this.dataset.id}`);
+                        section.classList.remove('hidden');
+                    }
                 });
             }
 
