@@ -127,7 +127,9 @@ class ComponentViewerHelper
             }
         }
 
-        $componentConfig['Errors'] = $errors;
+        if (count($errors)) {
+            $componentConfig['Errors'] = $errors;
+        }
 
         return $componentConfig;
     }
