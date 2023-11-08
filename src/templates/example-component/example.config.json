@@ -3,6 +3,7 @@
 	label: "Example",
 	handle: "component:example",
 	status: "ready",
+	viewClass: "m-auto",
 	context: {
 		label: "Button",
 		href: "#",

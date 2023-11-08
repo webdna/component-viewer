@@ -37,6 +37,29 @@ class ComponentViewerHelper
         
         return '';
     }
+    
+    /**
+     * @throws Exception
+     */
+    public static function getComponentViewClass($componentId): array
+    {
+        $componentMap = ComponentLibrary::getInstance()->formatters->getComponentMap();
+
+        // load in the components-map.json file as an array
+        $componentConfigPath = $componentMap[$componentId];
+        // swap out the '.twig' extension for '.config.json'
+        //$componentConfig = Json::decode(file_get_contents(self::getComponentConfigPath($componentConfigPath)));
+        $componentConfig = self::getComponentConfig($componentConfigPath);
+
+        if (array_key_exists('viewClass', $componentConfig)) {
+            if (is_array($componentConfig['viewClass'])) {
+                return $componentConfig['viewClass'];
+            } else {
+                return [$componentConfig['viewClass']];
+            }
+        }
+        return [];
+    }
 
     /**
      * @throws Exception
