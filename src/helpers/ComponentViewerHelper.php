@@ -37,7 +37,7 @@ class ComponentViewerHelper
         
         return '';
     }
-    
+
     /**
      * @throws Exception
      */
@@ -76,6 +76,14 @@ class ComponentViewerHelper
 
         $context = $componentConfig['context'] ?? [];
         $variants = $componentConfig['variants'] ?? [];
+
+        foreach ($context as $key => $value) {
+            $context[$key] = Craft::$app->getRequest()->getParam($key, $value);                   
+        }
+
+        // normalize the values (this means we can add actual elements to our context)
+        $context = self::normalizeValues($context);
+        $variants = self::normalizeValues($variants);
 
         if (isset($variants[(int)$variant])) {
             // merge context with variant context, variant should always override if matching props
@@ -221,5 +229,61 @@ class ComponentViewerHelper
         $layout = $pluginConfig['layout'] ?? Craft::getAlias('@webdna/componentlibrary/templates/component-viewer/render.example.twig');
         
         return $layout;
+    }
+
+    /**
+     * @throws Exception
+     */
+    public static function normalizeValues(array $values): array
+    {
+        $normalized = [];
+        foreach ($values as $key => $value) {
+            $normalized[$key] = self::normalizeValue($value);
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @param string $value
+     * @return bool|string|ElementInterface|null
+     */
+    public static function normalizeValue(string $value): mixed
+    {
+        if (str_contains($value, '{') &&  Craft::$app->getElements()->parseRefs($value)) {
+            $elementService = Craft::$app->getElements();
+            $core = StringHelper::trim($value, '{%}');
+            $parts = array_pad(explode(':', $core), 2, null);
+            $refHandle = $parts[0];
+            $ref = $parts[1];
+            $elementType = $elementService->getElementTypeByRefHandle($refHandle);
+            
+            $elementQuery = $elementService->createElementQuery($elementType)
+            ->status(null);
+            
+            if ($ref) {
+                $elementQuery->id($ref);
+            }
+            return $elementQuery->one();
+        }
+
+        if (Json::isJsonObject($value)) {
+
+            return Json::decodeIfJson($value);
+        }
+
+        if ($value === 'true') {
+            return true;
+        }
+
+        if ($value === 'false') {
+            return false;
+        }
+
+        if ($value === 'null') {
+            return null;
+        }
+
+        return $value;
     }
 }

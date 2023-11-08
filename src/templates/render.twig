@@ -13,11 +13,6 @@
 {% set context = componentViewerHelper.getComponentContext(component, variant) %}
 {% set viewClass = componentViewerHelper.getComponentViewClass(component) %}
 
-{% for key, value in context %}
-    {% set param = {(key):craft.app.request.getParam(key, value)} %}
-    {% set context = context|merge(param, true) %}
-{% endfor %}
-
 {% block viewClass %}
     {{ viewClass|join(' ') }}
 {% endblock %}
