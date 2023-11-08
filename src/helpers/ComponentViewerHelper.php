@@ -5,6 +5,7 @@ namespace webdna\componentlibrary\helpers;
 use cebe\markdown\Markdown;
 use Craft;
 use craft\helpers\Json;
+use craft\helpers\StringHelper;
 use yii\base\Exception;
 
 use webdna\componentlibrary\ComponentLibrary;
