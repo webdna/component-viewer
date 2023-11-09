@@ -251,12 +251,12 @@ class ComponentViewerHelper
      */
     public static function normalizeValue(string $value): mixed
     {
-        if (str_contains($value, '{') &&  Craft::$app->getElements()->parseRefs($value)) {
+        if (str_contains($value, '{ref:') &&  Craft::$app->getElements()->parseRefs($value)) {
             $elementService = Craft::$app->getElements();
-            $core = StringHelper::trim($value, '{%}');
-            $parts = array_pad(explode(':', $core), 2, null);
-            $refHandle = $parts[0];
-            $ref = $parts[1];
+            $core = StringHelper::trim($value, '{}');
+            $parts = array_pad(explode(':', $core), 3, null);
+            $refHandle = $parts[1];
+            $ref = $parts[2];
             $elementType = $elementService->getElementTypeByRefHandle($refHandle);
             
             $elementQuery = $elementService->createElementQuery($elementType)
