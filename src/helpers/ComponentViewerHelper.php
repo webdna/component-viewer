@@ -143,11 +143,13 @@ class ComponentViewerHelper
                     foreach ($config['variants'] as $variant) {
                         $buttons[] = [
                             'label' => $variant['name'],
+                            'status' => $variant['status'] ?? 'prototype',
                         ];
                     }
                 } else {
                     $buttons[] = [
                         'label' => $config['label'] ?? $componentName,
+                        'status' => $config['status'] ?? 'prototype',
                     ];
                 }
 
