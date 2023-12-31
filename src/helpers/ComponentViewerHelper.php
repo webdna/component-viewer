@@ -147,7 +147,7 @@ class ComponentViewerHelper
                     }
                 } else {
                     $buttons[] = [
-                        'label' => $componentName,
+                        'label' => $config['label'] ?? $componentName,
                     ];
                 }
 
