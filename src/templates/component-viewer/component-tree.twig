@@ -42,6 +42,7 @@
                                     handle: component.buttonVariants|first.componentId,
                                     variant: 0,
                                     name: component.buttonVariants|first.buttons|first.label,
+                                    status: component.buttonVariants|first.buttons|first.status,
                                 } %}
                             </div>
                         {% endif %}
@@ -53,6 +54,7 @@
                                     handle: component.componentId,
                                     variant: loop.index0,
                                     name: variant.label,
+                                    status: variant.status,
                                 } %}
                             {% endfor %}
                         </div>
