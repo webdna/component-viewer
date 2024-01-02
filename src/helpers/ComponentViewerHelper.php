@@ -48,6 +48,7 @@ class ComponentViewerHelper
 
         // load in the components-map.json file as an array
         $componentConfigPath = $componentMap[$componentId];
+        
         // swap out the '.twig' extension for '.config.json'
         //$componentConfig = Json::decode(file_get_contents(self::getComponentConfigPath($componentConfigPath)));
         $componentConfig = self::getComponentConfig($componentConfigPath);
@@ -133,15 +134,17 @@ class ComponentViewerHelper
         foreach ($componentMap as $componentId => $componentPath) {
             try {
                 //$config = Json::decode(file_get_contents(self::getComponentConfigPath($componentPath)));
-                $config = self::getComponentConfig($componentPath);
-                $componentParts = explode(':', $componentId);
-
-                // remove any '@' value from $exploded and capitalize the first letter of the string
-                [$componentGroup, $componentName] = $componentParts;
-                $componentGroup = ucfirst(str_replace('@', '', $componentGroup));
-                $componentName = $componentName ?? '';
-
-                $componentConfig[$componentGroup][$componentName] = $config;
+                if (!str_contains($componentId, '--')) {
+                    $config = self::getComponentConfig($componentPath);
+                    $componentParts = explode(':', $componentId);
+    
+                    // remove any '@' value from $exploded and capitalize the first letter of the string
+                    [$componentGroup, $componentName] = $componentParts;
+                    $componentGroup = ucfirst(str_replace('@', '', $componentGroup));
+                    $componentName = $componentName ?? '';
+    
+                    $componentConfig[$componentGroup][$componentName] = $config;
+                }
             } catch (\Exception $e) {
                 $errors[$componentId] = [
                     'error' => [
@@ -200,9 +203,9 @@ class ComponentViewerHelper
 
         // load in the components-map.json file as an array
         $componentConfigPath = $componentMap[$componentId];
-        $twigString = file_get_contents($componentConfigPath);
-        //$componentConfig = Json::decode(file_get_contents(self::getComponentConfigPath($componentConfigPath)));
         $componentConfig = self::getComponentConfig($componentConfigPath);
+        $twigString = file_get_contents($componentMap[self::getComponentId($componentId, $variant)]);
+        
         try {
             $rendered = Craft::$app->view->renderString($twigString, self::getComponentContext($componentId, $variant));
         } catch (\Exception $e) {
@@ -224,7 +227,11 @@ class ComponentViewerHelper
         
         try {
             $info = file_get_contents(Craft::getAlias('@webdna/componentlibrary/templates/component-viewer/info.twig'));
-            $info = Craft::$app->view->renderString($info, ['config' => $componentConfig]);
+            $config = $componentConfig;
+            if ($variant) {
+                $config = array_merge($config, $componentConfig['variants'][$variant-1]);
+            }
+            $info = Craft::$app->view->renderString($info, ['config' => $config]);
         } catch (\Exception $e) {
             $info = $e->getMessage();
         }
