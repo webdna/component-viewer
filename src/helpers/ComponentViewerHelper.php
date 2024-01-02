@@ -68,34 +68,57 @@ class ComponentViewerHelper
     public static function getComponentContext($componentId, $variant): array
     {
         $componentMap = ComponentLibrary::getInstance()->formatters->getComponentMap();
-
+    
         // load in the components-map.json file as an array
         $componentConfigPath = $componentMap[$componentId];
         // swap out the '.twig' extension for '.config.json'
         //$componentConfig = Json::decode(file_get_contents(self::getComponentConfigPath($componentConfigPath)));
         $componentConfig = self::getComponentConfig($componentConfigPath);
-
+    
         $context = $componentConfig['context'] ?? [];
         $variants = $componentConfig['variants'] ?? [];
-
+    
         foreach ($context as $key => $value) {
             $context[$key] = Craft::$app->getRequest()->getParam($key, $value);                   
         }
-
-        // normalize the values (this means we can add actual elements to our context)
+        
         $context = self::normalizeValues($context);
-        $variants = self::normalizeValues($variants);
-
+        
+        foreach ($variants as $key => $var) {
+            $varContext = $var['context'] ?? [];
+            
+            foreach ($varContext as $k => $value) {
+                $varContext[$k] = Craft::$app->getRequest()->getParam($k, $value);                   
+            }
+            $var['context'] = self::normalizeValues($varContext);
+            $variants[$key] = $var;
+        }
+    
         if (isset($variants[(int)$variant])) {
             // merge context with variant context, variant should always override if matching props
             return array_merge($context, $variants[(int)$variant]['context']);
         }
-
+    
         if ($context) {
             return $context;
         }
-
+    
         return $variants[0]['context'] ?? [];
+    }
+    
+    public static function getComponentId($componentId, $variant=0): string
+    {
+        if ($variant == 0) {
+            return $componentId;
+        }
+        
+        $componentMap = ComponentLibrary::getInstance()->formatters->getComponentMap();
+        $componentConfigPath = $componentMap[$componentId];
+        $componentConfig = self::getComponentConfig($componentConfigPath);
+        
+        $variantHandle = $componentConfig['variants'][$variant-1]['handle'];
+        
+        return '@'.$variantHandle;
     }
 
     /**
@@ -148,7 +171,7 @@ class ComponentViewerHelper
                     }
                 } else {
                     $buttons[] = [
-                        'label' => $config['label'] ?? $componentName,
+                        'label' => $config['name'] ?? $componentName,
                         'status' => $config['status'] ?? 'prototype',
                     ];
                 }

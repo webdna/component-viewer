@@ -12,6 +12,7 @@
 
 {% set context = componentViewerHelper.getComponentContext(component, variant) %}
 {% set viewClass = componentViewerHelper.getComponentViewClass(component) %}
+{% set component = componentViewerHelper.getComponentId(component, variant) %}
 
 {% block viewClass %}
     {{ viewClass|join(' ') }}
