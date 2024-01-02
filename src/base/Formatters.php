@@ -124,6 +124,12 @@ class Formatters extends Component
                     if (isset($component['handle'])) {
                         $componentName = '@' . $component['handle'];
                         $mapping[$componentName] = $twigFile;
+                        
+                        foreach (($component['variants'] ?? []) as $variant) {
+                            $componentName = '@' . $variant['handle'];
+                            $varPath = str_replace($component['handle'], '', $variant['handle']);
+                            $mapping[$componentName] = str_replace('.twig', $varPath.'.twig', $twigFile);
+                        }
                     } else {
                         throw new MissingComponentException('Missing handle for component: ' . $filename);
                     }

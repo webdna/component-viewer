@@ -52,7 +52,7 @@
                             {% for variant in component.buttons %}
                                 {% include 'component-library/component-viewer/left-panel-btn.twig' with {
                                     handle: component.componentId,
-                                    variant: loop.index0,
+                                    variant: loop.index,
                                     name: variant.label,
                                     status: variant.status,
                                 } %}

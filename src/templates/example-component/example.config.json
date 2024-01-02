@@ -1,6 +1,6 @@
 {{ raw({
 	title: "Example",
-	label: "Example",
+	name: "Example",
 	handle: "component:example",
 	status: "ready",
 	viewClass: "m-auto",
@@ -34,7 +34,7 @@
 
 {# {{ raw({
 	title: "Example",
-	label: "Example",
+	name: "Example",
 	handle: "component:example",
 	status: "ready",
 	context: {
@@ -45,6 +45,7 @@
 	variants: [
 		{
 			name: "default",
+			handle: "component:example-default",
 			label: "Primary link",
 			context: {
 				
@@ -52,6 +53,7 @@
 		},
 		{
 			name: "blue",
+			handle: "component:example-blue",
 			label: "Click me!",
 			context: {
 				color: "blue"
