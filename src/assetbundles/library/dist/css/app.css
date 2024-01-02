@@ -1,13 +1,19 @@
 #sideNav button.selected::before {
     content:'';
     display: block;
-    width: calc(100% + 24px);
-    height: 100%;
+    /*width: calc(100% + 24px);*/
+    /*height: 100%;*/
     position: absolute;
     top: 0;
-    left: 0;
-    border-top: 1px solid rgba(255, 255, 255, 1);
-    border-bottom: 1px solid rgba(255, 255, 255, 1);
+    right: -1.5rem;
+    /*border-top: 1px solid rgba(255, 255, 255, 1);*/
+    /*border-bottom: 1px solid rgba(255, 255, 255, 1);*/
+    
+    width: 0; 
+    height: 0; 
+    border-top: 20px solid transparent;
+    border-bottom: 20px solid transparent;
+    border-right: 20px solid white;
 }
 
 #bottomPanel nav button.selected {
