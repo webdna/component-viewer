@@ -271,7 +271,11 @@ class ComponentViewerHelper
     {
         $normalized = [];
         foreach ($values as $key => $value) {
-            $normalized[$key] = self::normalizeValue($value);
+            if (is_array($value)) {
+                $normalized[$key] = self::normalizeValues($value);
+            } else {
+                $normalized[$key] = self::normalizeValue($value);
+            }
         }
 
         return $normalized;
