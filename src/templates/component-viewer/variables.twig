@@ -1,4 +1,5 @@
-<div x-data="{vars:{ {{raw(context|map((value, key) => "#{key}:'#{value}'")|join(','))}} }, iframe:document.querySelector('iframe')}" x-init="url = new URL(iframe.src), params = new URLSearchParams(url.search)" x-effect="{{ raw(context|map((v,k) => "vars.#{k}")|join(',')) }}, Object.entries(vars).forEach((v) => {params.set(v[0], v[1])}), newUrl = new URL(url.origin+url.pathname+'?'+params.toString()), iframe.src=newUrl.href" class="grid grid-cols-3 gap-8">
+{% set vars = raw(context|json_encode)|replace('"',"'") %}
+<div x-data="{vars:{{vars}}, iframe:document.querySelector('iframe')}" x-init="url = new URL(iframe.src), params = new URLSearchParams(url.search)" x-effect="{{ raw(variables|map((v,k) => "vars.#{k}")|join(',')) }}, Object.entries(vars).forEach((v) => {params.set(v[0], JSON.stringify(v[1]))}), newUrl = new URL(url.origin+url.pathname+'?'+params.toString()), iframe.src=newUrl.href" class="grid grid-cols-3 gap-8">
 {% for key, var in (variables ?? []) %}
 <div class="relative">
 <label for="{{ key }}" class="absolute -top-2 left-2 inline-block px-1 text-xs font-medium text-gray-900 before:content-[''] before:block before:bg-gray-100 before:inset-0 before:absolute before:-translate-y-1.5"><span class="relative">{{ key|upper }}</span></label>
@@ -11,7 +12,7 @@
 			</select>
 
 	{% elseif var == 'number' %}
-	  		<input x-model.fill="vars.{{ key }}" type="number" name="{{ key }}" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6" value="{{ var }}">
+			  <input x-model.fill="vars.{{ key }}" type="number" name="{{ key }}" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6" value="{{ var }}">
 	{% else %}
 			<input x-model.fill="vars.{{ key }}" type="text" name="{{ key }}" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6" value="{{ var }}">
 	{% endif %}
