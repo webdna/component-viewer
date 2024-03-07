@@ -112,9 +112,9 @@ const leftPanel = {
                     const start = text.substr(0, index);
                     const highlighted = text.substr(index, searchValue.length);
                     const end = text.substr(index + searchValue.length);
-                    item.innerHTML = `${start}<span class="highlight">${highlighted}</span>${end}`;
+                    //item.innerHTML = `${start}<span class="highlight">${highlighted}</span>${end}`;
                 } else {
-                    item.innerHTML = item.dataset.originalText;
+                    //item.innerHTML = item.dataset.originalText;
                 }
             }
         },
