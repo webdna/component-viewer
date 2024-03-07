@@ -13,6 +13,28 @@
 
 	{% elseif var == 'number' %}
 			  <input x-model.fill="vars.{{ key }}" type="number" name="{{ key }}" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6" value="{{ var }}">
+	{% elseif var == 'checkbox' %}
+			<div class="block w-full rounded-md border-0 py-1.5 bg-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6">
+			
+					<input x-model.fill="vars.{{ key }}" type="hidden" name="{{ key }}" value="{{ var }}">
+		 		
+					<!-- Button -->
+					<button
+						x-ref="toggle"
+						@click="vars.{{ key }} = ! vars.{{ key }}"
+						type="button"
+						role="switch"
+						:aria-checked="vars.{{ key }}"
+						:class="vars.{{ key }} ? 'bg-green-400' : 'bg-slate-300'"
+						class="relative ml-3 mt-1.5 inline-flex w-14 rounded-full py-1 transition"
+					>
+						<span
+							:class="vars.{{ key }} ? 'translate-x-7' : 'translate-x-1'"
+							class="bg-white h-6 w-6 rounded-full transition shadow-md"
+							aria-hidden="true"
+						></span>
+					</button>
+			</div>
 	{% else %}
 			<input x-model.fill="vars.{{ key }}" type="text" name="{{ key }}" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6" value="{{ var }}">
 	{% endif %}
