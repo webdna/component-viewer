@@ -66,7 +66,7 @@ class ComponentViewerHelper
     /**
      * @throws Exception
      */
-    public static function getComponentContext($componentId, $variant): array
+    public static function getComponentContext($componentId, $variant, $parent=null): array
     {
         $componentMap = ComponentLibrary::getInstance()->formatters->getComponentMap();
     
@@ -93,6 +93,21 @@ class ComponentViewerHelper
             }
             $var['context'] = self::normalizeValues($varContext);
             $variants[$key] = $var;
+        }
+        
+        $variant -= 1;
+        
+        // replace any nested includes
+        if (!$parent || $parent == $componentId) {
+            foreach ($context as $key => $value) {
+                preg_match_all('/(@\w+:\w+)/', $value, $matches);
+                foreach ($matches[0] as $match) {
+                    $tcomponentConfigPath = $componentMap[$match];
+                    $tcontext = Json::encode(self::getComponentContext($match, null, $componentId));
+                    $t = Craft::$app->view->renderString("{{ include('$match', $tcontext) }}");
+                    $context = str_replace($match, $t, $context);
+                }
+            }
         }
     
         if (isset($variants[(int)$variant])) {
@@ -146,18 +161,16 @@ class ComponentViewerHelper
                     $componentConfig[$componentGroup][$componentName] = $config;
                 }
             } catch (\Exception $e) {
-                $errors[$componentId] = [
+                /*$errors[$componentId] = [
                     'error' => [
                         'message' => $e->getMessage(),
                         'code' => $e->getCode(),
                         'line' => $e->getLine(),
                     ],
                     'path' => self::getComponentConfigPath($componentPath),
-                ];
+                ];*/
             }
         }
-        
-        //Craft::dd($componentMap);
 
         // Adds a 'buttons' array to each component that normalizes variant and non-variant data into
         // a single array for our sidebar behavior
