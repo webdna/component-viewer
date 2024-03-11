@@ -100,7 +100,7 @@ class ComponentViewerHelper
         // replace any nested includes
         if (!$parent || $parent == $componentId) {
             foreach ($context as $key => $value) {
-                preg_match_all('/(@\w+:\w+)/', $value, $matches);
+                preg_match_all('/(@\w+:[\w-]+)/', $value, $matches);
                 foreach ($matches[0] as $match) {
                     $tcomponentConfigPath = $componentMap[$match];
                     $tcontext = Json::encode(self::getComponentContext($match, null, $componentId));
