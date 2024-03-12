@@ -1,4 +1,4 @@
-{% set vars = raw(context|json_encode)|replace('"',"'") %}
+{% set vars = raw(variables|map((v,k) => context[k])|json_encode)|replace('"',"'") %}
 <div x-data="{vars:{{vars}}, iframe:document.querySelector('iframe')}" x-init="url = new URL(iframe.src), params = new URLSearchParams(url.search)" x-effect="{{ raw(variables|map((v,k) => "vars.#{k}")|join(',')) }}, Object.entries(vars).forEach((v) => {params.set(v[0], (typeof v[1] === 'object' ? JSON.stringify(v[1]) : v[1]))}), newUrl = new URL(url.origin+url.pathname+'?'+params.toString()), iframe.src=newUrl.href" class="grid grid-cols-3 gap-8">
 {% for key, var in (variables ?? []) %}
 <div class="relative">
