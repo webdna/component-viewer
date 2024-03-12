@@ -116,6 +116,7 @@ class ComponentViewerHelper
             // merge context with variant context, variant should always override if matching props
             return array_merge($context, $variants[(int)$variant]['context']);
         }
+        
     
         if ($context) {
             return $context;
@@ -318,6 +319,17 @@ class ComponentViewerHelper
             }
             return $elementQuery->one();
         }
+        
+        $elementService = Craft::$app->getElements();
+        preg_match_all('/{(asset|entry):(\w+)(?::)?(\w+)?}/', $value, $matches);
+        if ($matches[0]) {
+            $elementType = $elementService->getElementTypeByRefHandle($matches[1][0]);
+            $elementQuery = $elementService->createElementQuery($elementType)
+            ->status(null)->id($matches[2][0]);
+            
+            return $elementQuery->one();
+        }
+        
 
         if (Json::isJsonObject($value)) {
 
