@@ -96,21 +96,6 @@ class ComponentViewerHelper
         }
         
         $variant -= 1;
-        
-        // replace any nested includes
-        if (!$parent || $parent == $componentId) {
-            foreach ($context as $key => $value) {
-                if (is_string($value)) {
-                    preg_match_all('/(@\w+:[\w-]+)/', $value, $matches);
-                    foreach ($matches[0] as $match) {
-                        $tcomponentConfigPath = $componentMap[$match];
-                        $tcontext = Json::encode(self::getComponentContext($match, null, $componentId));
-                        $t = Craft::$app->view->renderString("{{ include('$match', $tcontext) }}");
-                        $context = str_replace($match, $t, $context);
-                    }
-                }
-            }
-        }
     
         if (isset($variants[(int)$variant])) {
             // merge context with variant context, variant should always override if matching props
@@ -320,14 +305,33 @@ class ComponentViewerHelper
             return $elementQuery->one();
         }
         
+
+        preg_match_all('/{include:(@[\w:-]+)}/', $value, $matches);
+        //Craft::dd($matches);
+        if ($matches[0]) {
+            $componentMap = ComponentLibrary::getInstance()->formatters->getComponentMap();
+            foreach ($matches[1] as $match) {
+                $componentConfigPath = $componentMap[$match];
+                $context = Json::encode(self::getComponentContext($match, null));
+                //$jsonContext = Json::decode($context);
+                
+                $t = Craft::$app->view->renderString("{{ include('$match', $context) }}");
+                $value = str_replace("{include:$match}", $t, $value);
+            }
+        }
+
+        
         $elementService = Craft::$app->getElements();
         preg_match_all('/{(asset|entry):(\w+)(?::)?(\w+)?}/', $value, $matches);
         if ($matches[0]) {
             $elementType = $elementService->getElementTypeByRefHandle($matches[1][0]);
             $elementQuery = $elementService->createElementQuery($elementType)
             ->status(null)->id($matches[2][0]);
-            
-            return $elementQuery->one();
+            if (count($matches) == 4) {
+                return $elementQuery->one()->{$matches[3][0]};
+            } else {
+                return $elementQuery->one();
+            }
         }
         
 
