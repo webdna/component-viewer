@@ -136,6 +136,8 @@ class Formatters extends Component
                 }
             }
         }
+        
+        ksort($mapping);
 
         $this->_componentMap = $mapping;
 
