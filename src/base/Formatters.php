@@ -96,15 +96,21 @@ class Formatters extends Component
     /**
      * @throws MissingComponentException
      */
-    public function getComponentMap(): array
+    public function getComponentMap($site=null): array
     {
         if ($this->_componentMap) {
-            return $this->_componentMap;
+            //return $this->_componentMap;
         }
 
         $pluginConfig = Craft::$app->getConfig()->getConfigFromFile('component-library');
         $componentBaseDirs = [Craft::getAlias('@webdna/componentlibrary/templates/_components')];
         $componentBaseDirs = array_merge($componentBaseDirs, $pluginConfig['templateDirectories'] ?? []);
+        
+        if ($site) {
+            $componentBaseDirs = array_merge($componentBaseDirs, [$pluginConfig['sites']."/$site"] ?? []);
+            //Craft::dd($componentBaseDirs);
+        }
+        
 
         $mapping = [];
 

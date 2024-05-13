@@ -27,7 +27,8 @@ class ComponentViewerController extends Controller
         // get componentId from request params
         $componentId = Craft::$app->request->getParam('componentId');
         $variant = Craft::$app->request->getParam('variant');
-        $component = ComponentViewerHelper::getComponent($componentId, $variant);
+        $site = Craft::$app->request->getParam('site');
+        $component = ComponentViewerHelper::getComponent($componentId, $variant, $site);
 
         return $this->asJson($component);
     }

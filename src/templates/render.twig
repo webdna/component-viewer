@@ -1,7 +1,5 @@
 {% set componentViewerHelper = create('webdna\\componentlibrary\\helpers\\ComponentViewerHelper') %}
 
-{% extends componentViewerHelper.getLayout() %}
-
 {% set key = craft.app.request.getParam('key') %}
 {% if not currentUser and key != getComponentLibraryKey() %}
     {% exit 404 %}
@@ -9,14 +7,15 @@
 
 {% set component = craft.app.request.getParam('componentId') %}
 {% set variant = craft.app.request.getParam('variant') %}
+{% set site = craft.app.request.getParam('site') %}
 
-{% set context = componentViewerHelper.getComponentContext(component, variant) %}
-{% set viewClass = componentViewerHelper.getComponentViewClass(component) %}
-{% set component = componentViewerHelper.getComponentId(component, variant) %}
+{% extends componentViewerHelper.getLayout(site) %}
 
-{% block viewClass %}
-    {{ viewClass|join(' ') }}
-{% endblock %}
+{% set context = componentViewerHelper.getComponentContext(component, variant, null, site) %}
+{% set viewClass = componentViewerHelper.getComponentViewClass(component, site) %}
+{% set component = componentViewerHelper.getComponentId(component, variant, site) %}
+
+{% block viewClass %}{{ viewClass|join(' ') }}{% endblock %}
 
 {% block component %}
     {% include component with context %}

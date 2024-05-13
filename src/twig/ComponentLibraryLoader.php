@@ -73,7 +73,7 @@ class ComponentLibraryLoader implements LoaderInterface
     {
         // Fractal component items begin with an `@` symbol
         if (str_starts_with($name, '@')) {
-            $componentMap = ComponentLibrary::getInstance()->formatters->getComponentMap();
+            $componentMap = ComponentLibrary::getInstance()->formatters->getComponentMap(Craft::$app->getRequest()->getParam('site'));
             $template = $componentMap[$name] ?? null;
 
             if (!$template) {
