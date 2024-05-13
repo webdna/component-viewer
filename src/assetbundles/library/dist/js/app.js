@@ -17,6 +17,16 @@ const leftPanel = {
             el.classList.add('selected');
         },
     },
+    sites: {
+        selected: null,
+        init: () => {
+            const sites = document.getElementById('sites');
+            leftPanel.sites.selected = sites.value;
+            sites.addEventListener('change', function(e){
+                document.location = `?site=${sites.value}&componentId=${leftPanel.selection.id}&variant=${leftPanel.selection.variant}`;
+            })
+        }
+    },
     details: {
         open: () => {
             const details = document.querySelectorAll('details');
@@ -54,9 +64,10 @@ const leftPanel = {
                     {
                         componentId: leftPanel.selection.id,
                         variant: leftPanel.selection.variant,
+                        site: leftPanel.sites.selected,
                     },
                     '',
-                    `?componentId=${leftPanel.selection.id}&variant=${leftPanel.selection.variant}`,
+                    `?site=${leftPanel.sites.selected}&componentId=${leftPanel.selection.id}&variant=${leftPanel.selection.variant}`,
                 );
                 //leftPanel.details.openAncestors(ev.target);
                 rightPanel.bottom.sections.update();
@@ -153,6 +164,7 @@ const leftPanel = {
         },
     },
     init: () => {
+        leftPanel.sites.init();
         leftPanel.details.init();
         leftPanel.search.togglePanelButtons();
         leftPanel.search.toggleHighlights();
@@ -170,7 +182,7 @@ const rightPanel = {
             element: document.querySelector('iframe'),
             update: {
                 src: () => {
-                    const iframeSrc = `https://${config.domain}/component-library/render/?componentId=${leftPanel.selection.id}&variant=${leftPanel.selection.variant}&key=${window.renderKey}`;
+                    const iframeSrc = `https://${config.domain}/component-library/render/?site=${leftPanel.sites.selected}&componentId=${leftPanel.selection.id}&variant=${leftPanel.selection.variant}&key=${window.renderKey}`;
                     rightPanel.top.iframe.element.src = iframeSrc;
                     //document.querySelector('[data-component="iframe-link"]').href = iframeSrc;
                     rightPanel.top.iframe.element.parentElement.classList.remove('hidden');
@@ -208,7 +220,7 @@ const rightPanel = {
                 }
             },
             update: () => {
-                fetch(`https://${config.domain}/actions/component-library/component-viewer/get-component-info?componentId=${leftPanel.selection.id}&variant=${leftPanel.selection.variant}`)
+                fetch(`https://${config.domain}/actions/component-library/component-viewer/get-component-info?site=${leftPanel.sites.selected}&componentId=${leftPanel.selection.id}&variant=${leftPanel.selection.variant}`)
                     .then(response => response.json())
                     .then(data => {
                         document.querySelector('.component-notes .computed').innerHTML = data.readme;
@@ -361,6 +373,7 @@ const init = () => {
 
     // init page elements
     leftPanel.tree.buttons.init();
+    leftPanel.sites.init();
     //resizing.setBottomPanelHeight();
     //resizing.setTopPanelHeight();
     leftPanel.search.init();

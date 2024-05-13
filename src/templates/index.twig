@@ -2,7 +2,7 @@
     {% exit 404 %}
 {% endif %}
     {% set componentViewerHelper = create('webdna\\componentlibrary\\helpers\\ComponentViewerHelper') %}
-    {% set components = componentViewerHelper.getAllComponents() %}
+    {% set components = componentViewerHelper.getAllComponents(craft.app.request.getParam('site')) %}
 
 <!DOCTYPE html>
 <html>
@@ -66,6 +66,18 @@
         <div class="flex h-16 shrink-0 items-center">
           <svg class="h-8 w-auto text-white" viewBox="0 0 93 38" xmlns="http://www.w3.org/2000/svg"><path d="M43.868 9.4v9.4l4.7-9.4h1.567c6.056 0 10.967 4.91 10.967 10.967v17.234H50.135V21.934a3.134 3.134 0 00-3.133-3.134h-3.134v18.801H32.9v-28.2h10.967zM29.768 0v37.602H18.8L18.8 28.2l-4.7 9.4c-7.788 0-14.1-6.313-14.1-14.1C0 15.713 6.312 9.4 14.1 9.4h4.7V0h10.968zm63.206 9.4v28.201H82.007l-.001-9.4-4.7 9.4c-7.787 0-14.1-6.313-14.1-14.1 0-7.788 6.313-14.1 14.1-14.1h15.668zm-74.173 9.4h-3.134a4.7 4.7 0 000 9.401H18.8v-9.4zm63.206 0h-3.133a4.7 4.7 0 000 9.401h3.132v-9.4z" fill="currentColor" fill-rule="evenodd"></path></svg>
         </div>
+        
+        {% set sites = craft.app.sites.getAllSites() %}
+        {% if sites|length > 1 %}
+        <div class="">
+          <select id="sites" name="sites" class="mt-2 block w-full bg-transparent rounded-md border-0 py-1.5 pl-3 pr-10 text-white ring-1 ring-inset ring-white/50 focus:ring-2 focus:ring-white sm:text-sm sm:leading-6">
+            <option value="">BASE</option>
+            {% for site in craft.app.sites.getAllSites() %}
+            <option value="{{ site.handle }}" {% if site.handle == craft.app.request.getParam('site') %}selected{% endif %}>{{ site.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
         
         <div id="sideNav" class="divide-y divide-white/10">
         {% for key, group in components %}

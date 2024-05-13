@@ -42,12 +42,13 @@ class ComponentViewerHelper
     /**
      * @throws Exception
      */
-    public static function getComponentViewClass($componentId): array
+    public static function getComponentViewClass($componentId, $site=null): array
     {
-        $componentMap = ComponentLibrary::getInstance()->formatters->getComponentMap();
+        $componentMap = ComponentLibrary::getInstance()->formatters->getComponentMap($site);
 
         // load in the components-map.json file as an array
         $componentConfigPath = $componentMap[$componentId];
+        //Craft::dd($componentConfigPath);
         
         // swap out the '.twig' extension for '.config.json'
         //$componentConfig = Json::decode(file_get_contents(self::getComponentConfigPath($componentConfigPath)));
@@ -66,9 +67,9 @@ class ComponentViewerHelper
     /**
      * @throws Exception
      */
-    public static function getComponentContext($componentId, $variant, $parent=null): array
+    public static function getComponentContext($componentId, $variant, $parent=null, $site=null): array
     {
-        $componentMap = ComponentLibrary::getInstance()->formatters->getComponentMap();
+        $componentMap = ComponentLibrary::getInstance()->formatters->getComponentMap($site);
     
         // load in the components-map.json file as an array
         $componentConfigPath = $componentMap[$componentId];
@@ -110,13 +111,13 @@ class ComponentViewerHelper
         return $variants[0]['context'] ?? [];
     }
     
-    public static function getComponentId($componentId, $variant=0): string
+    public static function getComponentId($componentId, $variant=0, $site=null): string
     {
         if ($variant == 0) {
             return $componentId;
         }
         
-        $componentMap = ComponentLibrary::getInstance()->formatters->getComponentMap();
+        $componentMap = ComponentLibrary::getInstance()->formatters->getComponentMap($site);
         $componentConfigPath = $componentMap[$componentId];
         $componentConfig = self::getComponentConfig($componentConfigPath);
         
@@ -128,9 +129,9 @@ class ComponentViewerHelper
     /**
      * @throws Exception
      */
-    public static function getAllComponents(): array
+    public static function getAllComponents($site=null): array
     {
-        $componentMap = ComponentLibrary::getInstance()->formatters->getComponentMap();
+        $componentMap = ComponentLibrary::getInstance()->formatters->getComponentMap($site);
         $componentConfig = [];
         $errors = [];
 
@@ -198,17 +199,18 @@ class ComponentViewerHelper
     /**
      * @throws Exception
      */
-    public static function getComponent($componentId = '', $variant = null): array
+    public static function getComponent($componentId = '', $variant = null, $site=null): array
     {
-        $componentMap = ComponentLibrary::getInstance()->formatters->getComponentMap();
+        $componentMap = ComponentLibrary::getInstance()->formatters->getComponentMap($site);
 
         // load in the components-map.json file as an array
         $componentConfigPath = $componentMap[$componentId];
         $componentConfig = self::getComponentConfig($componentConfigPath);
-        $twigString = file_get_contents($componentMap[self::getComponentId($componentId, $variant)]);
+        $twigString = file_get_contents($componentMap[self::getComponentId($componentId, $variant, $site)]);
+            
         
         try {
-            $rendered = Craft::$app->view->renderString($twigString, self::getComponentContext($componentId, $variant));
+            $rendered = Craft::$app->view->renderString($twigString, self::getComponentContext($componentId, $variant, null, $site));
         } catch (\Exception $e) {
             $rendered = $e->getMessage();
         }
@@ -247,7 +249,7 @@ class ComponentViewerHelper
 
         return [
             'config' => $componentConfig,
-            'context' => self::getComponentContext($componentId, $variant),
+            'context' => self::getComponentContext($componentId, $variant, null, $site),
             'readme' => $readme,
             'twig' => $twigString,
             'rendered' => $rendered,
