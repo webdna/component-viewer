@@ -2,7 +2,7 @@
 
 {% set key = craft.app.request.getParam('key') %}
 {% if not currentUser and key != getComponentLibraryKey() %}
-    {% exit 404 %}
+    {% exit 403 %}
 {% endif %}
 
 {% set component = craft.app.request.getParam('componentId') %}

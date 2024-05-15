@@ -1,5 +1,5 @@
 {% if not currentUser %}
-    {% exit 404 %}
+    {% exit 403 %}
 {% endif %}
     {% set componentViewerHelper = create('webdna\\componentlibrary\\helpers\\ComponentViewerHelper') %}
     {% set components = componentViewerHelper.getAllComponents(craft.app.request.getParam('site')) %}
