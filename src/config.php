@@ -6,5 +6,5 @@ return [
 	],
 	'sites' => Craft::getAlias('@templates'),
 	'layout' => '/_components/render.twig',
-
+	//'navigation' => []
 ];
