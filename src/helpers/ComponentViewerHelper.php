@@ -120,10 +120,8 @@ class ComponentViewerHelper
         $componentMap = ComponentLibrary::getInstance()->formatters->getComponentMap($site);
         $componentConfigPath = $componentMap[$componentId];
         $componentConfig = self::getComponentConfig($componentConfigPath);
-        
-        $variantHandle = $componentConfig['variants'][$variant-1]['handle'];
-        
-        return '@'.$variantHandle;
+            
+        return '@'.$componentConfig['handle'];
     }
 
     /**
@@ -136,20 +134,29 @@ class ComponentViewerHelper
         $errors = [];
 
         foreach ($componentMap as $componentId => $componentPath) {
-            try {
+            //try {
                 //$config = Json::decode(file_get_contents(self::getComponentConfigPath($componentPath)));
                 if (!str_contains($componentId, '--')) {
                     $config = self::getComponentConfig($componentPath);
                     $componentParts = explode(':', $componentId);
     
                     // remove any '@' value from $exploded and capitalize the first letter of the string
-                    [$componentGroup, $componentName] = $componentParts;
+                    if (count($componentParts) == 3) {
+                        [$componentGroup, $componentName, $componentVariant] = $componentParts;
+                    } else {
+                        [$componentGroup, $componentName] = $componentParts;
+                        $componentVariant = null;
+                    }
                     $componentGroup = ucfirst(str_replace('@', '', $componentGroup));
                     $componentName = $componentName ?? '';
-    
-                    $componentConfig[$componentGroup][$componentName] = $config;
+                    
+                    if ($componentVariant) {
+                        $componentConfig[$componentGroup][$componentName]['variants'][$componentVariant] = $config;
+                    } else {
+                        $componentConfig[$componentGroup][$componentName] = $config;
+                    }
                 }
-            } catch (\Exception $e) {
+            //} catch (\Exception $e) {
                 /*$errors[$componentId] = [
                     'error' => [
                         'message' => $e->getMessage(),
@@ -158,7 +165,7 @@ class ComponentViewerHelper
                     ],
                     'path' => self::getComponentConfigPath($componentPath),
                 ];*/
-            }
+            //}
         }
 
         // Adds a 'buttons' array to each component that normalizes variant and non-variant data into
@@ -167,25 +174,21 @@ class ComponentViewerHelper
             foreach ($componentGroupConfig as $componentName => $config) {
 
                 $buttons = [];
-                if (!empty($config['variants'])) {
+                
+                
+                
+                if (isset($config['variants'])) {
+                    
+                    $componentConfig[$componentGroup][$componentName]['name'] = collect($config['variants'])->first()['name'];
+                    
                     foreach ($config['variants'] as $variant) {
-                        $buttons[] = [
-                            'label' => $variant['name'],
-                            'status' => $variant['status'] ?? 'prototype',
-                        ];
+                        $buttons[] = $variant;
                     }
-                } else {
-                    $buttons[] = [
-                        'label' => $config['name'] ?? $componentName,
-                        'status' => $config['status'] ?? 'prototype',
-                    ];
                 }
 
-                // Odd naming convention here but having buttonVariants->buttons made it easier on template logic for now
-                $componentConfig[$componentGroup][$componentName]['buttonVariants']['buttons'] = [
-                    'componentId' => $config['handle'],
-                    'buttons' => $buttons,
-                ];
+                if (count($buttons)) {
+                    $componentConfig[$componentGroup][$componentName]['variants'] = $buttons;
+                }
             }
         }
 

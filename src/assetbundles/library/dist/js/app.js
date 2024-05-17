@@ -8,12 +8,10 @@ const leftPanel = {
                 buttons[i].classList.remove('selected');
             }
             leftPanel.selection.id = null;
-            leftPanel.selection.variant = null;
         },
         update: (el) => {
             leftPanel.selection.clear();
             leftPanel.selection.id = el.dataset.componentId;
-            leftPanel.selection.variant = el.dataset.variant;
             el.classList.add('selected');
         },
     },
@@ -23,7 +21,7 @@ const leftPanel = {
             const sites = document.getElementById('sites');
             leftPanel.sites.selected = sites.value;
             sites.addEventListener('change', function(e){
-                document.location = `?site=${sites.value}&componentId=${leftPanel.selection.id}&variant=${leftPanel.selection.variant}`;
+                document.location = `?site=${sites.value}&componentId=${leftPanel.selection.id}`;
             })
         }
     },
@@ -63,11 +61,10 @@ const leftPanel = {
                 window.history.pushState(
                     {
                         componentId: leftPanel.selection.id,
-                        variant: leftPanel.selection.variant,
                         site: leftPanel.sites.selected,
                     },
                     '',
-                    `?site=${leftPanel.sites.selected}&componentId=${leftPanel.selection.id}&variant=${leftPanel.selection.variant}`,
+                    `?site=${leftPanel.sites.selected}&componentId=${leftPanel.selection.id}`,
                 );
                 //leftPanel.details.openAncestors(ev.target);
                 rightPanel.bottom.sections.update();
@@ -182,7 +179,7 @@ const rightPanel = {
             element: document.querySelector('iframe'),
             update: {
                 src: () => {
-                    const iframeSrc = `https://${config.domain}/component-library/render/?site=${leftPanel.sites.selected}&componentId=${leftPanel.selection.id}&variant=${leftPanel.selection.variant}&key=${window.renderKey}`;
+                    const iframeSrc = `https://${config.domain}/component-library/render/?site=${leftPanel.sites.selected}&componentId=${leftPanel.selection.id}&key=${window.renderKey}`;
                     rightPanel.top.iframe.element.src = iframeSrc;
                     //document.querySelector('[data-component="iframe-link"]').href = iframeSrc;
                     rightPanel.top.iframe.element.parentElement.classList.remove('hidden');
@@ -220,7 +217,7 @@ const rightPanel = {
                 }
             },
             update: () => {
-                fetch(`https://${config.domain}/actions/component-library/component-viewer/get-component-info?site=${leftPanel.sites.selected}&componentId=${leftPanel.selection.id}&variant=${leftPanel.selection.variant}`)
+                fetch(`https://${config.domain}/actions/component-library/component-viewer/get-component-info?site=${leftPanel.sites.selected}&componentId=${leftPanel.selection.id}`)
                     .then(response => response.json())
                     .then(data => {
                         document.querySelector('.component-notes .computed').innerHTML = data.readme;
@@ -389,9 +386,8 @@ const init = () => {
     // check for componentId and variant in URL
     const urlParams = new URLSearchParams(window.location.search);
     const componentId = urlParams.get('componentId');
-    const variant = urlParams.get('variant') ?? '';
     if (componentId) {
-        const button = document.querySelector(`button[data-component-id="${componentId}"][data-variant="${variant}"]`);
+        const button = document.querySelector(`button[data-component-id="${componentId}"]`);
         if (button) {
             button.click();
         }

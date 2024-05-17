@@ -9,7 +9,8 @@
             <span x-show="$disclosure.isOpen" x-cloak aria-hidden="true" class="ml-4">&minus;</span>
             <span x-show="! $disclosure.isOpen" aria-hidden="true" class="ml-4">&plus;</span>
         </button>
- 
+        {# {%dd(components)%} #}
+
         <div x-disclosure:panel x-collapse>
             {% for key, component in components %}
             {% if component.error is defined %}
@@ -30,34 +31,23 @@
                         } %}
                     {% elseif component.handle is defined %}
                         {# Component Name #}
-                        {% if component.buttonVariants|first.buttons|length > 1 %}
-                            {% include 'component-library/component-viewer/component-tree.twig' with {
-                                components: component.buttonVariants,
-                                componentKey: key,
-                                level: level + 1,
-                            } %}
-                        {% else %}
+
                             <div class="component-variants flex flex-col text-white items-start pl-3 font-light divide-y divide-white/10 items-start text-sm leading-6 border-t border-white/10">
                                 {% include 'component-library/component-viewer/left-panel-btn.twig' with {
-                                    handle: component.buttonVariants|first.componentId,
+                                    handle: component.handle,
                                     variant: 0,
-                                    name: component.buttonVariants|first.buttons|first.label,
-                                    status: component.buttonVariants|first.buttons|first.status,
+                                    name: component.name,
+                                    status: component.status,
                                 } %}
                             </div>
-                        {% endif %}
-                    {% elseif component.buttons is defined %}
-                        {# Component Details - Single and Multiple Variants #}
-                        <div class="component-variants flex flex-col text-white items-start pl-6 font-light divide-y divide-white/10 items-start text-sm leading-6 border-t border-white/10">
-                            {% for variant in component.buttons %}
-                                {% include 'component-library/component-viewer/left-panel-btn.twig' with {
-                                    handle: component.componentId,
-                                    variant: loop.index,
-                                    name: variant.label,
-                                    status: variant.status,
-                                } %}
-                            {% endfor %}
-                        </div>
+
+
+                    {% elseif component.variants is defined %}
+                        {% include 'component-library/component-viewer/component-tree.twig' with {
+                            components: component.variants,
+                            componentKey: component.name,
+                            level: level + 1,
+                        } %}
                     {% else %}
                         {# Headers #}
                         {% include 'component-library/component-viewer/component-tree.twig' with {
