@@ -195,6 +195,15 @@ class ComponentViewerHelper
         if (count($errors)) {
             $componentConfig['Errors'] = $errors;
         }
+        
+        $pluginConfig = Craft::$app->getConfig()->getConfigFromFile('component-library');
+        if (isset($pluginConfig['navigation'])) {
+            $config = [];
+            foreach ($pluginConfig['navigation'] as $key) {
+                $config[$key] = $componentConfig[$key];
+            }
+            $componentConfig = $config;
+        }
 
         return $componentConfig;
     }
