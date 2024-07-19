@@ -77,6 +77,8 @@
             {% endfor %}
           </select>
         </div>
+        {% else %}
+          {{ hiddenInput('sites', sites|first.handle )|attr({id:'sites'}) }}
         {% endif %}
         
         <div id="sideNav" class="divide-y divide-white/10">
