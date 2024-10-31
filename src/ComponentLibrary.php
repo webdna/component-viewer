@@ -38,18 +38,20 @@ class ComponentLibrary extends Module
 		
 		Craft::setAlias('@webdna/componentlibrary', $this->getBasePath());
 		
-		$view = Craft::$app->view;
-		$view->getTwig()->setLoader(new ComponentLibraryLoader($view));
-		$view->registerTwigExtension(new ComponentLibraryTwigExtension());
-		
-		Event::on(
-			View::class, 
-			View::EVENT_REGISTER_SITE_TEMPLATE_ROOTS, 
-			function(RegisterTemplateRootsEvent $e) {
-				if (is_dir($baseDir = $this->getBasePath() . DIRECTORY_SEPARATOR . 'templates')) {
-					$e->roots[$this->id] = $baseDir;
+		Craft::$app->onInit(function() {
+			$view = Craft::$app->view;
+			$view->getTwig()->setLoader(new ComponentLibraryLoader($view));
+			$view->registerTwigExtension(new ComponentLibraryTwigExtension());
+			
+			Event::on(
+				View::class, 
+				View::EVENT_REGISTER_SITE_TEMPLATE_ROOTS, 
+				function(RegisterTemplateRootsEvent $e) {
+					if (is_dir($baseDir = $this->getBasePath() . DIRECTORY_SEPARATOR . 'templates')) {
+						$e->roots[$this->id] = $baseDir;
+					}
 				}
-			}
-		);
+			);
+		});
 	}
 }
