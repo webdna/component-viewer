@@ -2,7 +2,7 @@
 spec: Component Library v2
 slug: component-library-v2
 status: draft
-version: 0.5
+version: 0.7
 date: 2026-09-28
 author: Claude (for Sam Birch)
 client: webdna (internal)
@@ -13,7 +13,7 @@ related: [_scope/component-library-v2.md]
 
 # Component Library v2
 
-> **Status:** draft · **Version:** 0.6 · **Profile:** `_PROFILE.component-library.md`
+> **Status:** draft · **Version:** 0.7 · **Profile:** `_PROFILE.component-library.md`
 > The team browses and tries out every component in the control panel, previewed on each site's
 > own styling. Clients review the same library through a link that expires and can be cancelled.
 
@@ -212,7 +212,7 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 | BR-12 | A component is either (a) a `.twig` file containing a `component` tag, pre-filtered by the regex `\{%-?\s*component\b` and then parsed, or (b) a legacy `<name>.config.json` with a sibling `<name>.twig`. If both describe one file, the tag wins and the check warns. |
 | BR-13 | Handle: the tag's `handle`, else the legacy `handle`, else derived from the path relative to its root. Segments are joined with `:` and the extension dropped. A stem equal to its parent folder collapses (`ui/button.twig` → `@ui:button`, `components/button/button.twig` → `@components:button`). Across roots the **later root wins** per handle, which is how site versions work. Within a root, a duplicate keeps the first by sorted path, and the check reports it. |
 | BR-14 | The index (handle → file, metadata, props, stories) is built at most once per site per cache lifetime. It sits in Craft's data cache, keyed by site handle and plugin schema version. It's cleared by a *Component library index* Clear Caches option and by `clear-caches/all`. With `devMode` on, it rebuilds when any file under a root is newer than the build (at most one stat walk per request). No include, in any mode, walks a directory. |
-| BR-15 | Legacy `.config.json` files are **Twig templates** (`{{ raw({…}\|json_encode) }}`). They're rendered with `renderTemplate()` in site template mode, with an empty context, only during an index build, then JSON-decoded. A failure indexes the component with an error flag and doesn't throw. Keys read: `handle`, `name`, `status`, `context`, `variants`, `viewClass`, and `variables` (mapped to prop types: `"string"` → `string`, `{type:'select', options}` → `select`, and so on). A sibling `readme.md` becomes `notes`. |
+| BR-15 | Legacy `.config.json` files are **Twig templates** (`{{ raw({…}\|json_encode) }}`). They're rendered with `renderTemplate()` in site template mode, with an empty context, only during an index build, then JSON-decoded. A failure indexes the component with an error flag and doesn't throw. Keys read: `handle`, `name`, `status`, `context`, `variants`, `viewClass`, and `variables` (mapped to prop types: `"string"` → `string`, `{type:'select', options}` → `select`, and so on). A sibling `readme.md` becomes `notes`, as Markdown, unrendered. A config under the site templates folder renders by its name there. A root outside that folder becomes the templates path for the render, because Craft refuses other names. |
 | BR-16 | In legacy defaults, `{include:@handle}` is honoured by rendering that handle with `renderTemplate()` at preview time (webdna uses it twice). `{ref:}`, `{entry:}` and `{asset:}` are **not** resolved. The value stays literal, and the check reports each one. |
 | BR-17 | Names the plugin owns match `^@[A-Za-z0-9_-]+(:[A-Za-z0-9_-]+)+$`, and a variant's last segment may contain `--`. Every other name goes untouched to Craft's loader: Twig namespaces (`@ns/path`), plain paths, anything with `/`. An unknown owned handle raises Twig's standard missing-template error, so `ignore missing` works. This applies to `include`, `embed`, `extends`, `source()` and `include()`, in site and CP template modes. |
 | BR-18 | Path includes of component files (LLL's `'_components/ui/button.twig'`) resolve through Craft as today. The index maps each file back to its handle, so the viewer lists it. |
@@ -320,7 +320,7 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 | Group `clViewers` with `accessCp` and `accessPlugin-component-library` only, and user `clviewer` | Yes, `tests/fixtures/setup.sh` |
 | Second sandbox site `second`, base URL `$PRIMARY_SITE_URL/second/` | Yes, `tests/fixtures/setup.sh` |
 | Sandbox roots at `tests/fixtures/templates` (and `_sites`), no v1 module lines in `config/app.php` | Yes, `tests/fixtures/setup.sh` |
-| `tests/fixtures/templates/`: `good` (tag + stories), `nested` (a story embedding another component with a block override), `bad-tag`, `legacy` (Twig-wrapped config with `variants`, `variables`, `{include:}`, `{ref:}`), `throws`, `raw-prop` (`\|raw` on a string prop), `_sites/second/` overriding `good`, and a page with 50 `@handle` includes. Plus `tests/fixtures/edge/`, a root outside the sandbox config (TN-8's duplicates) | Partly: `good`, `nested`, `bad-tag`, `_sites/second/` and `edge/` exist (2.1 to 2.3). The rest come with 2.4, 2.5 and 3.1 |
+| `tests/fixtures/templates/`: `good` (tag + stories), `nested` (a story embedding another component with a block override), `bad-tag`, `legacy/button` (Twig-wrapped config with `variants`, `variables`, `{include:}` and a readme), `throws`, `raw-prop` (`\|raw` on a string prop), `_sites/second/` overriding `good`, and a page with 50 `@handle` includes. Plus `tests/fixtures/edge/`, a root outside the sandbox config (TN-8's duplicates, and in `edge/legacy/` TN-9's failing config, `{ref:}`/`{entry:}`/`{asset:}` placeholders, and a tag beside a config) | Partly: `good`, `nested`, `bad-tag`, `legacy/button`, `_sites/second/` and `edge/` exist (2.1 to 2.4). The rest come with 2.5 and 3.1 |
 | Active, expired and cancelled share rows | Created per test |
 | mw-core and webdna local DDEV sites on v1 | Yes. Read-only, for TS-9. |
 
@@ -556,8 +556,39 @@ touching other repositories.
       LoaderTest renders the real page and asserts the same counts. Legacy configs (BR-12 b) are 2.4's.
       A mutation run (cache never hit, sites not pruned, earlier root wins, later duplicate wins) failed
       5 of IndexTest's 22 tests.
-- [ ] **2.4 Legacy adapter**: `src/legacy/ConfigJsonAdapter.php` (render as a template in site mode; `variables` → props, `variants` → stories, `readme.md` → notes; placeholders)
+- [x] **2.4 Legacy adapter**: `src/legacy/ConfigJsonAdapter.php` (render as a template in site mode; `variables` → props, `variants` → stories, `readme.md` → notes; placeholders)
       Rules: BR-15, BR-16 · Verify: Pest `LegacyTest`, TN-9
+      *As built:* `ConfigJsonAdapter::read($root, $relative, ?$readme)` returns the same `Component` a tag
+      does, and never throws. `Index::read()` calls it for a `.twig` with no tag and a sibling config
+      (BR-12 b), only inside `build()`, so a warm lookup renders nothing (BR-33). The adapter switches to
+      site mode itself as well. Craft refuses absolute template names and `..`, so a config under the
+      site templates folder renders by its name there (site-root includes resolve, as in v1), and a root
+      outside it (the sandbox fixtures) becomes the templates path for that one render. Both are
+      `renderTemplate()` with no variables, and the mode and templates path are restored afterwards.
+      v1's variable types map `string`, `text`/`textarea`, `number`, `checkbox`/`bool`/`boolean`/`lightswitch`, `json`, and `select` with
+      `[{value, label}]`, a list or a hash. Anything else is `string`, as v1's text box was, and a
+      `select` without options is `string` too. Defaults come from the base `context`. Context keys
+      with no variable aren't props, but stay in every story's props. Legacy declarations are taken as
+      they are, never refused. No variants gives one *Default* story holding the whole context. An
+      unnamed variant is *Variant n*, and a repeated name gets ` (2)`. v1 variant `handle`s (the
+      `--variant.twig` files) aren't indexed: none of mw-core's or webdna's 227 configs has variants.
+      A stories file beside a legacy component still wins over its variants. The folder's `readme.md`
+      is the notes, as Markdown, never Twig-rendered (v1 rendered it with `renderString`). With a tag
+      and a config on one file, the tag wins, the config's handle stands in while the tag has none (so
+      converting doesn't change the include name), and CL007 is raised. Every problem now carries its
+      BR-31 code: `Component::$errors` holds CL001 and CL005, and the new `Component::$warnings` holds
+      CL006 and CL007. `Component` also gained `configPath`. CL006 gives the placeholder's line when
+      it's written literally. Fixtures: `templates/legacy/button/` (clean: variants, variables of every
+      type, `{include:@ui:good}`, a readme, a legacy handle `@ui:legacy-button` beating the derived
+      `@legacy:button`). `edge/legacy/`: `broken` (TN-9), `not-json`, `placeholders` (`{ref:}`,
+      `{entry:}`, `{asset:}`, an invalid legacy handle, variant naming), `converted` (tag + config),
+      `orphan` (a config with no template), and `site-path` (a site-root include). The `{ref:}`
+      fixture is in `edge/`, not `templates/` as §7 first said, so B5 #4 can still show "0 problems".
+      TN-9's preview panel is 3.1's, and the site page is 2.5's to show. Here, the broken config is
+      listed with its error and line, and the rest of the root is indexed. A mutation run (adapter
+      not switching to site mode, variant context not merged, placeholders never matched, the tag
+      branch skipped) failed exactly the 4 matching tests of 124. A failure that throws broke the
+      whole edge index (15 failures).
 - [ ] **2.5 Loader**: `src/twig/Loader.php`, wrapping Craft's loader for owned names only, on both the site and CP Twig instances
       Rules: BR-17, BR-18 · Verify: TN-5, TN-6, Pest `LoaderTest`
 - [ ] **2.6 Resolver service**: `src/services/Resolver.php`, with the signature exactly as BR-19
@@ -726,3 +757,4 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | 2026-09-28 | 0.4 | Task 2.1 built. BR-6 applied also to the shape of the tag (unknown keys, types, statuses, options), and one tag per file. See 2.1's as-built note. | Claude, for Sam Birch |
 | 2026-09-28 | 0.5 | Task 2.2 built. BR-8 applied also to where a story may sit: only at the top level of a `.stories.twig` file, never nested. A blank body counts as no body. See 2.2's as-built note. | Claude, for Sam Birch |
 | 2026-09-28 | 0.6 | Task 2.3 built. BR-11: a missing site folder logs at info, and the `sites` folder is pruned from other roots. See 2.3's as-built note. | Claude, for Sam Birch |
+| 2026-09-28 | 0.7 | Task 2.4 built. BR-15: the readme stays unrendered Markdown, and a root outside the site templates folder becomes the templates path for the render. Problems carry their BR-31 code. The `{ref:}` fixture moved to `edge/`. See 2.4's as-built note. | Claude, for Sam Birch |

@@ -13,6 +13,7 @@ use Twig\Environment;
 use Twig\Error\Error as TwigError;
 use Twig\Source;
 use webdna\componentlibrary\ComponentLibrary;
+use webdna\componentlibrary\legacy\ConfigJsonAdapter;
 use webdna\componentlibrary\models\Component;
 use webdna\componentlibrary\models\Story;
 use webdna\componentlibrary\twig\ComponentNode;
@@ -30,6 +31,7 @@ use yii\caching\TagDependency;
  * each request makes one stat walk of the roots and rebuilds when a file changed.
  *
  * @phpstan-type Walk list<array{root:string,files:array<string,array{int,int}>}>
+ * @phpstan-import-type Problem from Component
  */
 class Index extends BaseComponent
 {
@@ -253,10 +255,11 @@ class Index extends BaseComponent
     }
 
     /**
-     * The component a file declares, or null if it isn't one. A file whose tag doesn't parse is
-     * still a component, with the error recorded, so one bad file never breaks the library.
+     * The component a file declares, by its tag or by a legacy config beside it (BR-12), or null
+     * if it isn't one. A file whose tag or config can't be read is still a component, with the
+     * error recorded, so one bad file never breaks the library.
      *
-     * @param array<string,mixed> $files The root's files, to find the stories file beside it
+     * @param array<string,mixed> $files The root's files, to find the stories, config and readme beside it
      */
     private function read(Environment $twig, string $root, string $relative, array $files): ?Component
     {
@@ -265,26 +268,39 @@ class Index extends BaseComponent
         }
 
         $path = "$root/$relative";
-        $code = (string)file_get_contents($path);
-        if (!preg_match(self::TAG_PATTERN, $code)) {
+        $stem = substr($relative, 0, -strlen('.twig'));
+        $configRelative = $stem . ConfigJsonAdapter::SUFFIX;
+        $hasConfig = isset($files[$configRelative]);
+        $errors = [];
+        $warnings = [];
+
+        $component = $this->readTag($twig, $path, $relative);
+        if ($component === null && !$hasConfig) {
             return null;
         }
 
-        $errors = [];
-        try {
-            $component = ComponentNode::find($twig->parse($twig->tokenize(new Source($code, $relative, $path))))?->getComponent();
-            if ($component === null) {
-                // The pattern matched something that isn't a tag, such as a comment.
-                return null;
+        if ($component === null) {
+            $folder = dirname($relative);
+            $readme = ($folder === '.' ? '' : "$folder/") . ConfigJsonAdapter::README;
+            $component = ConfigJsonAdapter::read($root, $configRelative, isset($files[$readme]) ? "$root/$readme" : null);
+        } elseif ($hasConfig) {
+            // The tag wins (BR-12). The config's handle stands in only while the tag has none (BR-13),
+            // so converting a file doesn't change what templates include it by.
+            $warnings[] = [
+                'code' => 'CL007',
+                'path' => "$root/$configRelative",
+                'line' => null,
+                'message' => "$relative has a component tag, so the tag is used and this config is ignored. Delete the config once the tag has everything from it.",
+            ];
+            if ($component->handle === null) {
+                $component = $component->with(['handle' => ConfigJsonAdapter::read($root, $configRelative)->handle]);
             }
-        } catch (TwigError $e) {
-            $component = new Component();
-            $errors[] = self::error($path, $e);
         }
 
         $handle = $component->handle ?? self::handleFor($relative);
         if (!preg_match(Component::HANDLE_PATTERN, $handle)) {
             $errors[] = [
+                'code' => 'CL001',
                 'path' => $path,
                 'line' => null,
                 'message' => "Its path gives the handle $handle, which templates can't include. Move it into a category folder or give its tag a handle.",
@@ -303,10 +319,11 @@ class Index extends BaseComponent
             }
         }
 
-        // BR-10, and the fallback for a stories file that declares none or doesn't parse.
+        // BR-10: a stories file first, then a legacy config's variants, then Default from the prop
+        // defaults. The last is also the fallback for a stories file that declares none or doesn't parse.
         if ($stories === []) {
             $default = Story::fromDefaults($component);
-            $stories = [$default->name => $default];
+            $stories = $component->stories ?: [$default->name => $default];
         }
 
         return $component->with([
@@ -315,18 +332,38 @@ class Index extends BaseComponent
             'root' => $root,
             'stories' => $stories,
             'storiesPath' => $storiesPath,
-            'errors' => $errors,
+            'errors' => [...$component->errors, ...$errors],
+            'warnings' => [...$component->warnings, ...$warnings],
         ]);
     }
 
     /**
-     * @return array{path:string,line:int|null,message:string}
+     * The component a file's tag declares, or null if it has none. A tag that doesn't parse gives
+     * a component with only the error.
+     */
+    private function readTag(Environment $twig, string $path, string $relative): ?Component
+    {
+        $code = (string)file_get_contents($path);
+        if (!preg_match(self::TAG_PATTERN, $code)) {
+            return null;
+        }
+
+        try {
+            // Null when the pattern matched something that isn't a tag, such as a comment.
+            return ComponentNode::find($twig->parse($twig->tokenize(new Source($code, $relative, $path))))?->getComponent();
+        } catch (TwigError $e) {
+            return new Component(errors: [self::error($path, $e)]);
+        }
+    }
+
+    /**
+     * @return Problem
      */
     private static function error(string $path, TwigError $e): array
     {
         $line = $e->getTemplateLine();
 
-        return ['path' => $path, 'line' => $line > 0 ? $line : null, 'message' => $e->getRawMessage()];
+        return ['code' => 'CL001', 'path' => $path, 'line' => $line > 0 ? $line : null, 'message' => $e->getRawMessage()];
     }
 
     private function absolute(string $dir): string

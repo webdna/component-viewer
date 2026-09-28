@@ -1,0 +1,19 @@
+{{ raw({
+	name: "Placeholders",
+	handle: "placeholders",
+	context: {
+		title: "{ref:entry:1:title}",
+		teaser: "Read {entry:2:title} next",
+		image: "{asset:3}",
+	},
+	variables: {
+		title: "string",
+		image: {type: 'select'},
+	},
+	variants: [
+		{context: {title: "{ref:entry:1:title}"}},
+		{name: ""},
+		{name: "Twin"},
+		{name: "Twin"},
+	]
+}|json_encode) }}

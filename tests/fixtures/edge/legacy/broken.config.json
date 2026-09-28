@@ -1,0 +1,4 @@
+{# A v1 config that fails while rendering (TN-9): max() of nothing throws. #}
+
+{% set label = max([]) %}
+{{ raw({name: "Broken", context: {label: label}}|json_encode) }}

@@ -1,0 +1,5 @@
+{# Includes by a site-root path, which resolves only when the config sits under @templates. #}
+{{ raw({
+	name: include('edge/legacy/_name.twig')|trim,
+	context: {tone: 'plain', size: 2},
+}|json_encode) }}

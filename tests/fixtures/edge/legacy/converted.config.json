@@ -1,0 +1,5 @@
+{{ raw({
+	name: "Old name",
+	handle: "legacy:was-converted",
+	status: "wip",
+}|json_encode) }}
