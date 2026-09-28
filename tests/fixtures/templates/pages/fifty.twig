@@ -1,0 +1,6 @@
+{# TS-13's page: 50 includes by handle. It has no component tag, so the index skips it. #}
+<ul>
+{% for i in 1..50 %}
+    <li>{% include '@ui:good' with { label: 'Item ' ~ i } only %}</li>
+{% endfor %}
+</ul>

@@ -22,8 +22,11 @@ final class Component
 {
     public const STATUSES = ['prototype', 'wip', 'ready', 'deprecated'];
 
-    /** BR-17's owned-name pattern. The tag may leave off the leading `@`. */
-    public const HANDLE_PATTERN = '/^@[A-Za-z0-9_-]+(:[A-Za-z0-9_-]+)+$/';
+    /**
+     * BR-17's owned-name pattern. The tag may leave off the leading `@`. `D`, because a bare `$`
+     * also matches before a trailing newline.
+     */
+    public const HANDLE_PATTERN = '/^@[A-Za-z0-9_-]+(:[A-Za-z0-9_-]+)+$/D';
 
     private const KEYS = ['name', 'handle', 'status', 'notes', 'viewClass', 'props'];
 

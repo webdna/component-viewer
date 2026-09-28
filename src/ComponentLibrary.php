@@ -4,14 +4,17 @@ namespace webdna\componentlibrary;
 
 use Craft;
 use craft\base\Plugin;
+use craft\events\CreateTwigEvent;
 use craft\events\RegisterCacheOptionsEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\services\UserPermissions;
 use craft\utilities\ClearCaches;
 use craft\web\UrlManager;
+use craft\web\View;
 use webdna\componentlibrary\services\Index;
 use webdna\componentlibrary\twig\Extension;
+use webdna\componentlibrary\twig\Loader;
 use yii\base\Event;
 use yii\base\InvalidConfigException;
 
@@ -85,6 +88,7 @@ class ComponentLibrary extends Plugin
 
         // Site and CP template modes both, since a component compiles wherever it's included.
         Craft::$app->getView()->registerTwigExtension(new Extension());
+        $this->registerLoader();
     }
 
     public function getIndex(): Index
@@ -120,6 +124,25 @@ class ComponentLibrary extends Plugin
             function(RegisterUrlRulesEvent $event): void {
                 $event->rules['component-library'] = 'component-library/viewer/index';
                 $event->rules['component-library/shares'] = 'component-library/shares/index';
+            },
+        );
+    }
+
+    /**
+     * BR-17. Craft creates one Twig environment per view and template mode, each with its own
+     * loader. Wrapping each as it's created covers site and CP modes, and any other view, without
+     * touching the loader of an environment the plugin didn't see made.
+     */
+    private function registerLoader(): void
+    {
+        Event::on(
+            View::class,
+            View::EVENT_AFTER_CREATE_TWIG,
+            function(CreateTwigEvent $event): void {
+                $loader = $event->twig->getLoader();
+                if (!$loader instanceof Loader) {
+                    $event->twig->setLoader(new Loader($loader));
+                }
             },
         );
     }
