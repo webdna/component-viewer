@@ -5,11 +5,18 @@ namespace webdna\componentlibrary\models;
 use InvalidArgumentException;
 
 /**
- * A component's self-description, as declared by its `component` tag (BR-5).
+ * A component's self-description, as declared by its `component` tag (BR-5) or by a legacy
+ * `.config.json` beside it (BR-15).
  *
  * Every field is optional in the tag. Where the file lives, and the handle derived from its path
  * when the tag gives none, belong to the index (BR-13), which fills the location fields through
  * with(). A component straight from the tag has none of them.
+ *
+ * A problem carries the check code it reports as (BR-31): CL001 a tag or stories file that doesn't
+ * parse, or a handle templates can't include, CL005 a legacy config that couldn't be read, CL006 an
+ * unresolved legacy placeholder, CL007 a tag and a config on one file.
+ *
+ * @phpstan-type Problem array{code:string,path:string,line:int|null,message:string}
  */
 final class Component
 {
@@ -28,7 +35,9 @@ final class Component
      * @param string|null $storiesPath Absolute path of its stories file, if it has one
      * @param string|null $overrides The file in an earlier root this one replaces, e.g. as a site version (BR-13)
      * @param list<string> $duplicates Later files in the same root that claimed this handle and lost (BR-13)
-     * @param list<array{path:string,line:int|null,message:string}> $errors Why the file or its stories didn't parse
+     * @param list<Problem> $errors Why the file, its stories or its legacy config couldn't be read
+     * @param string|null $configPath Absolute path of the legacy `.config.json` it was read from (BR-12)
+     * @param list<Problem> $warnings What still indexes, but the check reports
      */
     public function __construct(
         public readonly ?string $name = null,
@@ -44,6 +53,8 @@ final class Component
         public readonly ?string $overrides = null,
         public readonly array $duplicates = [],
         public readonly array $errors = [],
+        public readonly ?string $configPath = null,
+        public readonly array $warnings = [],
     ) {
     }
 
