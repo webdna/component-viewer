@@ -1,0 +1,157 @@
+/*
+ * The viewer's layout on top of the CP styles (BR-34). Nothing here may widen the page: the
+ * preview and code scroll inside their own boxes, so 375 px has no horizontal page scroll.
+ */
+
+.cl-viewer {
+    display: flex;
+    flex-direction: column;
+    gap: var(--m, 16px);
+    min-width: 0;
+}
+
+.cl-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 12px;
+}
+
+.cl-title {
+    margin: 0;
+}
+
+.cl-handle {
+    overflow-wrap: anywhere;
+}
+
+.cl-badge {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 10px;
+    background: var(--gray-100, #eef0f3);
+    color: var(--gray-700, #3f4d5a);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.cl-status-ready {
+    background: var(--teal-050, #e2f7f3);
+    color: var(--teal-700, #0b6b5c);
+}
+
+.cl-status-deprecated,
+.cl-duplicate {
+    background: var(--red-050, #fdeceb);
+    color: var(--red-700, #a8201a);
+}
+
+.cl-site-version {
+    background: var(--blue-050, #e6f0ff);
+    color: var(--blue-800, #1f3a8a);
+}
+
+.cl-problems {
+    padding: 8px 12px;
+    border-left: 3px solid var(--error-color, #cf1124);
+    background: var(--red-050, #fdeceb);
+}
+
+.cl-problems ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.cl-problems code {
+    margin-right: 6px;
+    overflow-wrap: anywhere;
+}
+
+.cl-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 24px;
+}
+
+.cl-site,
+.cl-width {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.cl-site label,
+.cl-width label {
+    font-weight: 600;
+}
+
+/* The iframe keeps a chosen width, and the frame scrolls when that's wider than the pane. */
+.cl-frame {
+    overflow: auto;
+    min-height: 120px;
+    height: 420px;
+    border: 1px solid var(--hairline-color, rgba(51, 64, 77, 0.1));
+    border-radius: var(--small-border-radius, 4px);
+    background: #fff;
+    resize: vertical;
+}
+
+/* The iframe takes focus but draws no ring of its own (TS-14). */
+.cl-frame:focus-within {
+    box-shadow: var(--focus-ring, 0 0 0 1px #0f74f5, 0 0 0 3px rgba(15, 116, 245, 0.5));
+}
+
+.cl-frame iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    margin: 0 auto;
+}
+
+.cl-panel .field {
+    max-width: 40rem;
+}
+
+.cl-stories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.cl-stories .btn[aria-pressed='true'] {
+    background: var(--gray-700, #3f4d5a);
+    color: #fff;
+}
+
+.cl-code {
+    overflow: auto;
+    max-height: 32rem;
+    padding: 12px;
+    border-radius: var(--small-border-radius, 4px);
+    background: var(--gray-050, #f3f7fc);
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre;
+}
+
+.cl-search {
+    margin-bottom: 12px;
+}
+
+.cl-roots {
+    padding-left: 20px;
+    list-style: disc;
+}
+
+.cl-empty code,
+.cl-roots code {
+    overflow-wrap: anywhere;
+}

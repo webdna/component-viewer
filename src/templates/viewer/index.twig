@@ -1,9 +1,23 @@
-{# Placeholder until task 3.2 builds the viewer. #}
+{# The CP viewer (§6). The partials take the viewer's state, so the share viewer reuses them. #}
 {% extends '_layouts/cp' %}
 
 {% set title = 'Component Library'|t('component-library') %}
 {% set selectedSubnavItem = 'library' %}
 
+{% if component %}
+    {% set tabs = {
+        'cl-settings': {label: 'Settings'|t('component-library'), url: '#cl-settings'},
+        'cl-examples': {label: 'Examples'|t('component-library'), url: '#cl-examples'},
+        'cl-source': {label: 'Source'|t('component-library'), url: '#cl-source'},
+        'cl-notes': {label: 'Notes'|t('component-library'), url: '#cl-notes'},
+    } %}
+    {% set tablistLabel = 'Component details'|t('component-library') %}
+{% endif %}
+
+{% block sidebar %}
+    {% include 'component-library/viewer/_tree' %}
+{% endblock %}
+
 {% block content %}
-    <p>{{ 'The component viewer is not built yet.'|t('component-library') }}</p>
+    {% include component ? 'component-library/viewer/_component' : 'component-library/viewer/_empty' %}
 {% endblock %}

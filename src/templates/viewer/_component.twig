@@ -1,0 +1,152 @@
+{#
+ # One component: its preview, settings, examples, source and notes (§6 Screens, BR-34).
+ #
+ # Test hooks (§7): data-cl-story, data-cl-prop, data-cl-preview, data-cl-site-version.
+ # Paths show only with showPaths, which the share viewer leaves off (BR-29).
+ #}
+{% import '_includes/forms' as forms %}
+
+{% set name = component.name ?? component.handle %}
+{% set problems = component.errors|merge(component.warnings) %}
+{% set frameTitle = 'Preview of {component}, example “{story}”'|t('component-library', {
+    component: name,
+    story: story.name,
+}) %}
+
+<div class="cl-viewer" data-cl-viewer="{{ config|json_encode }}"
+     data-cl-frame-title="{{ 'Preview of {component}, example “{story}”'|t('component-library') }}">
+    <header class="cl-header">
+        <h2 class="cl-title">{{ name }}</h2>
+        <code class="cl-handle">{{ component.handle }}</code>
+        {% if component.status %}
+            <span class="cl-badge cl-status-{{ component.status }}">{{ component.status }}</span>
+        {% endif %}
+        {% if siteVersion %}
+            <span class="cl-badge cl-site-version" data-cl-site-version>
+                {{- '{site} version'|t('component-library', {site: site.name}) -}}
+            </span>
+        {% endif %}
+        {% if component.duplicates %}
+            <span class="cl-badge cl-duplicate" data-cl-duplicate>{{ 'Duplicate handle'|t('component-library') }}</span>
+        {% endif %}
+    </header>
+
+    {% if problems %}
+        <div class="cl-problems" role="note" aria-label="{{ 'Problems'|t('component-library') }}">
+            <ul>
+                {% for problem in problems %}
+                    <li>
+                        <code>{{ problem.code }}</code>
+                        {% if showPaths %}<code>{{ problem.path }}{{ problem.line ? ':' ~ problem.line }}</code>{% endif %}
+                        {{ problem.message }}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <div class="cl-toolbar">
+        {# BR-35: a single site has nothing to switch to. #}
+        {% if sites|length > 1 %}
+            <form class="cl-site" method="get" action="{{ siteForm.action }}" data-cl-site-form>
+                {% for name, value in siteForm.hidden %}
+                    {{ hiddenInput(name, value) }}
+                {% endfor %}
+                <label for="cl-site">{{ 'Site'|t('component-library') }}</label>
+                <div class="select">
+                    <select id="cl-site" name="site">
+                        {% for option in sites %}
+                            <option value="{{ option.handle }}" {{ option.id == site.id ? 'selected' }}>{{ option.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <input type="hidden" name="story" value="{{ story.name }}" data-cl-site-story>
+                <input type="hidden" name="props" value="{{ overrides ? overrides|json_encode }}" data-cl-site-props
+                       {{ overrides ? '' : 'disabled' }}>
+                <button type="submit" class="btn">{{ 'Switch site'|t('component-library') }}</button>
+            </form>
+        {% endif %}
+
+        <div class="cl-width">
+            <label for="cl-width">{{ 'Width'|t('component-library') }}</label>
+            <div class="select">
+                <select id="cl-width" data-cl-width>
+                    <option value="">{{ 'Full'|t('component-library') }}</option>
+                    <option value="1280">{{ 'Desktop (1280 px)'|t('component-library') }}</option>
+                    <option value="1024">{{ 'Laptop (1024 px)'|t('component-library') }}</option>
+                    <option value="768">{{ 'Tablet (768 px)'|t('component-library') }}</option>
+                    <option value="375">{{ 'Phone (375 px)'|t('component-library') }}</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="cl-frame">
+        <iframe src="{{ previewUrl }}" title="{{ frameTitle }}" data-cl-preview></iframe>
+    </div>
+
+    <div id="cl-settings" role="tabpanel" aria-labelledby="tab-cl-settings" class="cl-panel">
+        {% if controls is empty %}
+            <p class="zilch">{{ 'This component has no settings.'|t('component-library') }}</p>
+        {% else %}
+            {% for control in controls %}
+                {% set prop = control.prop %}
+                {% set field = {
+                    id: 'cl-prop-' ~ prop.name,
+                    name: prop.name,
+                    label: prop.name,
+                    instructions: prop.description,
+                    required: prop.required,
+                    fieldAttributes: {data: {'cl-prop': prop.name, 'cl-type': prop.type}},
+                } %}
+                {% switch prop.type %}
+                    {% case 'bool' %}
+                        {{ forms.checkboxField(field|merge({checked: control.value})) }}
+                    {% case 'select' %}
+                        {% set options = prop.required and control.value != '' ? [] : [{label: '—', value: ''}] %}
+                        {% for value, label in prop.options %}
+                            {% set options = options|merge([{label: label, value: value}]) %}
+                        {% endfor %}
+                        {{ forms.selectField(field|merge({options: options, value: control.value})) }}
+                    {% case 'text' %}
+                        {{ forms.textareaField(field|merge({value: control.value, rows: 4})) }}
+                    {% case 'json' %}
+                        {{ forms.textareaField(field|merge({value: control.value, rows: 4, class: 'code'})) }}
+                    {% case 'number' %}
+                        {{ forms.textField(field|merge({value: control.value, type: 'number', step: 'any'})) }}
+                    {% default %}
+                        {{ forms.textField(field|merge({value: control.value})) }}
+                {% endswitch %}
+            {% endfor %}
+            <button type="button" class="btn" data-cl-reset>{{ 'Reset settings'|t('component-library') }}</button>
+        {% endif %}
+    </div>
+
+    <div id="cl-examples" role="tabpanel" aria-labelledby="tab-cl-examples" class="cl-panel hidden">
+        <ul class="cl-stories">
+            {% for option in component.stories %}
+                <li>
+                    <button type="button" class="btn" data-cl-story="{{ option.name }}"
+                            aria-pressed="{{ option.name == story.name ? 'true' : 'false' }}">
+                        {{- option.name -}}
+                    </button>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div id="cl-source" role="tabpanel" aria-labelledby="tab-cl-source" class="cl-panel hidden">
+        {% for file in sources %}
+            <h3>{{ file.label }}{% if showPaths %} <code class="light">{{ file.path }}</code>{% endif %}</h3>
+            <pre class="cl-code" tabindex="0"><code>{{ file.source }}</code></pre>
+        {% endfor %}
+    </div>
+
+    <div id="cl-notes" role="tabpanel" aria-labelledby="tab-cl-notes" class="cl-panel hidden">
+        {% if component.notes %}
+            <div class="readable">{{ component.notes|md }}</div>
+        {% else %}
+            <p class="zilch">{{ 'This component has no notes.'|t('component-library') }}</p>
+        {% endif %}
+    </div>
+</div>

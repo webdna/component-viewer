@@ -31,6 +31,12 @@ it('refuses the viewer to a CP user without the plugin permission', function() {
     $this->actingAs('restricted')->get('admin/component-library')->assertStatus(403);
 });
 
+// BR-2: Craft's plugin-handle gate doesn't cover the action path, so the controller's does
+it('refuses the viewer action path to a CP user without the plugin permission', function() {
+    $this->actingAs('restricted')->get('admin/actions/component-library/viewer/index')->assertStatus(403);
+    $this->actingAs('clviewer')->get('admin/actions/component-library/viewer/index')->assertOk();
+});
+
 it('hides the nav item from a CP user without the plugin permission', function() {
     $this->actingAs('restricted')->get('admin/dashboard')->assertOk()->assertDontSee(NAV_LINK);
     $this->actingAs('clviewer')->get('admin/dashboard')->assertOk()->assertSee(NAV_LINK);
@@ -48,7 +54,9 @@ it('refuses the share list and share creation to a CP user without the plugin pe
 
 // TS-1 step 3
 it('lets a viewer browse the library without the share links tab', function() {
-    $this->actingAs('clviewer')->get('admin/component-library')->assertOk()->assertDontSee(SHARES_LINK);
+    $this->actingAs('clviewer')->get('admin/component-library')->assertOk()
+        ->assertSee('data-cl-component="@ui:good"')
+        ->assertDontSee(SHARES_LINK);
     $this->actingAs('admin')->get('admin/component-library')->assertOk()->assertSee(SHARES_LINK);
 });
 
