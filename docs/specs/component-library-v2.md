@@ -2,7 +2,7 @@
 spec: Component Library v2
 slug: component-library-v2
 status: draft
-version: 0.8
+version: 0.9
 date: 2026-09-28
 author: Claude (for Sam Birch)
 client: webdna (internal)
@@ -13,7 +13,7 @@ related: [_scope/component-library-v2.md]
 
 # Component Library v2
 
-> **Status:** draft · **Version:** 0.7 · **Profile:** `_PROFILE.component-library.md`
+> **Status:** draft · **Version:** 0.9 · **Profile:** `_PROFILE.component-library.md`
 > The team browses and tries out every component in the control panel, previewed on each site's
 > own styling. Clients review the same library through a link that expires and can be cancelled.
 
@@ -613,8 +613,21 @@ touching other repositories.
       pattern without `D`) failed 11 of 178 tests, and every mutation failed at least one. CP
       dashboard, entries, plugins, clear-caches and library pages, and both sites' front pages, return
       200 as admin. B5 #4 waits for 5.1's check command.
-- [ ] **2.6 Resolver service**: `src/services/Resolver.php`, with the signature exactly as BR-19
+- [x] **2.6 Resolver service**: `src/services/Resolver.php`, with the signature exactly as BR-19
       Rules: BR-19 · Verify: TN-17
+      *As built:* the plugin's `resolver` component (`getResolver()`). It walks `Index::roots()`
+      last first, which now takes an optional site handle, so the resolver and the index share
+      BR-11's order. A given handle counts only once `getSiteByHandle()` returns a site, and only
+      Craft's `$site->handle` becomes a path segment. An unknown handle returns `null` and never
+      falls back to the base roots. Beyond BR-19: a path with a null byte or an empty path returns
+      `null`, any `..` substring is refused (not only a `..` segment), and a root other than the
+      site folder never reaches into the `sites` folder, so `_sites/<other>/…` can't read another
+      site's version. The index gained a public `sitesFolder()` for that. With `sites` unset, a
+      valid handle searches only the base roots. `ResolverTest` covers precedence in both root
+      orders, fallback, the current site, TN-17's two paths plus `/ui/good.twig` (a leading `/`
+      that normalises to a real file), bad handles and the sites-folder reach. A mutation run
+      (no `..` check, no `/` check, first root wins, raw handle, no sites-folder rule) failed 1
+      to 4 tests each, and every mutation failed at least one test. B5 #4 waits for 5.1's check command.
 - [ ] **3.1 Render action**: `src/controllers/RenderController.php`, `src/services/Renderer.php`, `src/templates/_render/{layout,error}.twig` (scope recheck, guest identity, prop coercion, headers, error scopes)
       Rules: BR-20 to BR-26 · Verify: TS-7, TS-10, TN-1 to TN-4, TN-16
 - [ ] **3.2 CP viewer**: `src/controllers/ViewerController.php`, `src/templates/viewer/*`, `src/web/assets/viewer/{ViewerAsset.php,viewer.js,viewer.css}` (tree, search, controls from props, stories, site switch, source, notes, URL state, empty states, test hooks)
@@ -781,3 +794,4 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | 2026-09-28 | 0.6 | Task 2.3 built. BR-11: a missing site folder logs at info, and the `sites` folder is pruned from other roots. See 2.3's as-built note. | Claude, for Sam Birch |
 | 2026-09-28 | 0.7 | Task 2.4 built. BR-15: the readme stays unrendered Markdown, and a root outside the site templates folder becomes the templates path for the render. Problems carry their BR-31 code. The `{ref:}` fixture moved to `edge/`. See 2.4's as-built note. | Claude, for Sam Birch |
 | 2026-09-28 | 0.8 | Task 2.5 built. BR-17's pattern is anchored with `D` (a bare `$` matched a trailing newline). An unknown handle is Craft's `TemplateLoaderException`. See 2.5's as-built note. | Claude, for Sam Birch |
+| 2026-09-28 | 0.9 | Task 2.6 built. BR-19 as specified. An unknown site handle returns `null`, and no root other than the site folder reaches into the `sites` folder. See 2.6's as-built note. | Claude, for Sam Birch |

@@ -101,19 +101,28 @@ class Index extends BaseComponent
 
     /**
      * The configured roots as absolute paths, in precedence order (BR-11), whether or not they
-     * exist. The site folder is always the current site's, and always last.
+     * exist. The site folder is always last, and the current site's unless the resolver asks for
+     * another one.
      *
+     * @param string|null $siteHandle A handle Craft has already returned a site for, never one
+     * straight from a request (BR-19)
      * @return list<string>
      */
-    public function roots(): array
+    public function roots(?string $siteHandle = null): array
     {
         $roots = array_map(fn(string $dir) => $this->absolute($dir), $this->templateDirectories);
 
         if ($this->sites !== null) {
-            $roots[] = $this->absolute($this->sites) . '/' . Craft::$app->getSites()->getCurrentSite()->handle;
+            $roots[] = $this->sitesFolder() . '/' . ($siteHandle ?? Craft::$app->getSites()->getCurrentSite()->handle);
         }
 
         return array_values(array_unique($roots));
+    }
+
+    /** The folder of site versions as an absolute path, or null if site versions aren't used. */
+    public function sitesFolder(): ?string
+    {
+        return $this->sites !== null ? $this->absolute($this->sites) : null;
     }
 
     /**
@@ -172,7 +181,7 @@ class Index extends BaseComponent
      */
     private function walk(array $roots): array
     {
-        $sites = $this->sites !== null ? $this->absolute($this->sites) : null;
+        $sites = $this->sitesFolder();
         $walk = [];
 
         foreach ($roots as $root) {
