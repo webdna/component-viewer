@@ -13,7 +13,7 @@ related: [_scope/component-library-v2.md]
 
 # Component Library v2
 
-> **Status:** draft · **Version:** 0.5 · **Profile:** `_PROFILE.component-library.md`
+> **Status:** draft · **Version:** 0.6 · **Profile:** `_PROFILE.component-library.md`
 > The team browses and tries out every component in the control panel, previewed on each site's
 > own styling. Clients review the same library through a link that expires and can be cancelled.
 
@@ -208,7 +208,7 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 
 | # | Rule |
 |---|---|
-| BR-11 | Roots are `templateDirectories` from `config/component-library.php` (default `['@templates/_components']`), in order. If `sites` is set, `<sites>/<currentSiteHandle>` is appended **last**. The site handle is always Craft's current site. A missing root is skipped with a log warning. |
+| BR-11 | Roots are `templateDirectories` from `config/component-library.php` (default `['@templates/_components']`), in order. If `sites` is set, `<sites>/<currentSiteHandle>` is appended **last**. The site handle is always Craft's current site. A missing root is skipped with a log warning, and a missing site folder with an info line. The `sites` folder is never scanned as part of another root. |
 | BR-12 | A component is either (a) a `.twig` file containing a `component` tag, pre-filtered by the regex `\{%-?\s*component\b` and then parsed, or (b) a legacy `<name>.config.json` with a sibling `<name>.twig`. If both describe one file, the tag wins and the check warns. |
 | BR-13 | Handle: the tag's `handle`, else the legacy `handle`, else derived from the path relative to its root. Segments are joined with `:` and the extension dropped. A stem equal to its parent folder collapses (`ui/button.twig` → `@ui:button`, `components/button/button.twig` → `@components:button`). Across roots the **later root wins** per handle, which is how site versions work. Within a root, a duplicate keeps the first by sorted path, and the check reports it. |
 | BR-14 | The index (handle → file, metadata, props, stories) is built at most once per site per cache lifetime. It sits in Craft's data cache, keyed by site handle and plugin schema version. It's cleared by a *Component library index* Clear Caches option and by `clear-caches/all`. With `devMode` on, it rebuilds when any file under a root is newer than the build (at most one stat walk per request). No include, in any mode, walks a directory. |
@@ -320,7 +320,7 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 | Group `clViewers` with `accessCp` and `accessPlugin-component-library` only, and user `clviewer` | Yes, `tests/fixtures/setup.sh` |
 | Second sandbox site `second`, base URL `$PRIMARY_SITE_URL/second/` | Yes, `tests/fixtures/setup.sh` |
 | Sandbox roots at `tests/fixtures/templates` (and `_sites`), no v1 module lines in `config/app.php` | Yes, `tests/fixtures/setup.sh` |
-| `tests/fixtures/templates/`: `good` (tag + stories), `nested` (a story embedding another component with a block override), `bad-tag`, `legacy` (Twig-wrapped config with `variants`, `variables`, `{include:}`, `{ref:}`), `throws`, `raw-prop` (`\|raw` on a string prop), `_sites/second/` overriding `good`, and a page with 50 `@handle` includes | **No, tasks 1.2 onward** |
+| `tests/fixtures/templates/`: `good` (tag + stories), `nested` (a story embedding another component with a block override), `bad-tag`, `legacy` (Twig-wrapped config with `variants`, `variables`, `{include:}`, `{ref:}`), `throws`, `raw-prop` (`\|raw` on a string prop), `_sites/second/` overriding `good`, and a page with 50 `@handle` includes. Plus `tests/fixtures/edge/`, a root outside the sandbox config (TN-8's duplicates) | Partly: `good`, `nested`, `bad-tag`, `_sites/second/` and `edge/` exist (2.1 to 2.3). The rest come with 2.4, 2.5 and 3.1 |
 | Active, expired and cancelled share rows | Created per test |
 | mw-core and webdna local DDEV sites on v1 | Yes. Read-only, for TS-9. |
 
@@ -532,8 +532,30 @@ touching other repositories.
       `parseStories()` moved to `tests/Pest.php`, which PHPStan now scans. A mutation run (the whole
       file rendered instead of one block, `with` not literal-checked) failed 13 of StoryTest's 29
       tests.
-- [ ] **2.3 Index service**: `src/services/Index.php` (roots, scan, handle derivation, precedence, cache, devMode mtime check, Clear Caches option, build counter)
+- [x] **2.3 Index service**: `src/services/Index.php` (roots, scan, handle derivation, precedence, cache, devMode mtime check, Clear Caches option, build counter)
       Rules: BR-11 to BR-14, BR-33 · Verify: TS-13, TN-8, TN-10
+      *As built:* the plugin registers `index` through `ComponentLibrary::config()`, which copies
+      `templateDirectories` and `sites` from `config/component-library.php`, so tests build their own
+      `new Index([...])` over other roots. The API is `all()` (handle → `Component`, sorted),
+      `get($handle)`, `roots()`, `invalidate()` (the Clear Caches action, a `TagDependency` over every
+      site) and `reset()` (forgets the per-request memo and zeroes the test counters `builds` and
+      `walks`). `Component` gained the location fields `path`, `root`, `stories`, `storiesPath`,
+      `overrides` (the earlier root's file a later root replaced: the site-version badge), `duplicates`
+      (TN-8's losers, for CL002) and `errors` (`path`, `line`, `message`: a tag or stories file that
+      failed to parse, for CL001). A file whose tag doesn't parse is still indexed, under its derived
+      handle, so one bad file never breaks the library. The cache key is site handle, schema version and
+      the resolved roots. One walk per request records every file's mtime and size, and serves as both the
+      devMode fingerprint and the rebuild's file list. Beyond BR-11: the `sites` folder is pruned from
+      the other roots (the sandbox nests `_sites` inside its root), and a missing site folder is logged
+      at info, because most sites have no versions. Beyond BR-13: a derived handle with no category
+      (`loose.twig` → `@loose`) is indexed with an error, because it can't be included. A stories file
+      that declares nothing, or doesn't parse, falls back to *Default*. Fixtures:
+      `_sites/second/ui/good.twig`, and `tests/fixtures/edge/` (duplicates, a comment-only match, a loose
+      file, a broken stories file), which is outside the sandbox config so B5 #4 stays clean. TS-13's
+      50-include page needs 2.5's loader, so `IndexTest` stands in with 50 `get()` calls. 2.5's
+      LoaderTest renders the real page and asserts the same counts. Legacy configs (BR-12 b) are 2.4's.
+      A mutation run (cache never hit, sites not pruned, earlier root wins, later duplicate wins) failed
+      5 of IndexTest's 22 tests.
 - [ ] **2.4 Legacy adapter**: `src/legacy/ConfigJsonAdapter.php` (render as a template in site mode; `variables` → props, `variants` → stories, `readme.md` → notes; placeholders)
       Rules: BR-15, BR-16 · Verify: Pest `LegacyTest`, TN-9
 - [ ] **2.5 Loader**: `src/twig/Loader.php`, wrapping Craft's loader for owned names only, on both the site and CP Twig instances
@@ -703,3 +725,4 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | 2026-09-28 | 0.3 | Task 1.2 built. Appendix A row 3 resolved: B5 #3 needs `-c` and `--test-directory`. `clViewers` fixture also holds `accessCp`. §7 fixtures table updated. | Claude, for Sam Birch |
 | 2026-09-28 | 0.4 | Task 2.1 built. BR-6 applied also to the shape of the tag (unknown keys, types, statuses, options), and one tag per file. See 2.1's as-built note. | Claude, for Sam Birch |
 | 2026-09-28 | 0.5 | Task 2.2 built. BR-8 applied also to where a story may sit: only at the top level of a `.stories.twig` file, never nested. A blank body counts as no body. See 2.2's as-built note. | Claude, for Sam Birch |
+| 2026-09-28 | 0.6 | Task 2.3 built. BR-11: a missing site folder logs at info, and the `sites` folder is pruned from other roots. See 2.3's as-built note. | Claude, for Sam Birch |

@@ -8,7 +8,8 @@ use InvalidArgumentException;
  * A component's self-description, as declared by its `component` tag (BR-5).
  *
  * Every field is optional in the tag. Where the file lives, and the handle derived from its path
- * when the tag gives none, belong to the index (BR-13).
+ * when the tag gives none, belong to the index (BR-13), which fills the location fields through
+ * with(). A component straight from the tag has none of them.
  */
 final class Component
 {
@@ -21,6 +22,13 @@ final class Component
 
     /**
      * @param array<string,Prop> $props Keyed by prop name, in declared order
+     * @param string|null $path Absolute path of the component file
+     * @param string|null $root The root it was found in (BR-11)
+     * @param array<string,Story> $stories Keyed by name, in file order
+     * @param string|null $storiesPath Absolute path of its stories file, if it has one
+     * @param string|null $overrides The file in an earlier root this one replaces, e.g. as a site version (BR-13)
+     * @param list<string> $duplicates Later files in the same root that claimed this handle and lost (BR-13)
+     * @param list<array{path:string,line:int|null,message:string}> $errors Why the file or its stories didn't parse
      */
     public function __construct(
         public readonly ?string $name = null,
@@ -29,7 +37,24 @@ final class Component
         public readonly ?string $notes = null,
         public readonly ?string $viewClass = null,
         public readonly array $props = [],
+        public readonly ?string $path = null,
+        public readonly ?string $root = null,
+        public readonly array $stories = [],
+        public readonly ?string $storiesPath = null,
+        public readonly ?string $overrides = null,
+        public readonly array $duplicates = [],
+        public readonly array $errors = [],
     ) {
+    }
+
+    /**
+     * A copy with the given fields changed.
+     *
+     * @param array<string,mixed> $changes Constructor arguments by name
+     */
+    public function with(array $changes): self
+    {
+        return new self(...array_merge(get_object_vars($this), $changes));
     }
 
     /**
