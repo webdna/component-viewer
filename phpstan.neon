@@ -7,6 +7,9 @@ parameters:
     paths:
         - src
         - tests
+    # tests/Pest.php defines FIXTURES and the tag helpers the test files share.
+    scanFiles:
+        - tests/Pest.php
     ignoreErrors:
         # Pest binds each test closure to a TestCase at runtime (tests/Pest.php).
         -

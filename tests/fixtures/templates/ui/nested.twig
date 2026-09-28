@@ -1,0 +1,22 @@
+{% component {
+    name: 'Nested dialog',
+    status: 'wip',
+    notes: "Shaped like LLL's ui/dialog.twig: a confirm panel by default, which a caller replaces through the `panel` block.",
+    props: {
+        id: 'dialog',
+        open: false,
+        title: 'Are you sure?',
+        body: { type: 'text', default: 'This cannot be undone.' },
+        confirmLabel: 'Confirm',
+    },
+} %}
+{% set id = id ?? 'dialog' %}
+<div class="dialog" role="dialog" aria-labelledby="{{ id }}-title"{{ (open ?? false) ? ' data-open' }}>
+    {%- block panel %}
+    <h2 id="{{ id }}-title">{{ title ?? 'Are you sure?' }}</h2>
+    <p>{{ (body ?? 'This cannot be undone.')|raw }}</p>
+    {%- block actions %}
+    <button type="button">{{ confirmLabel ?? 'Confirm' }}</button>
+    {%- endblock %}
+    {% endblock %}
+</div>

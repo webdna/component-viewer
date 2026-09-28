@@ -20,23 +20,6 @@ use webdna\componentlibrary\models\Component;
 use webdna\componentlibrary\twig\ComponentNode;
 use webdna\componentlibrary\twig\Extension;
 
-const FIXTURES = __DIR__ . '/../fixtures/templates';
-
-function twigIn(string $mode): Environment
-{
-    $view = Craft::$app->getView();
-    $view->setTemplateMode($mode);
-
-    return $view->getTwig();
-}
-
-function parseTag(string $source, string $name = 'inline.twig', string $mode = View::TEMPLATE_MODE_SITE): ?Component
-{
-    $twig = twigIn($mode);
-
-    return ComponentNode::find($twig->parse($twig->tokenize(new Source($source, $name))))?->getComponent();
-}
-
 /** The same source with its component tag, and the newline Twig trims after it, cut out. */
 function withoutTag(string $source): string
 {
