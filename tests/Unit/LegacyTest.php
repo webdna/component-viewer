@@ -23,7 +23,7 @@ const LEGACY_EDGE = __DIR__ . '/../fixtures/edge';
 
 function legacyEdgeIndex(): Index
 {
-    $index = new Index(['templateDirectories' => [FileHelper::normalizePath(LEGACY_EDGE)]]);
+    $index = new Index(['templateDirectories' => [FileHelper::normalizePath(LEGACY_EDGE)], 'legacy' => true]);
     $index->invalidate();
 
     return $index;
@@ -232,6 +232,43 @@ describe('a tag beside a config (BR-12)', function() {
             ->and($converted->warnings)->toHaveCount(1)
             ->and($converted->warnings[0]['code'])->toBe('CL007')
             ->and($converted->warnings[0]['path'])->toEndWith('/legacy/converted.config.json');
+    });
+});
+
+describe('opt-in (legacy)', function() {
+    it('is off unless the config turns it on', function() {
+        expect((new Index())->legacy)->toBeFalse()
+            ->and(ComponentLibrary::getInstance()->getIndex()->legacy)->toBeTrue();
+    });
+
+    it('ignores every config when off, and renders none of them', function() {
+        $index = new Index(['templateDirectories' => [FileHelper::normalizePath(LEGACY_EDGE)]]);
+        $index->invalidate();
+        $all = $index->all();
+
+        expect($all)->not->toHaveKeys(['@legacy:broken', '@legacy:not-json', '@legacy:placeholders', '@legacy:site-path'])
+            ->and($all)->toHaveKey('@cards:card')
+            ->and($this->renders)->toBe([]);
+    });
+
+    it('reads a converted file by its tag alone when off', function() {
+        $index = new Index(['templateDirectories' => [FileHelper::normalizePath(LEGACY_EDGE)]]);
+        $index->invalidate();
+        $converted = $index->get('@legacy:converted');
+
+        expect($converted)->not->toBeNull()
+            ->and($converted->name)->toBe('Converted')
+            ->and($converted->warnings)->toBe([])
+            ->and($index->all())->not->toHaveKey('@legacy:was-converted');
+    });
+
+    it('keeps the two settings apart in the cache', function() {
+        $root = FileHelper::normalizePath(LEGACY_EDGE);
+        $on = new Index(['templateDirectories' => [$root], 'legacy' => true]);
+        $on->invalidate();
+        expect($on->all())->toHaveKey('@legacy:broken');
+
+        expect((new Index(['templateDirectories' => [$root]]))->all())->not->toHaveKey('@legacy:broken');
     });
 });
 

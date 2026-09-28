@@ -13,7 +13,7 @@ related: [_scope/component-library-v2.md]
 
 # Component Library v2
 
-> **Status:** draft · **Version:** 0.11 · **Profile:** `_PROFILE.component-library.md`
+> **Status:** draft · **Version:** 0.12 · **Profile:** `_PROFILE.component-library.md`
 > The team browses and tries out every component in the control panel, previewed on each site's
 > own styling. Clients review the same library through a link that expires and can be cancelled.
 
@@ -39,7 +39,8 @@ settings, defaults and options. Named **examples** live in a companion file besi
 place one component inside another or fill a component's inner areas, which is how LLL builds most
 of its pages. The settings block changes nothing on the live site, because only the library reads
 it. So converting a component cannot alter a page. Components on the old separate settings file
-keep working, and conversion is optional, one component at a time.
+keep working on a site that turns on legacy reading when it upgrades. Conversion is optional, one
+component at a time. A new site leaves legacy reading off and uses the settings block alone.
 
 The idea it rests on: **the live site must not be able to tell v2 from v1, except that it's
 faster.** Every existing way of referring to a component keeps working: short names, file paths,
@@ -139,8 +140,9 @@ examples across sites.
    2. Fill them in. The component appears in the library on the next page load.
    3. Run the library check before committing. It lists anything broken and fails the build if so.
 
-**5. Upgrade a site from v1.** Swap the old module line for a plugin install, and grant the view
-permission to the groups that should keep the library. Pages look exactly as before.
+**5. Upgrade a site from v1.** Swap the old module line for a plugin install, add `'legacy' => true`
+to `config/component-library.php`, and grant the view permission to the groups that should keep the
+library. Pages look exactly as before. Once every component is converted, the line can go.
 
 **First run: the empty state.**
 - No components yet: the library says so, names the folders it searched, and shows the create
@@ -209,10 +211,10 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 | # | Rule |
 |---|---|
 | BR-11 | Roots are `templateDirectories` from `config/component-library.php` (default `['@templates/_components']`), in order. If `sites` is set, `<sites>/<currentSiteHandle>` is appended **last**. The site handle is always Craft's current site. A missing root is skipped with a log warning, and a missing site folder with an info line. The `sites` folder is never scanned as part of another root. |
-| BR-12 | A component is either (a) a `.twig` file containing a `component` tag, pre-filtered by the regex `\{%-?\s*component\b` and then parsed, or (b) a legacy `<name>.config.json` with a sibling `<name>.twig`. If both describe one file, the tag wins and the check warns. |
+| BR-12 | A component is either (a) a `.twig` file containing a `component` tag, pre-filtered by the regex `\{%-?\s*component\b` and then parsed, or (b) a legacy `<name>.config.json` with a sibling `<name>.twig`, **only when the config file sets `legacy` to `true` (default `false`)**. If both describe one file, the tag wins and the check warns. With `legacy` off, configs are never read or rendered, so a converted file is its tag alone. The setting is part of the index cache key. |
 | BR-13 | Handle: the tag's `handle`, else the legacy `handle`, else derived from the path relative to its root. Segments are joined with `:` and the extension dropped. A stem equal to its parent folder collapses (`ui/button.twig` → `@ui:button`, `components/button/button.twig` → `@components:button`). Across roots the **later root wins** per handle, which is how site versions work. Within a root, a duplicate keeps the first by sorted path, and the check reports it. |
 | BR-14 | The index (handle → file, metadata, props, stories) is built at most once per site per cache lifetime. It sits in Craft's data cache, keyed by site handle and plugin schema version. It's cleared by a *Component library index* Clear Caches option and by `clear-caches/all`. With `devMode` on, it rebuilds when any file under a root is newer than the build (at most one stat walk per request). No include, in any mode, walks a directory. |
-| BR-15 | Legacy `.config.json` files are **Twig templates** (`{{ raw({…}\|json_encode) }}`). They're rendered with `renderTemplate()` in site template mode, with an empty context, only during an index build, then JSON-decoded. A failure indexes the component with an error flag and doesn't throw. Keys read: `handle`, `name`, `status`, `context`, `variants`, `viewClass`, and `variables` (mapped to prop types: `"string"` → `string`, `{type:'select', options}` → `select`, and so on). A sibling `readme.md` becomes `notes`, as Markdown, unrendered. A config under the site templates folder renders by its name there. A root outside that folder becomes the templates path for the render, because Craft refuses other names. |
+| BR-15 | With `legacy` on (BR-12), legacy `.config.json` files are **Twig templates** (`{{ raw({…}\|json_encode) }}`). They're rendered with `renderTemplate()` in site template mode, with an empty context, only during an index build, then JSON-decoded. A failure indexes the component with an error flag and doesn't throw. Keys read: `handle`, `name`, `status`, `context`, `variants`, `viewClass`, and `variables` (mapped to prop types: `"string"` → `string`, `{type:'select', options}` → `select`, and so on). A sibling `readme.md` becomes `notes`, as Markdown, unrendered. A config under the site templates folder renders by its name there. A root outside that folder becomes the templates path for the render, because Craft refuses other names. |
 | BR-16 | In legacy defaults, `{include:@handle}` is honoured by rendering that handle with `renderTemplate()` at preview time (webdna uses it twice). `{ref:}`, `{entry:}` and `{asset:}` are **not** resolved. The value stays literal, and the check reports each one. |
 | BR-17 | Names the plugin owns match `^@[A-Za-z0-9_-]+(:[A-Za-z0-9_-]+)+$`, and a variant's last segment may contain `--`. Every other name goes untouched to Craft's loader: Twig namespaces (`@ns/path`), plain paths, anything with `/`. An unknown owned handle raises Twig's standard missing-template error, so `ignore missing` works. This applies to `include`, `embed`, `extends`, `source()` and `include()`, in site and CP template modes. |
 | BR-18 | Path includes of component files (LLL's `'_components/ui/button.twig'`) resolve through Craft as today. The index maps each file back to its handle, so the viewer lists it. |
@@ -381,7 +383,7 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 **TS-9 · Back-compat on consumers** · AC-9 · BR-10, BR-15, BR-17, BR-25 · *manual script*
 *Success criterion: no template edit needed, and the diffs are empty once tokens are normalised.*
 1. On mw-core with v1, fetch 3 URLs per site (24) and save them.
-2. Switch to v2 on a throwaway local branch (the `config/app.php` swap and plugin install only), fetch again and `diff`. Only CSRF tokens and asset hashes should differ.
+2. Switch to v2 on a throwaway local branch (the `config/app.php` swap, plugin install and `'legacy' => true` only), fetch again and `diff`. Only CSRF tokens and asset hashes should differ.
 3. Repeat on webdna with 10 URLs.
 4. Open the CP library on mw-core as admin. All 147 legacy components are listed, variants appear as examples, and site versions are badged.
 
@@ -711,8 +713,8 @@ touching other repositories.
       Rules: BR-31 · Verify: TS-11, B5 #4
 - [ ] **5.2 Make command**: `src/console/controllers/MakeController.php`
       Rules: BR-32 · Verify: TS-12
-- [ ] **5.3 Docs**: `README.md`, `docs/{setup,format,share-links,upgrading-from-v1,resolver}.md`, a `CHANGELOG.md` 2.0.0 entry
-      Rules: BR-4, BR-19 · Verify: Sam reads the upgrade guide against TS-9's steps
+- [ ] **5.3 Docs**: `README.md`, `docs/{setup,format,share-links,upgrading-from-v1,resolver}.md`, a `CHANGELOG.md` 2.0.0 entry. The upgrade guide leads with `'legacy' => true` (BR-12), and the setup guide says new sites leave it off.
+      Rules: BR-4, BR-12, BR-19 · Verify: Sam reads the upgrade guide against TS-9's steps
 - [ ] **6.1 LLL install and pilot** (LLL repo, own branch): `config/component-library.php`, `templates/_component-library/preview.twig` (the craft-vite pair from `_layouts/public.twig:38-40`), convert `_components/ui/button.twig`, `form/text.twig` and `ui/dialog.twig`, and add their `.stories.twig`
       Rules: BR-7, BR-8, BR-25 · Verify: TS-8, B5 #5
 - [ ] **6.2 Consumer back-compat proof** (mw-core and webdna on throwaway local branches, never committed): `$CLAUDE_JOB_DIR/tmp/compat.sh` fetch-and-diff script
@@ -868,3 +870,4 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | 2026-09-28 | 0.9 | Task 2.6 built. BR-19 as specified. An unknown site handle returns `null`, and no root other than the site folder reaches into the `sites` folder. See 2.6's as-built note. | Claude, for Sam Birch |
 | 2026-09-28 | 0.10 | Task 3.1 built. BR-21 also refuses a suspended user. The render templates live in `src/templates/site/_render/`, so no plugin template is a public front-end URL. §7 fixtures complete. See 3.1's as-built note. | Claude, for Sam Birch |
 | 2026-09-28 | 0.11 | Task 3.2 built. BR-22: a checked `site` also chooses whose index the viewer lists, for AC-3's badge. The viewer's state lives in a new `Viewer` service for 4.2 to reuse. TS-14 focus order awaits a manual pass. See 3.2's as-built note. | Claude, for Sam Birch |
+| 2026-09-28 | 0.12 | Legacy configs are opt-in (Sam's decision): BR-12 b and BR-15 apply only with `'legacy' => true` in the config file, default off. §1, journey 5, TS-9 step 2 and task 5.3 updated. The sandbox fixture config turns it on. | Claude, for Sam Birch |

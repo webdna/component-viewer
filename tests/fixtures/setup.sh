@@ -48,6 +48,8 @@ return [
         '@root/plugins/component-library/tests/fixtures/templates',
     ],
     'sites' => '@root/plugins/component-library/tests/fixtures/templates/_sites',
+    // The fixtures include a v1 component (legacy/button), so they read v1 configs.
+    'legacy' => true,
 ];
 PHP
 echo "config     roots at tests/fixtures/templates"
