@@ -118,6 +118,17 @@ Always rsync (section 2) before 1-4. A green run against a stale copy proves not
 - **craft-pest rethrows HTTP exceptions by default.** Call `$this->withExceptionHandling()` to get a
   403/400 back as a response status. `post()` adds a CSRF token. For a tokenless POST use
   `http('post', $uri)->setBody([...])->send()`. `actingAs('<username>')` takes the sandbox users.
+- **craft-pest sends every request through one Craft app** (task 3.1). `Application::init()` never
+  reruns, so Craft's 400 for an unknown or expired token never happens in Pest, and the site is
+  never re-detected from the URL (`second/` is served as the primary site). Expired tokens are
+  deleted once per process. Set the current site in the test and prove the real behaviour with
+  curl. Craft also caches resolved template names per View without the public-only flag, so a
+  routing test needs a fresh View.
+- **Craft routes any public site template by its URL, template roots included.** It checks for a
+  `_` segment only in the path below a root, so a root's own name can't make it private. Site
+  templates of the plugin's own live in `src/templates/site/_render/`.
+- **`craft exec` takes an expression, not a statement** (no `return`, no `;`), and prints
+  `= <value>` on stderr.
 - **Collision counts `@`-silenced warnings.** Yii's FileCache emits one on every cache miss.
   `tests/Pest.php` puts Yii on PHPUnit's `ExcludeList`. Don't remove it, or every request test
   reports warnings.

@@ -6,6 +6,7 @@ use Craft;
 use craft\base\Plugin;
 use craft\events\CreateTwigEvent;
 use craft\events\RegisterCacheOptionsEvent;
+use craft\events\RegisterTemplateRootsEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\services\UserPermissions;
@@ -13,6 +14,7 @@ use craft\utilities\ClearCaches;
 use craft\web\UrlManager;
 use craft\web\View;
 use webdna\componentlibrary\services\Index;
+use webdna\componentlibrary\services\Renderer;
 use webdna\componentlibrary\services\Resolver;
 use webdna\componentlibrary\twig\Extension;
 use webdna\componentlibrary\twig\Loader;
@@ -25,6 +27,7 @@ use yii\base\InvalidConfigException;
  * @method static ComponentLibrary getInstance()
  * @property-read Index $index
  * @property-read Resolver $resolver
+ * @property-read Renderer $renderer
  * @author webdna
  * @copyright webdna
  * @license proprietary
@@ -51,7 +54,8 @@ class ComponentLibrary extends Plugin
     public bool $hasCpSection = true;
 
     /**
-     * The index takes its roots from config/component-library.php (BR-11).
+     * The index takes its roots (BR-11), and the renderer its layout (BR-25), from
+     * config/component-library.php.
      */
     public static function config(): array
     {
@@ -65,6 +69,10 @@ class ComponentLibrary extends Plugin
                     'sites' => $config['sites'] ?? null,
                 ], fn($value) => $value !== null),
                 'resolver' => Resolver::class,
+                'renderer' => array_filter([
+                    'class' => Renderer::class,
+                    'layout' => $config['layout'] ?? null,
+                ], fn($value) => $value !== null),
             ],
         ];
     }
@@ -87,6 +95,7 @@ class ComponentLibrary extends Plugin
 
         $this->registerPermissions();
         $this->registerCpRoutes();
+        $this->registerSiteTemplateRoot();
         $this->registerCacheOption();
 
         // Site and CP template modes both, since a component compiles wherever it's included.
@@ -103,6 +112,12 @@ class ComponentLibrary extends Plugin
     public function getResolver(): Resolver
     {
         return $this->get('resolver');
+    }
+
+    /** The preview render (BR-20 to BR-26), and the tokens that reach it. */
+    public function getRenderer(): Renderer
+    {
+        return $this->get('renderer');
     }
 
     public function getCpNavItem(): ?array
@@ -133,6 +148,22 @@ class ComponentLibrary extends Plugin
             function(RegisterUrlRulesEvent $event): void {
                 $event->rules['component-library'] = 'component-library/viewer/index';
                 $event->rules['component-library/shares'] = 'component-library/shares/index';
+            },
+        );
+    }
+
+    /**
+     * The preview's own site templates (BR-25, BR-26). A folder of their own, so none of the CP
+     * templates can be reached from the front end. Craft only checks a root's inner path for
+     * private segments, so they sit in `_render` inside it, which its router never serves.
+     */
+    private function registerSiteTemplateRoot(): void
+    {
+        Event::on(
+            View::class,
+            View::EVENT_REGISTER_SITE_TEMPLATE_ROOTS,
+            function(RegisterTemplateRootsEvent $event): void {
+                $event->roots[Renderer::TEMPLATE_ROOT] = $this->getBasePath() . '/templates/site';
             },
         );
     }
