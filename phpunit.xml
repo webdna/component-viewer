@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Run from the sandbox root, not from here (profile §4). craft-pest-core boots Craft with
+  CRAFT_BASE_PATH = getcwd(), so the sandbox's .env, config and database are the ones used.
+  No failOnRisky: Pest 2's exit code ignores it (Result::exitCode returns early), so a risky
+  test shows only in the "Tests:" summary line.
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+         colors="true"
+         cacheDirectory="../../storage/runtime/phpunit"
+         beStrictAboutOutputDuringTests="false"
+         failOnWarning="true">
+  <testsuites>
+    <testsuite name="component-library">
+      <directory suffix="Test.php">./tests</directory>
+    </testsuite>
+  </testsuites>
+  <source>
+    <include>
+      <directory suffix=".php">./src</directory>
+    </include>
+  </source>
+</phpunit>

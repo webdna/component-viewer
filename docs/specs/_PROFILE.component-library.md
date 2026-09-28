@@ -21,7 +21,7 @@ repos and are never edited from here.
 | PHP | unconstrained | `^8.2` |
 | Namespace | `webdna\componentlibrary\` → `src/` (PSR-4) | unchanged |
 | Viewer UI | Tailwind + Alpine from public CDNs, hand-written `app.js` | Craft CP templates and CP styles, vanilla JS, no build step |
-| Tests | none | Pest + `markhuot/craft-pest-core`, PHPStan level 5, ECS (Craft ruleset) |
+| Tests | none | Pest 2.36 + `markhuot/craft-pest-core` 3.2, PHPStan level 5, ECS (Craft ruleset) |
 | Sandbox | `~/projects/craft5`: DDEV, Craft 5.11.1, PHP 8.3, MySQL 8.0, `https://craft5.ddev.site`, single site `default` | same |
 | First adopter | `~/Projects/lll`: DDEV, Craft 5.11.3, PHP 8.4, Vite 6 + Tailwind 3 via craft-vite, Alpine 3 | same |
 
@@ -72,8 +72,8 @@ cd ~/projects/craft5 && ddev exec vendor/bin/ecs check --config plugins/componen
 # expect: [OK] No errors found
 
 # 3. Tests
-cd ~/projects/craft5 && ddev exec vendor/bin/pest plugins/component-library/tests
-# expect: Tests: N passed — no failed, no risky
+cd ~/projects/craft5 && ddev exec vendor/bin/pest -c plugins/component-library/phpunit.xml --test-directory=plugins/component-library/tests
+# expect: Tests: N passed — no failed, no risky (read the line: Pest 2 exits 0 on risky)
 
 # 4. Component check
 cd ~/projects/craft5 && ddev craft component-library/check
@@ -101,8 +101,20 @@ Always rsync (section 2) before 1-4. A green run against a stale copy proves not
 - **Craft gates `admin/<plugin-handle>/…` itself.** Any CP request whose first segment is an
   installed plugin's handle needs `accessPlugin-<handle>`, checked in `web/Application.php` before
   the controller, whether or not the plugin has a CP section. That's why BR-1 uses it.
-- **The sandbox has one site (`default`).** Multi-site behaviour cannot be proved there without adding
-  a second site as a fixture.
+- **The sandbox's second site `second` is a fixture.** `bash tests/fixtures/setup.sh` (after the
+  rsync) creates it along with group `clViewers`, user `clviewer` and the fixture roots. It is
+  idempotent. Rerun it after any snapshot restore older than task 1.2.
+- **Pest loads `tests/Pest.php` only from `--test-directory`.** Run as `pest plugins/component-library/tests`,
+  the tests still pass because Craft boots anyway, but they aren't bound to craft-pest's `TestCase`
+  and get no transaction rollback. `tests/HarnessTest.php` fails loudly on this.
+- **craft-pest-core applies pending project config before every run** and boots Craft from the cwd.
+  So a DB change that never reached the YAML gets reverted by the next test run. A script that
+  saves project config without running a request must call `ProjectConfig::flush()`, not
+  `saveModifiedConfigData()`: only `flush()` writes the YAML.
+- **The sandbox is pinned to PHPUnit 10** by `codeception/lib-innerbrowser`, so Pest is 2.x.
+  `pestphp/pest-plugin` is allowed in the sandbox's `allow-plugins`. Install with `-w`, never `-W`:
+  `-W` also upgrades Craft.
+- **Pest 2 ignores `failOnRisky`** (`Result::exitCode` returns success first). Read the `Tests:` line.
 
 ### Twig and Craft (from v1)
 

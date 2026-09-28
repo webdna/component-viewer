@@ -6,3 +6,9 @@ parameters:
     level: 5
     paths:
         - src
+        - tests
+    ignoreErrors:
+        # Pest binds each test closure to a TestCase at runtime (tests/Pest.php).
+        -
+            message: '#^Undefined variable: \$this$#'
+            path: tests/*
