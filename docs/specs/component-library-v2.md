@@ -2,7 +2,7 @@
 spec: Component Library v2
 slug: component-library-v2
 status: draft
-version: 0.2
+version: 0.3
 date: 2026-09-28
 author: Claude (for Sam Birch)
 client: webdna (internal)
@@ -13,7 +13,7 @@ related: [_scope/component-library-v2.md]
 
 # Component Library v2
 
-> **Status:** draft · **Version:** 0.2 · **Profile:** `_PROFILE.component-library.md`
+> **Status:** draft · **Version:** 0.3 · **Profile:** `_PROFILE.component-library.md`
 > The team browses and tries out every component in the control panel, previewed on each site's
 > own styling. Clients review the same library through a link that expires and can be cancelled.
 
@@ -317,8 +317,9 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 |---|---|
 | Sandbox `~/projects/craft5`, admin via `users/impersonate admin` | Yes |
 | `restricted` user: has `accessCp`, lacks the new permission, so it is the refused user | Yes |
-| Group `clViewers` with `accessPlugin-component-library` only, and user `clviewer` | **No, task 1.2** |
-| Second sandbox site `second` with its own base URL | **No, task 1.2** |
+| Group `clViewers` with `accessCp` and `accessPlugin-component-library` only, and user `clviewer` | Yes, `tests/fixtures/setup.sh` |
+| Second sandbox site `second`, base URL `$PRIMARY_SITE_URL/second/` | Yes, `tests/fixtures/setup.sh` |
+| Sandbox roots at `tests/fixtures/templates` (and `_sites`), no v1 module lines in `config/app.php` | Yes, `tests/fixtures/setup.sh` |
 | `tests/fixtures/templates/`: `good` (tag + stories), `nested` (a story embedding another component with a block override), `bad-tag`, `legacy` (Twig-wrapped config with `variants`, `variables`, `{include:}`, `{ref:}`), `throws`, `raw-prop` (`\|raw` on a string prop), `_sites/second/` overriding `good`, and a page with 50 `@handle` includes | **No, tasks 1.2 onward** |
 | Active, expired and cancelled share rows | Created per test |
 | mw-core and webdna local DDEV sites on v1 | Yes. Read-only, for TS-9. |
@@ -436,9 +437,13 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 
 ### Automated checks
 
-Pest (`tests/`, run from the sandbox per the profile) covers every scenario marked *Pest* and every
+Pest 2 with `markhuot/craft-pest-core` 3 (`tests/`) covers every scenario marked *Pest* and every
 TN row, plus unit tests for handle derivation (BR-12, BR-13), story isolation (BR-9) and the legacy
-`variables` mapping (BR-15). TS-3 step 3, TS-8 and TS-9 run against other projects' real pages.
+`variables` mapping (BR-15). The suite runs from the sandbox root: craft-pest-core boots Craft
+with `CRAFT_BASE_PATH = getcwd()`, and Pest loads `tests/Pest.php` only from `--test-directory`,
+so B5 #3 passes both `-c` and `--test-directory`. Each test runs in a rolled-back transaction.
+Fixtures that must outlive a test come from `tests/fixtures/setup.sh`, and `tests/HarnessTest.php`
+fails if they are missing. TS-3 step 3, TS-8 and TS-9 run against other projects' real pages.
 TS-14 needs a human judgement on focus order. TS-2 and TS-3 steps 1–2 stay browser runs until an
 e2e runner targets the plugin (the sandbox has Playwright, but nothing points at the plugin yet).
 
@@ -481,8 +486,9 @@ touching other repositories.
 - [x] **1.1 Plugin skeleton**: `composer.json` (`craft-plugin`, `^5.0`, `^8.2`, `extra.handle`), `src/ComponentLibrary.php` (Plugin, permissions, CP nav, module-registration guard), `src/migrations/Install.php`, `src/records/ShareRecord.php`. Delete v1's `src/base/`, `src/helpers/`, `src/controllers/ComponentViewerController.php`, and the v1 templates and assets.
       Rules: BR-1, BR-2, BR-4, BR-35 · Verify: B5 #1-3, TN-14
       *As built:* also deleted v1's `src/twig/` (it called the removed `formatters` service) and `src/config.php` (v1 keys). `phpstan.neon` and `ecs.php` landed here so B5 #1-2 could run. B5 #3 waits for 1.2's harness.
-- [ ] **1.2 Harness and sandbox fixtures**: `tests/Pest.php`, `phpunit.xml`, extend `phpstan.neon` and `ecs.php` to `tests/`, `tests/fixtures/setup.sh` (group `clViewers` + user `clviewer`, site `second`, roots pointed at the fixtures, sandbox `config/app.php` module lines removed). Run `ddev snapshot` first. Settle Appendix A row 3 here.
+- [x] **1.2 Harness and sandbox fixtures**: `tests/Pest.php`, `phpunit.xml`, extend `phpstan.neon` and `ecs.php` to `tests/`, `tests/fixtures/setup.sh` (group `clViewers` + user `clviewer`, site `second`, roots pointed at the fixtures, sandbox `config/app.php` module lines removed). Run `ddev snapshot` first. Settle Appendix A row 3 here.
       Rules: — · Verify: B5 #1-3 green on an empty suite
+      *As built:* the suite isn't empty. `tests/HarnessTest.php` proves `tests/Pest.php` was loaded (the plain `pest plugins/component-library/tests` form silently skips it), that the plugin is installed and that the fixtures exist. `setup.sh` does the file edits and runs `tests/fixtures/setup.php` in DDEV for the group, user, site and plugin install through Craft's APIs, ending with `ProjectConfig::flush()`. `clViewers` also needs `accessCp`: Craft drops a nested permission whose parent is missing. `tests/fixtures/templates/` is an empty root, and later tasks add its fixtures. PHPStan ignores `Undefined variable: $this` in `tests/` only (Pest binds closures at runtime).
 - [ ] **1.3 Permission tests**: `tests/Feature/AccessTest.php`
       Rules: BR-1, BR-2, BR-3 · Verify: TS-1, TN-11
 - [ ] **2.1 `component` tag**: `src/twig/ComponentTokenParser.php`, `src/twig/ComponentNode.php` (compiles to nothing), `src/models/{Component,Prop}.php`, the literal-only validator
@@ -524,7 +530,7 @@ touching other repositories.
 |---|---|---|---|
 | 1 | Share-link wording: the viewer header, the expired, cancelled and unknown pages, and the one-time URL notice | Sam | Open, blocking release |
 | 2 | Does Craft's CP stylesheet (`CpAsset`) load and style correctly on a site request, without the CP JS globals? If not, the share viewer ships a copied subset of CP CSS. | Developer | Open, blocking task 4.2 |
-| 3 | Does `markhuot/craft-pest-core` run a plugin's `tests/` from the host project, as B5 #3 assumes? If not, the tests run from the sandbox's own `tests/` and the profile is updated. | Developer | Open, blocking task 1.2 |
+| 3 | Does `markhuot/craft-pest-core` run a plugin's `tests/` from the host project, as B5 #3 assumes? If not, the tests run from the sandbox's own `tests/` and the profile is updated. | Developer | **Resolved in 1.2:** yes, from the sandbox root, but only with `-c plugins/component-library/phpunit.xml --test-directory=plugins/component-library/tests`. Without `--test-directory` the tests run with Craft booted but without `tests/Pest.php`. Promoted into §7 *Automated checks* and B5 #3. |
 
 **Assumptions**
 - Previews render as a guest, so components that need a logged-in user (several of LLL's feed and
@@ -618,8 +624,8 @@ cd ~/projects/craft5 && ddev exec vendor/bin/ecs check --config plugins/componen
 # expect: [OK] No errors found
 
 # 3. Tests
-cd ~/projects/craft5 && ddev exec vendor/bin/pest plugins/component-library/tests
-# expect: "Tests: N passed", 0 failed
+cd ~/projects/craft5 && ddev exec vendor/bin/pest -c plugins/component-library/phpunit.xml --test-directory=plugins/component-library/tests
+# expect: "Tests: N passed", nothing failed or risky (Pest 2 exits 0 on risky, so read the line)
 
 # 4. Library check on the clean fixture config
 cd ~/projects/craft5 && ddev craft component-library/check
@@ -657,3 +663,4 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 |---|---|---|---|
 | 2026-09-28 | 0.1 | First draft, from the agreed scope note and design decisions | Claude, for Sam Birch |
 | 2026-09-28 | 0.2 | Task 1.1 built. BR-1: view permission is Craft's `accessPlugin-component-library`, not `accessComponentLibrary` (Craft's own gate made a separate one unusable). B5: `ddev --dir` does not exist, commands now `cd` first; ECS takes `--config`. | Claude, for Sam Birch |
+| 2026-09-28 | 0.3 | Task 1.2 built. Appendix A row 3 resolved: B5 #3 needs `-c` and `--test-directory`. `clViewers` fixture also holds `accessCp`. §7 fixtures table updated. | Claude, for Sam Birch |
