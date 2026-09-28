@@ -1,0 +1,39 @@
+{#
+ # The error panel inside a preview (BR-21, BR-26). Standalone, since the site's layout may be
+ # what failed. `detail` is set in user scope only, and holds no absolute paths.
+ #}
+<!DOCTYPE html>
+<html lang="{{ craft.app.language }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title>{{ message }}</title>
+    <style>
+        body { margin: 0; padding: 24px; font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; color: #3f4d5a; background: #fff; }
+        .cl-error { max-width: 60em; padding: 14px 18px; border: 1px solid #cf1124; border-radius: 4px; background: #fdf1f2; }
+        .cl-error p { margin: 0; }
+        .cl-error p + * { margin-top: 10px; }
+        .cl-error__message { color: #cf1124; font-weight: 600; }
+        .cl-error pre { margin: 10px 0 0; white-space: pre-wrap; word-break: break-word; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+        .cl-error__where { color: #606d7b; }
+    </style>
+</head>
+<body>
+<div class="cl-error" role="alert" data-cl-error>
+    <p class="cl-error__message">{{ message }}</p>
+    {% if detail %}
+        <pre>{{ detail.message }}</pre>
+        {% if detail.template %}
+            <p class="cl-error__where">
+                {%- if detail.line -%}
+                    {{ '{template}, line {line}'|t('component-library', { template: detail.template, line: detail.line }) }}
+                {%- else -%}
+                    {{ detail.template }}
+                {%- endif -%}
+            </p>
+        {% endif %}
+    {% endif %}
+</div>
+</body>
+</html>

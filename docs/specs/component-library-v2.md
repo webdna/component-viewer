@@ -2,7 +2,7 @@
 spec: Component Library v2
 slug: component-library-v2
 status: draft
-version: 0.9
+version: 0.10
 date: 2026-09-28
 author: Claude (for Sam Birch)
 client: webdna (internal)
@@ -13,7 +13,7 @@ related: [_scope/component-library-v2.md]
 
 # Component Library v2
 
-> **Status:** draft · **Version:** 0.9 · **Profile:** `_PROFILE.component-library.md`
+> **Status:** draft · **Version:** 0.10 · **Profile:** `_PROFILE.component-library.md`
 > The team browses and tries out every component in the control panel, previewed on each site's
 > own styling. Clients review the same library through a link that expires and can be cancelled.
 
@@ -223,7 +223,7 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 | # | Rule |
 |---|---|
 | BR-20 | The preview is an iframe on the target site's base URL, carrying a Craft token (`tokens->createToken`) routed to the render action. Token params hold only the scope, `user:<id>` or `share:<id>`. The lifetime is 1 hour or the share's remaining life, whichever is shorter, with no usage limit. The component, story and props travel as the query params `component`, `story`, `props`. |
-| BR-21 | Every render request rechecks the scope: the user still exists and holds `accessPlugin-component-library`, or the share is active. On failure it returns 403, "Preview expired, reload the page". |
+| BR-21 | Every render request rechecks the scope: the user still exists, is active (not suspended) and holds `accessPlugin-component-library`, or the share is active. On failure it returns 403, "Preview expired, reload the page". |
 | BR-22 | The site rendered, and the index used, is the site the request was served on. No request value selects a site for rendering, indexing or a path. The viewer's `site` address parameter only chooses the iframe's base URL, and it's accepted only once `getSiteByHandle()` returns a site (otherwise the primary site). |
 | BR-23 | Previews render as a guest. The identity is cleared in memory for the request only, with no session write, so `currentUser` is null whoever's browser it is. |
 | BR-24 | `props` is a JSON object of at most 8 KB. Each key is coerced to its declared type: strings ≤ 2,000 chars, text ≤ 10,000, `select` must be one of `options` (else the default), `json` depth ≤ 5. Undeclared keys are dropped. **Every request-supplied string reaches the component as inert, pre-escaped text** (`Twig\Markup` of the HTML-escaped value), so `\|raw` cannot inject markup. It's never passed to `renderString`, placeholder-parsed or used in a path. HTML in props comes only from files. |
@@ -320,7 +320,7 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 | Group `clViewers` with `accessCp` and `accessPlugin-component-library` only, and user `clviewer` | Yes, `tests/fixtures/setup.sh` |
 | Second sandbox site `second`, base URL `$PRIMARY_SITE_URL/second/` | Yes, `tests/fixtures/setup.sh` |
 | Sandbox roots at `tests/fixtures/templates` (and `_sites`), no v1 module lines in `config/app.php` | Yes, `tests/fixtures/setup.sh` |
-| `tests/fixtures/templates/`: `good` (tag + stories), `nested` (a story embedding another component with a block override), `bad-tag`, `legacy/button` (Twig-wrapped config with `variants`, `variables`, `{include:}` and a readme), `throws`, `raw-prop` (`\|raw` on a string prop), `_sites/second/` overriding `good`, and a page with 50 `@handle` includes. Plus `tests/fixtures/edge/`, a root outside the sandbox config (TN-8's duplicates, and in `edge/legacy/` TN-9's failing config, `{ref:}`/`{entry:}`/`{asset:}` placeholders, and a tag beside a config) | Partly: `good`, `nested`, `bad-tag`, `legacy/button`, `_sites/second/`, `edge/` and the 50-include page `pages/fifty.twig` exist (2.1 to 2.5). `throws` and `raw-prop` come with 3.1 |
+| `tests/fixtures/templates/`: `good` (tag + stories), `nested` (a story embedding another component with a block override), `bad-tag`, `legacy/button` (Twig-wrapped config with `variants`, `variables`, `{include:}` and a readme), `throws`, `raw-prop` (`\|raw` on a string prop), `_sites/second/` overriding `good`, and a page with 50 `@handle` includes. Plus `tests/fixtures/edge/`, a root outside the sandbox config (TN-8's duplicates, and in `edge/legacy/` TN-9's failing config, `{ref:}`/`{entry:}`/`{asset:}` placeholders, and a tag beside a config) | Yes (2.1 to 3.1), with the 50-include page at `pages/fifty.twig`. 3.1 also added `ui/guest` (prints `currentUser`, for TN-16) and `tests/fixtures/layouts/v1.twig`, a layout on v1's block contract outside every root |
 | Active, expired and cancelled share rows | Created per test |
 | mw-core and webdna local DDEV sites on v1 | Yes. Read-only, for TS-9. |
 
@@ -628,8 +628,43 @@ touching other repositories.
       that normalises to a real file), bad handles and the sites-folder reach. A mutation run
       (no `..` check, no `/` check, first root wins, raw handle, no sites-folder rule) failed 1
       to 4 tests each, and every mutation failed at least one test. B5 #4 waits for 5.1's check command.
-- [ ] **3.1 Render action**: `src/controllers/RenderController.php`, `src/services/Renderer.php`, `src/templates/_render/{layout,error}.twig` (scope recheck, guest identity, prop coercion, headers, error scopes)
+- [x] **3.1 Render action**: `src/controllers/RenderController.php`, `src/services/Renderer.php`, `src/templates/_render/{layout,error}.twig` (scope recheck, guest identity, prop coercion, headers, error scopes)
       Rules: BR-20 to BR-26 · Verify: TS-7, TS-10, TN-1 to TN-4, TN-16
+      *As built:* the plugin's `renderer` component (`getRenderer()`, `layout` from the config file).
+      For 3.2 and 4.2: `createToken($scope, ?$until)` (a token routed to `Renderer::ROUTE` holding
+      only `scope`, one hour or `$until`, no usage limit) and `previewUrl($site, $token, $handle,
+      ?$story, ?$props)`. The templates moved to **`src/templates/site/_render/{layout,page,error}.twig`**,
+      registered as site template root `component-library` → `src/templates/site`, so they're named
+      `component-library/_render/…`. Craft routes any public site template by its URL, template roots
+      included, and checks for `_` only in the path below a root. v1's shape (the whole `templates`
+      folder as the root) would have served the CP templates as front-end pages, and a root named
+      `_component-library` doesn't stop it. `page.twig` extends the layout and fills `component` with
+      the story's HTML, rendered first so a broken component fails before any layout output, and
+      `viewClass` only when the component sets one (`clLayout`, `clHtml`, `clViewClass`, prefixed so
+      they can't shadow a layout's variables). A stories file in a root outside the site templates
+      folder renders with that root as the templates path, as the legacy adapter does. So a story
+      body there reaches other components by handle only, which is how the sandbox fixtures are
+      written. BR-22: the render reads no site from the request. The token row is read with its
+      expiry by the controller itself, because Craft deletes expired tokens only once per process.
+      Over HTTP, Craft's own 400 answers an unknown or expired token (TN-1), from
+      `Application::init()`, and a token's route beats an `actions/` path. BR-24 details: a value
+      that doesn't coerce is dropped and the story's value stands, as does an over-long string. Numbers
+      in string props become strings, `"true"`/`"1"` become booleans, numeric strings become numbers,
+      and a `select` takes the file's own option value. Every string inside a `json` value is escaped
+      `Markup`, and a key that HTML-escaping would change is dropped. More than 8 KB, or anything but
+      a JSON object, is 400. BR-16's `{include:@h}` renders the included handle's first story, as v1
+      did, and only in values from files, nested 3 deep at most (which also stops cycles). BR-23:
+      `setIdentity(null)`, then `resetGlobals()` on the site Twig environment, which caches
+      `currentUser`. BR-26: unknown component or story is 404, and every status carries the four
+      headers. The error panel's detail has the site templates, storage, plugin, vendor, project and
+      root paths removed, and any other absolute folder elided. Beyond BR-21: a suspended user's
+      previews stop. `RenderTest` (82 tests) covers TS-7, TS-10, TN-1 to TN-4 and BR-20 to BR-26 in
+      process. craft-pest keeps one app, so a curl script covers what that can't show: TN-1's 400s,
+      `second`'s real base URL, TN-16 with a real logged-in cookie (still logged in after), and the
+      headers. A mutation run (16 mutations, among them strings unescaped, scope always valid,
+      detail in every scope, scope from the query string, no size limit, undeclared props kept, no
+      headers, and the whole templates folder as the site root) failed at least one test each. Only
+      "identity kept" passes in process, and the curl TN-16 check fails on it.
 - [ ] **3.2 CP viewer**: `src/controllers/ViewerController.php`, `src/templates/viewer/*`, `src/web/assets/viewer/{ViewerAsset.php,viewer.js,viewer.css}` (tree, search, controls from props, stories, site switch, source, notes, URL state, empty states, test hooks)
       Rules: BR-2, BR-22, BR-34, BR-35 · Verify: TS-2, TS-3, TS-14, TN-15
 - [ ] **4.1 Share service and management**: `src/services/Shares.php`, `src/controllers/SharesController.php`, `src/templates/shares/*`, GC hook, user-delete cascade
@@ -795,3 +830,4 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | 2026-09-28 | 0.7 | Task 2.4 built. BR-15: the readme stays unrendered Markdown, and a root outside the site templates folder becomes the templates path for the render. Problems carry their BR-31 code. The `{ref:}` fixture moved to `edge/`. See 2.4's as-built note. | Claude, for Sam Birch |
 | 2026-09-28 | 0.8 | Task 2.5 built. BR-17's pattern is anchored with `D` (a bare `$` matched a trailing newline). An unknown handle is Craft's `TemplateLoaderException`. See 2.5's as-built note. | Claude, for Sam Birch |
 | 2026-09-28 | 0.9 | Task 2.6 built. BR-19 as specified. An unknown site handle returns `null`, and no root other than the site folder reaches into the `sites` folder. See 2.6's as-built note. | Claude, for Sam Birch |
+| 2026-09-28 | 0.10 | Task 3.1 built. BR-21 also refuses a suspended user. The render templates live in `src/templates/site/_render/`, so no plugin template is a public front-end URL. §7 fixtures complete. See 3.1's as-built note. | Claude, for Sam Birch |

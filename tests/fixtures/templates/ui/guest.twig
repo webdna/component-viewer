@@ -1,0 +1,6 @@
+{# Shows who Craft thinks is signed in, so TN-16 can prove previews render as a guest (BR-23). #}
+{% component {
+    name: 'Guest check',
+    status: 'wip',
+} %}
+<p class="whoami">{{ currentUser ? 'signed-in:' ~ currentUser.username : 'guest' }}</p>

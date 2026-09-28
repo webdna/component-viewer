@@ -1,0 +1,9 @@
+{#
+ # A preview page (BR-25): the story, already rendered, in the configured layout's `component`
+ # block. The variables carry a prefix so they can't shadow a layout's own.
+ #}
+{% extends clLayout %}
+
+{% block viewClass %}{% if clViewClass is not null %}{{ clViewClass }}{% else %}{{ parent() }}{% endif %}{% endblock %}
+
+{% block component %}{{ clHtml }}{% endblock %}

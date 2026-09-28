@@ -1,0 +1,8 @@
+{# A consumer preview layout on v1's block contract (BR-25), like mw-core's and webdna's. #}
+<!DOCTYPE html>
+<html>
+<head><title>v1 layout</title></head>
+<body class="v1-layout">
+<main class="{% block viewClass %}fallback-class{% endblock %}">{% block component %}{% endblock %}</main>
+</body>
+</html>
