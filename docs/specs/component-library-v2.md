@@ -13,7 +13,7 @@ related: [_scope/component-library-v2.md]
 
 # Component Library v2
 
-> **Status:** draft · **Version:** 0.10 · **Profile:** `_PROFILE.component-library.md`
+> **Status:** draft · **Version:** 0.11 · **Profile:** `_PROFILE.component-library.md`
 > The team browses and tries out every component in the control panel, previewed on each site's
 > own styling. Clients review the same library through a link that expires and can be cancelled.
 
@@ -665,8 +665,44 @@ touching other repositories.
       detail in every scope, scope from the query string, no size limit, undeclared props kept, no
       headers, and the whole templates folder as the site root) failed at least one test each. Only
       "identity kept" passes in process, and the curl TN-16 check fails on it.
-- [ ] **3.2 CP viewer**: `src/controllers/ViewerController.php`, `src/templates/viewer/*`, `src/web/assets/viewer/{ViewerAsset.php,viewer.js,viewer.css}` (tree, search, controls from props, stories, site switch, source, notes, URL state, empty states, test hooks)
+- [x] **3.2 CP viewer**: `src/controllers/ViewerController.php`, `src/templates/viewer/*`, `src/web/assets/viewer/{ViewerAsset.php,viewer.js,viewer.css}` (tree, search, controls from props, stories, site switch, source, notes, URL state, empty states, test hooks)
       Rules: BR-2, BR-22, BR-34, BR-35 · Verify: TS-2, TS-3, TS-14, TN-15
+      *As built:* one file more than planned, **`src/services/Viewer.php`** (the plugin's `viewer`
+      component), so 4.2's share viewer reuses it with a `share:` token. `state($site, $handle, $story,
+      $props, $token, $url)` returns everything the templates need, and the templates are partials
+      (`viewer/_tree`, `_component`, `_empty`) that `viewer/index.twig` puts on the CP layout. Paths
+      show only with `showPaths` (BR-29). The CP route is `component-library/<handle:@[A-Za-z0-9_:-]+>`,
+      so no word like `shares` can be a handle. Every request value is checked against something the
+      server holds: `site` against `getSiteByHandle()` (else the primary site), the handle against the
+      index (else 404), the story against the component's stories (else its first), and `props` must
+      decode as the renderer would and is cut to declared props. BR-22 in practice: a checked `site`
+      picks the iframe's base URL **and whose index the tree and badge come from**, since AC-3 needs that
+      site's own version. The index is read with that site set as current and restored afterwards. The
+      badge (`data-cl-site-version`) marks a component whose root is that site's folder. Controls come
+      from Craft's form macros: text, textarea, number, a native checkbox for `bool` (a lightswitch's
+      jQuery change event never reaches a vanilla listener), select with a blank option unless required
+      and set, and a JSON textarea. Tabs are the CP layout's own (`tabs`), so Craft handles their
+      keyboard and narrow-screen menu. The tree is the layout's `sidebar`, which Craft puts behind
+      *Show sidebar* on a narrow screen. The site switch is a GET form with a submit button, so arrow
+      keys in the select don't navigate. `viewer.js` is a plain ES module with no CP globals: a change
+      sets the iframe's `story` and `props` on the same token (no usage limit), replaces the address,
+      and fills the site form's hidden fields. A setting changed by hand survives a story switch
+      (TS-2 step 3's copied address has both). **Trap:** Craft's `cpUrl()` adds the requested site to
+      any CP URL without `site`, so a base URL with paths appended broke every link after a site switch.
+      Links now pass `site` themselves, through a URL closure from the controller, and the GET form's
+      action is split into path and hidden fields (`Viewer::formFor()`). craft-pest caches
+      `Cp::requestedSite()`, so `ViewerTest` sets it by reflection. Also: craft-pest's one View
+      prints an asset bundle only on the first page that registers it, so the test reads it at
+      `EVENT_END_PAGE`. `ViewerTest` (31 tests) and AccessTest's action-path refusal cover the server
+      side. A mutation run (12 mutations: site from any handle, site ignored, undeclared props kept,
+      switch on one site, no badge, index not per site, site not restored, unknown handle → first,
+      unknown story → Default, token for admin, no view gate, state attribute unescaped) failed at
+      least one test each. Browser (sandbox, Chrome): TS-2 all steps, preview updated ~900 ms after
+      typing (250 ms debounce). TS-3 steps 1-2. At 375 px, no horizontal page scroll and the tree behind
+      the toggle. The focus order is search, tree, tabs, site, width, preview, settings, with no
+      positive tabindex, every control named, and a visible ring on each (the iframe needed one, so it's
+      on its frame). The window was in the background, so focus order came from a DOM audit, not real
+      Tab presses: **Sam to confirm TS-14 by hand.** TS-3 step 3 (mw-core) waits for 6.2.
 - [ ] **4.1 Share service and management**: `src/services/Shares.php`, `src/controllers/SharesController.php`, `src/templates/shares/*`, GC hook, user-delete cascade
       Rules: BR-3, BR-27, BR-28, BR-30, BR-36 · Verify: TS-4, TN-11 to TN-13
 - [ ] **4.2 Share viewer**: `src/controllers/ShareViewerController.php` (site URL rule), share layout reusing the viewer templates with the CP stylesheet, and the expired, cancelled and unknown pages. Settle Appendix A row 2 first.
@@ -831,3 +867,4 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | 2026-09-28 | 0.8 | Task 2.5 built. BR-17's pattern is anchored with `D` (a bare `$` matched a trailing newline). An unknown handle is Craft's `TemplateLoaderException`. See 2.5's as-built note. | Claude, for Sam Birch |
 | 2026-09-28 | 0.9 | Task 2.6 built. BR-19 as specified. An unknown site handle returns `null`, and no root other than the site folder reaches into the `sites` folder. See 2.6's as-built note. | Claude, for Sam Birch |
 | 2026-09-28 | 0.10 | Task 3.1 built. BR-21 also refuses a suspended user. The render templates live in `src/templates/site/_render/`, so no plugin template is a public front-end URL. §7 fixtures complete. See 3.1's as-built note. | Claude, for Sam Birch |
+| 2026-09-28 | 0.11 | Task 3.2 built. BR-22: a checked `site` also chooses whose index the viewer lists, for AC-3's badge. The viewer's state lives in a new `Viewer` service for 4.2 to reuse. TS-14 focus order awaits a manual pass. See 3.2's as-built note. | Claude, for Sam Birch |

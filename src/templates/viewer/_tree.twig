@@ -1,0 +1,38 @@
+{#
+ # The component tree and search. On a narrow screen the CP layout puts it behind its
+ # "Show sidebar" toggle (TS-14).
+ #}
+{% if tree %}
+    <div class="cl-search">
+        <label for="cl-search" class="visually-hidden">{{ 'Search components'|t('component-library') }}</label>
+        <input type="search" id="cl-search" class="text fullwidth" autocomplete="off"
+               placeholder="{{ 'Search'|t('component-library') }}" aria-describedby="cl-search-status"
+               data-cl-search>
+        <p id="cl-search-status" class="visually-hidden" role="status" data-cl-search-status></p>
+        <p class="light cl-no-match hidden" data-cl-no-match>{{ 'No components match.'|t('component-library') }}</p>
+    </div>
+
+    <nav aria-label="{{ 'Components'|t('component-library') }}">
+        <ul>
+            {% for category, members in tree %}
+                <li class="heading" data-cl-category><span>{{ category }}</span></li>
+                {% for item in members %}
+                    {% set current = component and item.handle == component.handle %}
+                    <li>
+                        <a href="{{ links[item.handle] }}"
+                           {{ attr({
+                               class: current ? 'sel',
+                               'aria-current': current ? 'page' : false,
+                               data: {
+                                   'cl-component': item.handle,
+                                   'cl-search-text': (item.name ~ ' ' ~ item.handle)|lower,
+                               },
+                           }) }}>
+                            <span class="label">{{ item.name ?? item.handle }}</span>
+                        </a>
+                    </li>
+                {% endfor %}
+            {% endfor %}
+        </ul>
+    </nav>
+{% endif %}

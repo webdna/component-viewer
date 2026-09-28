@@ -1,0 +1,15 @@
+{# §3 first run: no components yet. The folders show only with showPaths (BR-29). #}
+<div class="cl-empty" data-cl-empty>
+    <h2>{{ 'No components yet'|t('component-library') }}</h2>
+    {% if showPaths %}
+        <p>{{ 'The library looked in these folders:'|t('component-library') }}</p>
+        <ul class="cl-roots">
+            {% for root in roots %}
+                <li><code>{{ root }}</code></li>
+            {% endfor %}
+        </ul>
+        <p>{{ 'Create one with this command, then reload the page:'|t('component-library') }}</p>
+        <pre class="cl-code"><code>php craft component-library/make ui/button</code></pre>
+    {% endif %}
+    <p><a href="{{ formatGuide }}" rel="noopener" target="_blank">{{ 'How to write a component'|t('component-library') }}</a></p>
+</div>

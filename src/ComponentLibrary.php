@@ -16,6 +16,7 @@ use craft\web\View;
 use webdna\componentlibrary\services\Index;
 use webdna\componentlibrary\services\Renderer;
 use webdna\componentlibrary\services\Resolver;
+use webdna\componentlibrary\services\Viewer;
 use webdna\componentlibrary\twig\Extension;
 use webdna\componentlibrary\twig\Loader;
 use yii\base\Event;
@@ -28,6 +29,7 @@ use yii\base\InvalidConfigException;
  * @property-read Index $index
  * @property-read Resolver $resolver
  * @property-read Renderer $renderer
+ * @property-read Viewer $viewer
  * @author webdna
  * @copyright webdna
  * @license proprietary
@@ -73,6 +75,7 @@ class ComponentLibrary extends Plugin
                     'class' => Renderer::class,
                     'layout' => $config['layout'] ?? null,
                 ], fn($value) => $value !== null),
+                'viewer' => Viewer::class,
             ],
         ];
     }
@@ -120,6 +123,12 @@ class ComponentLibrary extends Plugin
         return $this->get('renderer');
     }
 
+    /** What the CP and share viewers show for a request (§6 Screens). */
+    public function getViewer(): Viewer
+    {
+        return $this->get('viewer');
+    }
+
     public function getCpNavItem(): ?array
     {
         $item = parent::getCpNavItem();
@@ -148,6 +157,8 @@ class ComponentLibrary extends Plugin
             function(RegisterUrlRulesEvent $event): void {
                 $event->rules['component-library'] = 'component-library/viewer/index';
                 $event->rules['component-library/shares'] = 'component-library/shares/index';
+                // Owned handles only (BR-17), so `shares` and any other word can never be one.
+                $event->rules['component-library/<handle:@[A-Za-z0-9_:-]+>'] = 'component-library/viewer/index';
             },
         );
     }
