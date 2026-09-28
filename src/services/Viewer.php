@@ -37,12 +37,20 @@ use yii\base\InvalidArgumentException;
  *     sources:list<array{label:string,path:string,source:string}>,
  *     roots:list<string>,
  *     config:array<string,mixed>|null,
+ *     device:string,
+ *     deviceOrientation:string,
  * }
  */
 class Viewer extends BaseComponent
 {
     /** The format guide the empty state links to (written by task 5.3). */
     public const FORMAT_GUIDE = 'https://github.com/webdna/component-viewer/blob/main/docs/format.md';
+
+    /** BR-39: the preview's devices, the default first. Only the viewer page reads them. */
+    public const DEVICES = ['desktop', 'tablet', 'phone'];
+
+    /** BR-39: the orientations, the default first. Desktop has only the default. */
+    public const ORIENTATIONS = ['portrait', 'landscape'];
 
     /** The index components are listed from. The plugin's own when unset. */
     public ?Index $index = null;
@@ -78,11 +86,15 @@ class Viewer extends BaseComponent
      * @param Closure(string,array<string,string>):string $url The viewer's address for a handle
      * and query params. Links always pass `site`, because Craft's cpUrl() adds the requested
      * site to any CP URL that doesn't.
+     * @param mixed $device The requested `device`, for the page only (BR-39)
+     * @param mixed $orientation The requested `orientation`, likewise
      * @return State|null
      */
-    public function state(Site $site, ?string $handle, mixed $story, mixed $props, string $token, Closure $url): ?array
+    public function state(Site $site, ?string $handle, mixed $story, mixed $props, string $token, Closure $url, mixed $device = null, mixed $orientation = null): ?array
     {
         $components = $this->components($site);
+        $view = self::device($device, $orientation);
+        $viewParams = self::deviceParams($view);
 
         if ($handle === null) {
             $component = $components[array_key_first($components)] ?? null;
@@ -94,7 +106,7 @@ class Viewer extends BaseComponent
             'site' => $site,
             'sites' => $this->sites(),
             'tree' => $this->tree($components),
-            'links' => array_map(fn(string $h) => $url($h, ['site' => $site->handle]), array_combine(array_keys($components), array_keys($components))),
+            'links' => array_map(fn(string $h) => $url($h, ['site' => $site->handle] + $viewParams), array_combine(array_keys($components), array_keys($components))),
             'siteForm' => null,
             'component' => $component,
             'story' => null,
@@ -105,6 +117,9 @@ class Viewer extends BaseComponent
             'sources' => [],
             'roots' => array_map(self::relative(...), $this->index()->roots($site->handle)),
             'config' => null,
+            // Not `orientation`: Craft's CP layouts set that variable to the text direction.
+            'device' => $view['device'],
+            'deviceOrientation' => $view['orientation'],
         ];
 
         if ($component === null) {
@@ -132,8 +147,34 @@ class Viewer extends BaseComponent
                 'types' => array_map(fn(Prop $prop) => $prop->type, $component->props),
                 'overrides' => (object)$overrides,
                 'previewUrl' => $previewUrl,
-            ],
+            ] + $view,
         ]);
+    }
+
+    /**
+     * BR-39: the device and orientation a page opens on. Anything but a listed value is the
+     * default, desktop portrait, and desktop is never turned. Neither reaches the render: the
+     * preview URL carries only `component`, `story` and `props` (BR-20).
+     *
+     * @return array{device:string,orientation:string}
+     */
+    public static function device(mixed $device, mixed $orientation): array
+    {
+        $device = in_array($device, self::DEVICES, true) ? $device : self::DEVICES[0];
+        $turned = $device !== self::DEVICES[0] && in_array($orientation, self::ORIENTATIONS, true);
+
+        return ['device' => $device, 'orientation' => $turned ? $orientation : self::ORIENTATIONS[0]];
+    }
+
+    /**
+     * The address params for a device, as viewer.js writes them: none for desktop.
+     *
+     * @param array{device:string,orientation:string} $view
+     * @return array<string,string>
+     */
+    public static function deviceParams(array $view): array
+    {
+        return $view['device'] === self::DEVICES[0] ? [] : $view;
     }
 
     /**
@@ -255,7 +296,7 @@ class Viewer extends BaseComponent
     /**
      * A GET form for `$url`. Browsers drop the query of a GET form's action, so it's split into
      * the path and hidden fields (e.g. `p` without pretty URLs). The form's own fields replace
-     * `site`, `story` and `props`.
+     * `site`, `story`, `props`, `device` and `orientation`.
      *
      * @return array{action:string,hidden:array<string,string>}
      */
@@ -267,7 +308,7 @@ class Viewer extends BaseComponent
         return [
             'action' => $action,
             'hidden' => array_filter(
-                array_diff_key($hidden, ['site' => 1, 'story' => 1, 'props' => 1]),
+                array_diff_key($hidden, ['site' => 1, 'story' => 1, 'props' => 1, 'device' => 1, 'orientation' => 1]),
                 fn($value) => is_string($value),
             ),
         ];

@@ -59,6 +59,21 @@ function parseTag(string $source, string $name = 'inline.twig', string $mode = V
     return ComponentNode::find(parseTemplate($source, $name, $mode))?->getComponent();
 }
 
+/*
+ * TS-15 step 5 and TN-18, for both viewers: a query string and a string the page must not contain.
+ * Each opens on desktop portrait (BR-39).
+ */
+dataset('unusable devices', [
+    'unknown device' => ['device=watch&orientation=sideways', 'watch'],
+    'unknown orientation' => ['device=watch&orientation=sideways', 'sideways'],
+    'markup' => ['device=' . rawurlencode('<i>x-device</i>'), 'x-device'],
+    '5 KB' => ['device=' . str_repeat('p', 5000), str_repeat('p', 5000)],
+    'lists' => ['device[]=phone&orientation[]=landscape', 'data-device="phone"'],
+    'wrong case' => ['device=Phone', 'data-device="phone"'],
+    'desktop turned' => ['device=desktop&orientation=landscape', 'data-orientation="landscape"'],
+    'orientation alone' => ['orientation=landscape', 'data-orientation="landscape"'],
+]);
+
 /**
  * @return array<string,Story>
  */

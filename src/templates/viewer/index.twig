@@ -1,23 +1,23 @@
-{# The CP viewer (§6). The partials take the viewer's state, so the share viewer reuses them. #}
-{% extends '_layouts/cp' %}
+{#
+ # The CP viewer (§6): the preview workspace full screen, on Craft's bare CP page (its styles and
+ # scripts, no CP nav or header, BR-37). The header links back to the CP and, with the share
+ # permission, to the share links. The partials take the viewer's state, so the share viewer
+ # reuses them.
+ #}
+{% extends '_layouts/basecp' %}
 
-{% set title = 'Component Library'|t('component-library') %}
-{% set selectedSubnavItem = 'library' %}
+{% set title = component
+    ? (component.name ?? component.handle) ~ ' – ' ~ 'Component Library'|t('component-library')
+    : 'Component Library'|t('component-library') %}
+{% set bodyClass = 'cl-workspace-page' %}
 
-{% if component %}
-    {% set tabs = {
-        'cl-settings': {label: 'Settings'|t('component-library'), url: '#cl-settings'},
-        'cl-examples': {label: 'Examples'|t('component-library'), url: '#cl-examples'},
-        'cl-source': {label: 'Source'|t('component-library'), url: '#cl-source'},
-        'cl-notes': {label: 'Notes'|t('component-library'), url: '#cl-notes'},
-    } %}
-    {% set tablistLabel = 'Component details'|t('component-library') %}
-{% endif %}
-
-{% block sidebar %}
-    {% include 'component-library/viewer/_tree' %}
-{% endblock %}
-
-{% block content %}
-    {% include component ? 'component-library/viewer/_component' : 'component-library/viewer/_empty' %}
+{% block body %}
+    {% embed 'component-library/viewer/_workspace' %}
+        {% block actions %}
+            {% if currentUser.can('manageComponentLibraryShares') %}
+                <a class="btn" href="{{ url('component-library/shares') }}">{{ 'Share links'|t('component-library') }}</a>
+            {% endif %}
+            <a class="btn" href="{{ url('dashboard') }}">{{ 'Control panel'|t('component-library') }}</a>
+        {% endblock %}
+    {% endembed %}
 {% endblock %}

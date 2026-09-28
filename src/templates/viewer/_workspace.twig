@@ -1,0 +1,64 @@
+{#
+ # The preview workspace (BR-37), the whole page body of both viewers: a header, then the tree,
+ # the controls and the preview side by side, like Craft's entry preview. The CP page and the
+ # share page embed it, so the two can't drift apart. viewer.js drives it all, with no CP script.
+ #
+ # Takes the viewer's state, plus `pageHeading` (the share page's own heading; the component's
+ # name is the heading otherwise) and `workspaceAttributes`. Block `actions` fills the header's end.
+ #
+ # Test hooks (§7): data-cl-workspace, data-cl-tree-toggle. _component adds the rest.
+ #}
+{% set name = component ? component.name ?? component.handle %}
+
+{% tag 'div' with {
+    class: 'cl-workspace',
+    data: {'cl-workspace': true},
+}|merge(workspaceAttributes ?? {}, recursive=true) %}
+    <header class="cl-ws-header">
+        {% if tree %}
+            {% set hideLabel = 'Hide components'|t('component-library') %}
+            <button type="button" class="btn chromeless cl-tree-toggle" title="{{ hideLabel }}"
+                    aria-controls="cl-tree" aria-expanded="true" data-cl-tree-toggle
+                    data-show-label="{{ 'Show components'|t('component-library') }}" data-hide-label="{{ hideLabel }}">
+                <span class="cl-icon" aria-hidden="true">{{ iconSvg('sidebar') }}</span>
+                <span class="visually-hidden" data-cl-tree-toggle-label>{{ hideLabel }}</span>
+            </button>
+        {% endif %}
+
+        <div class="cl-ws-title">
+            {% if pageHeading ?? null %}
+                <h1 class="cl-heading">{{ pageHeading }}</h1>
+                {% if component %}<span class="cl-ws-component">{{ name }}</span>{% endif %}
+            {% else %}
+                <h1 class="cl-heading">{{ name ?? 'Component Library'|t('component-library') }}</h1>
+            {% endif %}
+            {% if component %}
+                <code class="cl-handle">{{ component.handle }}</code>
+                {% if component.status %}
+                    <span class="cl-badge cl-status-{{ component.status }}">{{ component.status }}</span>
+                {% endif %}
+                {% if siteVersion %}
+                    <span class="cl-badge cl-site-version" data-cl-site-version>
+                        {{- '{site} version'|t('component-library', {site: site.name}) -}}
+                    </span>
+                {% endif %}
+                {% if component.duplicates %}
+                    <span class="cl-badge cl-duplicate" data-cl-duplicate>{{ 'Duplicate handle'|t('component-library') }}</span>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        <div class="cl-ws-actions">
+            {% block actions %}{% endblock %}
+        </div>
+    </header>
+
+    <main class="cl-ws-body">
+        {% if tree %}
+            <div id="cl-tree" class="cl-ws-tree">
+                {% include 'component-library/viewer/_tree' %}
+            </div>
+        {% endif %}
+        {% include component ? 'component-library/viewer/_component' : 'component-library/viewer/_empty' %}
+    </main>
+{% endtag %}
