@@ -1,0 +1,21 @@
+{% component {
+    name: 'Good button',
+    status: 'ready',
+    notes: 'A **fixture** component with one prop of each kind.',
+    viewClass: 'p-4',
+    props: {
+        label: 'Save',
+        count: 3,
+        offset: -1.5,
+        disabled: false,
+        attrs: { 'data-x': 1 },
+        style: { type: 'select', default: 'primary', options: ['primary', 'secondary'] },
+        size: { type: 'select', options: { sm: 'Small', lg: 'Large' }, required: true },
+        body: { type: 'text', description: 'Shown under the label' },
+        icon: null,
+    },
+} %}
+{% set label = label ?? 'Save' %}
+<button class="btn btn--{{ style ?? 'primary' }}"{{ (disabled ?? false) ? ' disabled' }}>
+    {{- label -}}
+</button>
