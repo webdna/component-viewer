@@ -77,7 +77,8 @@ cd ~/projects/craft5 && ddev exec vendor/bin/pest -c plugins/component-library/p
 
 # 4. Component check
 cd ~/projects/craft5 && ddev craft component-library/check
-# expect: exit 0, final line "0 problems"
+# expect: only CL001 for the deliberate fixture tests/fixtures/templates/ui/bad-tag.twig:3,
+# final line "1 problems", exit 1 (spec B5 #4). Anything more is a regression.
 ```
 
 Always rsync (section 2) before 1-4. A green run against a stale copy proves nothing.
