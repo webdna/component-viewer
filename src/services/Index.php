@@ -51,6 +51,12 @@ class Index extends BaseComponent
     /** The folder holding one sub-folder per site handle, if site versions are used (BR-11). */
     public ?string $sites = null;
 
+    /**
+     * Whether v1's `.config.json` files are read (BR-12 b, BR-15). Off unless a site upgrading
+     * from v1 turns it on, so a new library is only ever described by component tags.
+     */
+    public bool $legacy = false;
+
     /** Test hook: index builds since the last reset(). */
     public int $builds = 0;
 
@@ -68,7 +74,7 @@ class Index extends BaseComponent
     public function all(): array
     {
         $roots = $this->roots();
-        $key = [self::class, Craft::$app->getSites()->getCurrentSite()->handle, ComponentLibrary::getInstance()->schemaVersion, $roots];
+        $key = [self::class, Craft::$app->getSites()->getCurrentSite()->handle, ComponentLibrary::getInstance()->schemaVersion, $roots, $this->legacy];
         $memo = md5(serialize($key));
 
         return $this->loaded[$memo] ??= $this->load($key, $roots);
@@ -264,8 +270,8 @@ class Index extends BaseComponent
     }
 
     /**
-     * The component a file declares, by its tag or by a legacy config beside it (BR-12), or null
-     * if it isn't one. A file whose tag or config can't be read is still a component, with the
+     * The component a file declares, by its tag or, with `legacy` on, by a config beside it
+     * (BR-12), or null if it isn't one. A file whose tag or config can't be read is still a component, with the
      * error recorded, so one bad file never breaks the library.
      *
      * @param array<string,mixed> $files The root's files, to find the stories, config and readme beside it
@@ -279,7 +285,7 @@ class Index extends BaseComponent
         $path = "$root/$relative";
         $stem = substr($relative, 0, -strlen('.twig'));
         $configRelative = $stem . ConfigJsonAdapter::SUFFIX;
-        $hasConfig = isset($files[$configRelative]);
+        $hasConfig = $this->legacy && isset($files[$configRelative]);
         $errors = [];
         $warnings = [];
 

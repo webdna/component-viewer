@@ -69,6 +69,7 @@ class ComponentLibrary extends Plugin
                     'class' => Index::class,
                     'templateDirectories' => $config['templateDirectories'] ?? null,
                     'sites' => $config['sites'] ?? null,
+                    'legacy' => $config['legacy'] ?? null,
                 ], fn($value) => $value !== null),
                 'resolver' => Resolver::class,
                 'renderer' => array_filter([

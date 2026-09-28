@@ -20,7 +20,7 @@ const EDGE = __DIR__ . '/../fixtures/edge';
 
 function edgeIndex(): Index
 {
-    $index = new Index(['templateDirectories' => [FileHelper::normalizePath(EDGE)]]);
+    $index = new Index(['templateDirectories' => [FileHelper::normalizePath(EDGE)], 'legacy' => true]);
     $index->invalidate();
 
     return $index;
