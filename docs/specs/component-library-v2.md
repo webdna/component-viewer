@@ -2,7 +2,7 @@
 spec: Component Library v2
 slug: component-library-v2
 status: draft
-version: 0.7
+version: 0.8
 date: 2026-09-28
 author: Claude (for Sam Birch)
 client: webdna (internal)
@@ -320,7 +320,7 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 | Group `clViewers` with `accessCp` and `accessPlugin-component-library` only, and user `clviewer` | Yes, `tests/fixtures/setup.sh` |
 | Second sandbox site `second`, base URL `$PRIMARY_SITE_URL/second/` | Yes, `tests/fixtures/setup.sh` |
 | Sandbox roots at `tests/fixtures/templates` (and `_sites`), no v1 module lines in `config/app.php` | Yes, `tests/fixtures/setup.sh` |
-| `tests/fixtures/templates/`: `good` (tag + stories), `nested` (a story embedding another component with a block override), `bad-tag`, `legacy/button` (Twig-wrapped config with `variants`, `variables`, `{include:}` and a readme), `throws`, `raw-prop` (`\|raw` on a string prop), `_sites/second/` overriding `good`, and a page with 50 `@handle` includes. Plus `tests/fixtures/edge/`, a root outside the sandbox config (TN-8's duplicates, and in `edge/legacy/` TN-9's failing config, `{ref:}`/`{entry:}`/`{asset:}` placeholders, and a tag beside a config) | Partly: `good`, `nested`, `bad-tag`, `legacy/button`, `_sites/second/` and `edge/` exist (2.1 to 2.4). The rest come with 2.5 and 3.1 |
+| `tests/fixtures/templates/`: `good` (tag + stories), `nested` (a story embedding another component with a block override), `bad-tag`, `legacy/button` (Twig-wrapped config with `variants`, `variables`, `{include:}` and a readme), `throws`, `raw-prop` (`\|raw` on a string prop), `_sites/second/` overriding `good`, and a page with 50 `@handle` includes. Plus `tests/fixtures/edge/`, a root outside the sandbox config (TN-8's duplicates, and in `edge/legacy/` TN-9's failing config, `{ref:}`/`{entry:}`/`{asset:}` placeholders, and a tag beside a config) | Partly: `good`, `nested`, `bad-tag`, `legacy/button`, `_sites/second/`, `edge/` and the 50-include page `pages/fifty.twig` exist (2.1 to 2.5). `throws` and `raw-prop` come with 3.1 |
 | Active, expired and cancelled share rows | Created per test |
 | mw-core and webdna local DDEV sites on v1 | Yes. Read-only, for TS-9. |
 
@@ -589,8 +589,30 @@ touching other repositories.
       not switching to site mode, variant context not merged, placeholders never matched, the tag
       branch skipped) failed exactly the 4 matching tests of 124. A failure that throws broke the
       whole edge index (15 failures).
-- [ ] **2.5 Loader**: `src/twig/Loader.php`, wrapping Craft's loader for owned names only, on both the site and CP Twig instances
+- [x] **2.5 Loader**: `src/twig/Loader.php`, wrapping Craft's loader for owned names only, on both the site and CP Twig instances
       Rules: BR-17, BR-18 · Verify: TN-5, TN-6, Pest `LoaderTest`
+      *As built:* `ComponentLibrary` listens for `View::EVENT_AFTER_CREATE_TWIG` and wraps that one
+      environment's own loader (`Loader::$inner`). Craft creates one environment per view and
+      template mode, so this covers site and CP modes, and any other `View`, and no loader is ever
+      replaced app-wide. `Loader::owns()` is `Component::HANDLE_PATTERN`. A name it owns resolves
+      through `Index::get()` for Craft's current site. It never reaches Craft's loader, which also
+      refuses paths outside the templates folder, so the loader reads the file itself. The cache key is
+      the absolute path (as Craft's is), so a component compiles once whether it's included by handle
+      or by path, and a site version compiles apart from the file it replaces. An unknown handle
+      throws Craft's own `TemplateLoaderException` ("Unable to find the template “@ui:nope”."), a
+      Twig `LoaderError`, so `ignore missing`, `include(…, ignore_missing = true)`,
+      `source(…, ignore_missing = true)` and fallback lists all work. Beyond BR-17: the pattern
+      gained the `D` modifier, because a bare `$` also matched `"@ui:good\n"`. `LoaderTest` renders
+      through Craft's environments in both modes (include, `include()`, embed, extends, `source()`, a
+      handle built at runtime), proves with a spy loader that owned names never reach Craft and that
+      other names reach it unchanged, and compares `@ns/file.twig` (a registered `@clns` template root)
+      and paths with Craft's bare `TemplateLoader`. It also renders the StoryTest fixtures' *In a
+      toolbar* and *Custom panel* stories through Craft, and runs TS-13 on the real 50-include page
+      (`templates/pages/fifty.twig`, copied to a temporary root under a swapped-in `Index`). A mutation
+      run (unknown handles falling through to Craft, CP mode not wrapped, `isFresh` always true, the
+      pattern without `D`) failed 11 of 178 tests, and every mutation failed at least one. CP
+      dashboard, entries, plugins, clear-caches and library pages, and both sites' front pages, return
+      200 as admin. B5 #4 waits for 5.1's check command.
 - [ ] **2.6 Resolver service**: `src/services/Resolver.php`, with the signature exactly as BR-19
       Rules: BR-19 · Verify: TN-17
 - [ ] **3.1 Render action**: `src/controllers/RenderController.php`, `src/services/Renderer.php`, `src/templates/_render/{layout,error}.twig` (scope recheck, guest identity, prop coercion, headers, error scopes)
@@ -758,3 +780,4 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | 2026-09-28 | 0.5 | Task 2.2 built. BR-8 applied also to where a story may sit: only at the top level of a `.stories.twig` file, never nested. A blank body counts as no body. See 2.2's as-built note. | Claude, for Sam Birch |
 | 2026-09-28 | 0.6 | Task 2.3 built. BR-11: a missing site folder logs at info, and the `sites` folder is pruned from other roots. See 2.3's as-built note. | Claude, for Sam Birch |
 | 2026-09-28 | 0.7 | Task 2.4 built. BR-15: the readme stays unrendered Markdown, and a root outside the site templates folder becomes the templates path for the render. Problems carry their BR-31 code. The `{ref:}` fixture moved to `edge/`. See 2.4's as-built note. | Claude, for Sam Birch |
+| 2026-09-28 | 0.8 | Task 2.5 built. BR-17's pattern is anchored with `D` (a bare `$` matched a trailing newline). An unknown handle is Craft's `TemplateLoaderException`. See 2.5's as-built note. | Claude, for Sam Birch |
