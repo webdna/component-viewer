@@ -4,10 +4,13 @@ namespace webdna\componentlibrary;
 
 use Craft;
 use craft\base\Plugin;
+use craft\events\RegisterCacheOptionsEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\services\UserPermissions;
+use craft\utilities\ClearCaches;
 use craft\web\UrlManager;
+use webdna\componentlibrary\services\Index;
 use webdna\componentlibrary\twig\Extension;
 use yii\base\Event;
 use yii\base\InvalidConfigException;
@@ -16,6 +19,7 @@ use yii\base\InvalidConfigException;
  * Component Library plugin
  *
  * @method static ComponentLibrary getInstance()
+ * @property-read Index $index
  * @author webdna
  * @copyright webdna
  * @license proprietary
@@ -41,6 +45,24 @@ class ComponentLibrary extends Plugin
     public string $schemaVersion = '2.0.0';
     public bool $hasCpSection = true;
 
+    /**
+     * The index takes its roots from config/component-library.php (BR-11).
+     */
+    public static function config(): array
+    {
+        $config = Craft::$app->getConfig()->getConfigFromFile('component-library');
+
+        return [
+            'components' => [
+                'index' => array_filter([
+                    'class' => Index::class,
+                    'templateDirectories' => $config['templateDirectories'] ?? null,
+                    'sites' => $config['sites'] ?? null,
+                ], fn($value) => $value !== null),
+            ],
+        ];
+    }
+
     public function init(): void
     {
         // BR-4: v1 was a module, and v1 installs list it in config/app.php. Loaded that way the
@@ -59,9 +81,15 @@ class ComponentLibrary extends Plugin
 
         $this->registerPermissions();
         $this->registerCpRoutes();
+        $this->registerCacheOption();
 
         // Site and CP template modes both, since a component compiles wherever it's included.
         Craft::$app->getView()->registerTwigExtension(new Extension());
+    }
+
+    public function getIndex(): Index
+    {
+        return $this->get('index');
     }
 
     public function getCpNavItem(): ?array
@@ -92,6 +120,24 @@ class ComponentLibrary extends Plugin
             function(RegisterUrlRulesEvent $event): void {
                 $event->rules['component-library'] = 'component-library/viewer/index';
                 $event->rules['component-library/shares'] = 'component-library/shares/index';
+            },
+        );
+    }
+
+    /**
+     * BR-14. `clear-caches/all` flushes the data cache, which holds the index, so it needs nothing.
+     */
+    private function registerCacheOption(): void
+    {
+        Event::on(
+            ClearCaches::class,
+            ClearCaches::EVENT_REGISTER_CACHE_OPTIONS,
+            function(RegisterCacheOptionsEvent $event): void {
+                $event->options[] = [
+                    'key' => Index::CACHE_TAG,
+                    'label' => Craft::t('component-library', 'Component library index'),
+                    'action' => fn() => $this->getIndex()->invalidate(),
+                ];
             },
         );
     }
