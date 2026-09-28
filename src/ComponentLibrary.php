@@ -13,6 +13,7 @@ use craft\utilities\ClearCaches;
 use craft\web\UrlManager;
 use craft\web\View;
 use webdna\componentlibrary\services\Index;
+use webdna\componentlibrary\services\Resolver;
 use webdna\componentlibrary\twig\Extension;
 use webdna\componentlibrary\twig\Loader;
 use yii\base\Event;
@@ -23,6 +24,7 @@ use yii\base\InvalidConfigException;
  *
  * @method static ComponentLibrary getInstance()
  * @property-read Index $index
+ * @property-read Resolver $resolver
  * @author webdna
  * @copyright webdna
  * @license proprietary
@@ -62,6 +64,7 @@ class ComponentLibrary extends Plugin
                     'templateDirectories' => $config['templateDirectories'] ?? null,
                     'sites' => $config['sites'] ?? null,
                 ], fn($value) => $value !== null),
+                'resolver' => Resolver::class,
             ],
         ];
     }
@@ -94,6 +97,12 @@ class ComponentLibrary extends Plugin
     public function getIndex(): Index
     {
         return $this->get('index');
+    }
+
+    /** BR-19's public API: a file's path across the roots, for other template engines. */
+    public function getResolver(): Resolver
+    {
+        return $this->get('resolver');
     }
 
     public function getCpNavItem(): ?array
