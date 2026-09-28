@@ -489,8 +489,17 @@ touching other repositories.
 - [x] **1.2 Harness and sandbox fixtures**: `tests/Pest.php`, `phpunit.xml`, extend `phpstan.neon` and `ecs.php` to `tests/`, `tests/fixtures/setup.sh` (group `clViewers` + user `clviewer`, site `second`, roots pointed at the fixtures, sandbox `config/app.php` module lines removed). Run `ddev snapshot` first. Settle Appendix A row 3 here.
       Rules: — · Verify: B5 #1-3 green on an empty suite
       *As built:* the suite isn't empty. `tests/HarnessTest.php` proves `tests/Pest.php` was loaded (the plain `pest plugins/component-library/tests` form silently skips it), that the plugin is installed and that the fixtures exist. `setup.sh` does the file edits and runs `tests/fixtures/setup.php` in DDEV for the group, user, site and plugin install through Craft's APIs, ending with `ProjectConfig::flush()`. `clViewers` also needs `accessCp`: Craft drops a nested permission whose parent is missing. `tests/fixtures/templates/` is an empty root, and later tasks add its fixtures. PHPStan ignores `Undefined variable: $this` in `tests/` only (Pest binds closures at runtime).
-- [ ] **1.3 Permission tests**: `tests/Feature/AccessTest.php`
+- [x] **1.3 Permission tests**: `tests/Feature/AccessTest.php`
       Rules: BR-1, BR-2, BR-3 · Verify: TS-1, TN-11
+      *As built:* BR-2 and BR-3 live in controllers, so this task added them with their final gates:
+      `src/controllers/ViewerController.php` (`index`) and `src/controllers/SharesController.php`
+      (`index`, `create`, `revoke`), plus CP URL rules and placeholder templates `viewer/index.twig` and
+      `shares/index.twig`. 3.2 and 4.1 fill the action bodies and must keep each `beforeAction()`.
+      `create` and `revoke` throw a 500 until 4.1. TS-1 step 3's "with the tree" is asserted in 3.2
+      (only 200 and no *Share links* link here). A non-POST to a share action is **405**, not 400
+      (Craft 5 `requirePostRequest()`). `tests/Pest.php` adds Yii to PHPUnit's exclude list, because
+      Collision counted Yii's `@`-silenced FileCache warnings on every request. A mutation run with
+      the manage check removed failed exactly the 4 viewer-vs-manager tests.
 - [ ] **2.1 `component` tag**: `src/twig/ComponentTokenParser.php`, `src/twig/ComponentNode.php` (compiles to nothing), `src/models/{Component,Prop}.php`, the literal-only validator
       Rules: BR-5, BR-6, BR-7 · Verify: TN-7, Pest `TagTest`
 - [ ] **2.2 `story` tag and stories file**: `src/twig/StoryTokenParser.php`, `src/twig/StoryNode.php`, `src/models/Story.php`
