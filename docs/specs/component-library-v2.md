@@ -2,7 +2,7 @@
 spec: Component Library v2
 slug: component-library-v2
 status: draft
-version: 0.14
+version: 0.15
 date: 2026-09-28
 author: Claude (for Sam Birch)
 client: webdna (internal)
@@ -13,7 +13,7 @@ related: [_scope/component-library-v2.md]
 
 # Component Library v2
 
-> **Status:** draft · **Version:** 0.14 · **Profile:** `_PROFILE.component-library.md`
+> **Status:** draft · **Version:** 0.15 · **Profile:** `_PROFILE.component-library.md`
 > The team browses and tries out every component in the control panel, previewed on each site's
 > own styling. Clients review the same library through a link that expires and can be cancelled.
 
@@ -322,7 +322,7 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 | Group `clViewers` with `accessCp` and `accessPlugin-component-library` only, and user `clviewer` | Yes, `tests/fixtures/setup.sh` |
 | Second sandbox site `second`, base URL `$PRIMARY_SITE_URL/second/` | Yes, `tests/fixtures/setup.sh` |
 | Sandbox roots at `tests/fixtures/templates` (and `_sites`), no v1 module lines in `config/app.php` | Yes, `tests/fixtures/setup.sh` |
-| `tests/fixtures/templates/`: `good` (tag + stories), `nested` (a story embedding another component with a block override), `bad-tag`, `legacy/button` (Twig-wrapped config with `variants`, `variables`, `{include:}` and a readme), `throws`, `raw-prop` (`\|raw` on a string prop), `_sites/second/` overriding `good`, and a page with 50 `@handle` includes. Plus `tests/fixtures/edge/`, a root outside the sandbox config (TN-8's duplicates, and in `edge/legacy/` TN-9's failing config, `{ref:}`/`{entry:}`/`{asset:}` placeholders, and a tag beside a config) | Yes (2.1 to 3.1), with the 50-include page at `pages/fifty.twig`. 3.1 also added `ui/guest` (prints `currentUser`, for TN-16) and `tests/fixtures/layouts/v1.twig`, a layout on v1's block contract outside every root |
+| `tests/fixtures/templates/`: `good` (tag + stories), `nested` (a story embedding another component with a block override), `bad-tag`, `legacy/button` (Twig-wrapped config with `variants`, `variables`, `{include:}` and a readme), `throws`, `raw-prop` (`\|raw` on a string prop), `_sites/second/` overriding `good`, and a page with 50 `@handle` includes. Plus `tests/fixtures/edge/`, a root outside the sandbox config (TN-8's duplicates, and in `edge/legacy/` TN-9's failing config, `{ref:}`/`{entry:}`/`{asset:}` placeholders, and a tag beside a config) | Yes (2.1 to 3.1), with the 50-include page at `pages/fifty.twig`. 3.1 also added `ui/guest` (prints `currentUser`, for TN-16) and `tests/fixtures/layouts/v1.twig`, a layout on v1's block contract outside every root. 5.1 added `edge/pages/{references,extended}.twig` (CL003, CL008 and the references that must pass) and `edge/refs/panel` (CL004 in its stories) |
 | Active, expired and cancelled share rows | Created per test |
 | mw-core and webdna local DDEV sites on v1 | Yes. Read-only, for TS-9. |
 
@@ -758,8 +758,32 @@ touching other repositories.
       the preview and the address, examples and tabs switched, and arrow keys moved between tabs.
       At 375 px there's no horizontal scroll and the toggle shows the tree. `window.Craft` is
       undefined, and no path appears. Sam still reviews the wording (Appendix A row 1).
-- [ ] **5.1 Check command**: `src/console/controllers/CheckController.php`
+- [x] **5.1 Check command**: `src/console/controllers/CheckController.php`
       Rules: BR-31 · Verify: TS-11, B5 #4
+      *As built:* the check invalidates the index and builds it fresh for every site, so it reports
+      what's on disk, never a cache. Handles count as known if any site has one, since a template may
+      include a site-only component. Each problem prints once, however many sites share it. It
+      takes CL001, CL002 (from `duplicates`), CL005, CL006 and CL007 from the index, then parses
+      every template (Craft's `defaultTemplateExtensions`) under `@templates` and every root once,
+      with the site Twig. Literal `include`/`embed`/`extends` and `include()` give CL003, or CL004
+      inside a `.stories.twig`. A reference marked `ignore missing` is never reported (BR-17).
+      CL008 fires only when a name built at run time starts like a handle (`'@blocks:' ~ x`,
+      `"@blocks:#{…}"`). Plain dynamic paths such as mw-core's `"_sites/#{…}/head.twig"` aren't
+      the library's business, and would otherwise fail every `--strict` run. A template that
+      doesn't parse and isn't a component is skipped with an info log line. Paths print relative to
+      `@templates`, else to `@root`, and a problem with no line (CL002, a loose handle) prints the
+      path without `:line`. Only index winners are checked: a component overridden by a later root
+      on every site isn't reported. **B5 #4 amended:** the sandbox root keeps the deliberate
+      `ui/bad-tag.twig`, which the viewer tests need, so B5 #4 expects exactly that one CL001 and
+      exit 1. The 0-problems case is TS-11 step 2. New fixtures are `edge/pages/{references,extended}.twig`
+      and `edge/refs/panel{,.stories}.twig`. `CheckTest` (31 tests) covers TS-11 and BR-31.
+      A mutation run (19 mutations: `ignore missing` unchecked for includes or embeds, CL008 on any
+      name, `--strict` ignored, always exit 0, cached index used, no dedupe, current site only, site
+      not restored, embeds, extends or `include()` not scanned, stories as CL003, absolute paths, no
+      CL002, warnings dropped, no count line, known handles ignored, roots not scanned) failed at
+      least one test each. Three were missed at first and closed by test fixes: warm every site's
+      index before the stale-cache test, start the site test on the primary site, and add a root
+      outside `@templates`. B5: PHPStan OK, ECS OK, Pest 409 passed, and B5 #4 as amended.
 - [ ] **5.2 Make command**: `src/console/controllers/MakeController.php`
       Rules: BR-32 · Verify: TS-12
 - [ ] **5.3 Docs**: `README.md`, `docs/{setup,format,share-links,upgrading-from-v1,resolver}.md`, a `CHANGELOG.md` 2.0.0 entry. The upgrade guide leads with `'legacy' => true` (BR-12), and the setup guide says new sites leave it off.
@@ -874,9 +898,11 @@ cd ~/projects/craft5 && ddev exec vendor/bin/ecs check --config plugins/componen
 cd ~/projects/craft5 && ddev exec vendor/bin/pest -c plugins/component-library/phpunit.xml --test-directory=plugins/component-library/tests
 # expect: "Tests: N passed", nothing failed or risky (Pest 2 exits 0 on risky, so read the line)
 
-# 4. Library check on the clean fixture config
+# 4. Library check on the sandbox fixture config
 cd ~/projects/craft5 && ddev craft component-library/check
-# expect: last line "0 problems", exit 0
+# expect: exactly one problem, "CL001 plugins/component-library/tests/fixtures/templates/ui/bad-tag.twig:3 …",
+# then "1 problems", exit 1. bad-tag stays in the sandbox root for the viewer's error panel (TS-2);
+# every other case lives in edge/. TS-11 step 2 proves "0 problems", exit 0 on a clean library.
 
 # 5. LLL pilot
 cd ~/Projects/lll && ddev craft component-library/check
@@ -922,3 +948,4 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | 2026-09-28 | 0.12 | Legacy configs are opt-in (Sam's decision): BR-12 b and BR-15 apply only with `'legacy' => true` in the config file, default off. §1, journey 5, TS-9 step 2 and task 5.3 updated. The sandbox fixture config turns it on. | Claude, for Sam Birch |
 | 2026-09-28 | 0.13 | Task 4.1 built. BR-28's "today" is the UTC day, matching §4's end-of-day-UTC expiry. §4's user-delete cascade needs an event handler, because Craft soft-deletes users. See 4.1's as-built note. | Claude, for Sam Birch |
 | 2026-09-28 | 0.14 | Task 4.2 built. Appendix A row 2 resolved: the share viewer loads Craft's CP stylesheets without `CpAsset` or any CP JS (§6 *Screens*). Share pages also send `no-store` and `noindex`. See 4.2's as-built note. | Claude, for Sam Birch |
+| 2026-09-28 | 0.15 | Task 5.1 built. BR-31 as specified: handles are known if any site has them, and CL008 covers only runtime names that start like a handle. B5 #4 now expects the one deliberate `bad-tag` CL001 and exit 1 (the 0-problems case is TS-11 step 2). §7 fixtures table updated. See 5.1's as-built note. | Claude, for Sam Birch |
