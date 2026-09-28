@@ -2,7 +2,7 @@
 spec: Component Library v2
 slug: component-library-v2
 status: draft
-version: 0.10
+version: 0.14
 date: 2026-09-28
 author: Claude (for Sam Birch)
 client: webdna (internal)
@@ -13,7 +13,7 @@ related: [_scope/component-library-v2.md]
 
 # Component Library v2
 
-> **Status:** draft · **Version:** 0.12 · **Profile:** `_PROFILE.component-library.md`
+> **Status:** draft · **Version:** 0.14 · **Profile:** `_PROFILE.component-library.md`
 > The team browses and tries out every component in the control panel, previewed on each site's
 > own styling. Clients review the same library through a link that expires and can be cancelled.
 
@@ -280,7 +280,7 @@ v1's front-end `component-library` and `component-library/render` URLs and the
 |---|---|---|
 | Viewer (CP) | New, on the CP layout | Tree and search sidebar. Preview with site switch (hidden on single-site) and viewport widths. Tabs: Settings, Examples, Source, Notes. Site-version badge. |
 | Share links (CP) | New, CP table and form | One-time URL panel with copy. Cancel with confirmation. |
-| Share viewer | New, same templates outside the CP | CP stylesheet, no CP nav. Header with label and expiry. |
+| Share viewer | New, same templates outside the CP | CP stylesheets only (Craft's reset, CP theme and `cp.css`, published from Craft's own folders), none of the CP's JS: `CpAsset` would write the visitor's email and user id into `window.Craft` on a public page. No CP nav. Header with label and expiry. |
 | Expired, cancelled and unknown link pages | New | Plain: one sentence and a suggestion |
 | Error panel | New | Inside the preview. Detail depends on scope (BR-26). |
 
@@ -726,8 +726,38 @@ touching other repositories.
       first). Browser (sandbox, Chrome, admin): TS-4 steps 1, 3 and 4, then *Cancel link* through
       Craft's `formsubmit` (confirm stubbed) set `revokedAt` and removed the button. Step 2's +91 is
       refused by the date input's `max` in the browser and by the server in Pest.
-- [ ] **4.2 Share viewer**: `src/controllers/ShareViewerController.php` (site URL rule), share layout reusing the viewer templates with the CP stylesheet, and the expired, cancelled and unknown pages. Settle Appendix A row 2 first.
+- [x] **4.2 Share viewer**: `src/controllers/ShareViewerController.php` (site URL rule), share layout reusing the viewer templates with the CP stylesheet, and the expired, cancelled and unknown pages. Settle Appendix A row 2 first.
       Rules: BR-26, BR-27, BR-29 · Verify: TS-5, TS-6
+      *As built:* Appendix A row 2 is resolved: CP stylesheets only, through a new
+      `src/web/assets/share/CpStylesAsset.php`. `ShareAsset` (same folder, with `share.js` and
+      `share.css`) lists the viewer's own `viewer.js`/`viewer.css` rather than depending on
+      `ViewerAsset`, which keeps `CpAsset`. `share.js` does what Craft's CP script does for the CP
+      viewer: tabs (click, arrow keys, Home and End) and the narrow-screen sidebar toggle
+      (`body.showing-sidebar`). The templates are CP-mode `src/templates/share/{index,_message}.twig`,
+      rendered on a site request with the CP layout's ids and classes, so `cp.css` lays them out.
+      Neither is a front-end URL (only `templates/site` is a site root). Site rules
+      `component-library/share/<shareToken>[/<handle>]` take any segment, so every refusal is the
+      plugin's own page with its headers, never the site's 404. The param isn't `token`, because Yii
+      copies route params into the query string, where Craft reads `token` as its own. Every share
+      response sends `Referrer-Policy: no-referrer`, plus `Cache-Control: no-store` (a cancelled link
+      mustn't come back from a cache) and `X-Robots-Tag: noindex, nofollow`. Unknown token, of any
+      shape: 404, no state. Expired or cancelled: 410 with `data-cl-share-state`, cancelled winning,
+      and no `lastUsedAt` touch. An unknown component inside an active link: 404 with a way back.
+      An active visit calls `markUsed()`, and previews run under `share:<id>` tokens capped at the
+      link's expiry. Links and the site form stay on share URLs (`Shares::url()` + handle). The
+      header is "{label} · expires {date}", with the date in UTC like the share list. `_empty` shows
+      only "Nothing to show yet." without `showPaths` (§3 first run), and the format-guide link moved
+      inside the CP branch. `ShareViewerTest` (28 tests) covers TS-5 and TS-6 in process. A mutation
+      run (15 mutations: paths shown, no referrer header, user-scope token, token not capped,
+      cancelled or expired served, expired as 404, no `markUsed`, unknown handle → first, CP links,
+      site ignored, `CpAsset` on the share page, empty state with folders, no state hook, no label)
+      failed at least one test each. Real HTTP with no cookies (`$CLAUDE_JOB_DIR/tmp/smoke-4-2.sh`):
+      share page 200 with no-referrer, preview 200 with no-store, noindex and no-referrer. After
+      cancelling, the open preview is 403 "Preview expired" and the page is 410 `cancelled`. Unknown
+      and malformed tokens are 404. Browser (sandbox, Chrome): CP look confirmed. A setting updated
+      the preview and the address, examples and tabs switched, and arrow keys moved between tabs.
+      At 375 px there's no horizontal scroll and the toggle shows the tree. `window.Craft` is
+      undefined, and no path appears. Sam still reviews the wording (Appendix A row 1).
 - [ ] **5.1 Check command**: `src/console/controllers/CheckController.php`
       Rules: BR-31 · Verify: TS-11, B5 #4
 - [ ] **5.2 Make command**: `src/console/controllers/MakeController.php`
@@ -746,7 +776,7 @@ touching other repositories.
 | # | Question | Owner | State |
 |---|---|---|---|
 | 1 | Share-link wording: the viewer header, the expired, cancelled and unknown pages, and the one-time URL notice | Sam | Open, blocking release |
-| 2 | Does Craft's CP stylesheet (`CpAsset`) load and style correctly on a site request, without the CP JS globals? If not, the share viewer ships a copied subset of CP CSS. | Developer | Open, blocking task 4.2 |
+| 2 | Does Craft's CP stylesheet (`CpAsset`) load and style correctly on a site request, without the CP JS globals? If not, the share viewer ships a copied subset of CP CSS. | Developer | **Resolved in 4.2:** the stylesheets style a site page fully, with no CP JS and no copied CSS. `CpAsset` itself isn't used: it brings the CP's jQuery and Garnish stack and puts the visitor's email and user id in `window.Craft`. `CpStylesAsset` publishes Craft's own three stylesheets (the CP theme by name, since `ThemeAsset` picks the front-end theme on a site request), and the share page supplies its own tabs and sidebar toggle. Promoted into §6 *Screens*. |
 | 3 | Does `markhuot/craft-pest-core` run a plugin's `tests/` from the host project, as B5 #3 assumes? If not, the tests run from the sandbox's own `tests/` and the profile is updated. | Developer | **Resolved in 1.2:** yes, from the sandbox root, but only with `-c plugins/component-library/phpunit.xml --test-directory=plugins/component-library/tests`. Without `--test-directory` the tests run with Craft booted but without `tests/Pest.php`. Promoted into §7 *Automated checks* and B5 #3. |
 
 **Assumptions**
@@ -891,3 +921,4 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | 2026-09-28 | 0.11 | Task 3.2 built. BR-22: a checked `site` also chooses whose index the viewer lists, for AC-3's badge. The viewer's state lives in a new `Viewer` service for 4.2 to reuse. TS-14 focus order awaits a manual pass. See 3.2's as-built note. | Claude, for Sam Birch |
 | 2026-09-28 | 0.12 | Legacy configs are opt-in (Sam's decision): BR-12 b and BR-15 apply only with `'legacy' => true` in the config file, default off. §1, journey 5, TS-9 step 2 and task 5.3 updated. The sandbox fixture config turns it on. | Claude, for Sam Birch |
 | 2026-09-28 | 0.13 | Task 4.1 built. BR-28's "today" is the UTC day, matching §4's end-of-day-UTC expiry. §4's user-delete cascade needs an event handler, because Craft soft-deletes users. See 4.1's as-built note. | Claude, for Sam Birch |
+| 2026-09-28 | 0.14 | Task 4.2 built. Appendix A row 2 resolved: the share viewer loads Craft's CP stylesheets without `CpAsset` or any CP JS (§6 *Screens*). Share pages also send `no-store` and `noindex`. See 4.2's as-built note. | Claude, for Sam Birch |

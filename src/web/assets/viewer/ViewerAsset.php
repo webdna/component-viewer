@@ -7,7 +7,8 @@ use craft\web\assets\cp\CpAsset;
 
 /**
  * The viewer's own script and styles, plain files with no build step. The script is a vanilla ES
- * module and needs nothing from the CP's JS, so the share viewer (task 4.2) can load it too.
+ * module and needs nothing from the CP's JS, so the share viewer loads the same files, on the CP's
+ * stylesheets only (share\ShareAsset).
  */
 class ViewerAsset extends AssetBundle
 {
