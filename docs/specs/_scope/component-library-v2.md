@@ -1,6 +1,6 @@
 # Component Library v2 — scope note
 
-**Status:** for sign-off · **Date:** 28 September 2026 · **Full spec:** not yet written
+**Status:** for sign-off · **Approver:** Sam · **Date:** 28 September 2026 · **Full spec:** not yet written
 
 ## What it is
 
@@ -22,9 +22,10 @@ and without the security holes found in the September review.
 
 - **Rebuilt as a proper Craft plugin, for Craft 5 only.** Access comes from a permission, not a
   shared key.
-- **A viewer in the control panel.** It has a component tree, search, settings controls, the
-  rendered output, the source and notes. Every view can be bookmarked or linked. It's usable by
-  keyboard and on small screens.
+- **A viewer in the control panel, built in the control panel's own look.** It has a component
+  tree, search, settings controls, the rendered output, the source and notes. Every view can be
+  bookmarked or linked. It's usable by keyboard and on small screens. Share-link viewers see the
+  same design outside the panel.
 - **Previews on each site's own address, with its own styling**, including the eight mw-core
   storefronts.
 - **Share links that open the whole library.** Each has an expiry and a label, and can be revoked.
@@ -46,8 +47,11 @@ and without the security holes found in the September review.
   - automated tests
 - **A documented way for other code to find a site's version of a template.** mw-core's search
   cards can use it when convenient.
-- **Up and running in LLL.** Installed, previewing with LLL's styling, with a first set of LLL
-  components converted as the working example (see open questions).
+- **Up and running in LLL.** Installed and previewing with LLL's styling. Three LLL components
+  are converted as the working example: the button, the text field and the dialog. Between them
+  they cover a plain component, a form field, and a component with inner areas.
+- **Share-link wording drafted by the developer and reviewed by Sam before release.** This covers
+  the page a link opens and the pages shown for an expired or cancelled link.
 - **Documentation:** setup, the component format, share links and upgrading from v1.
 
 ## Out of scope
@@ -64,22 +68,16 @@ and without the security holes found in the September review.
 - **Publishing on the Craft Plugin Store.** It stays a private package for our own sites.
 - **Automated screenshot comparison or accessibility testing of components.** It's a separate tool
   and could be added later.
+- **A bespoke viewer design.** The control panel's own look is quicker to build, and it keeps
+  Craft's accessibility work.
 - **Craft 4 support.** Every site that would use v2 is already on Craft 5.
 
 ## What we need from you
 
-- **Which LLL components form the first converted set.** *Blocking the price.* My proposal is a
-  button, a text field, a dialog and an empty state. Between them they cover a plain component, a
-  form field, a component with inner areas, and a message state.
-- **Who designs the viewer.** *Blocking the price.* See the open questions.
-- **The approver for this note.** *Not blocking.* I've assumed Sam.
-- **The wording shown to people opening a share link**, and on an expired or cancelled link.
-  *Not blocking.* A developer can draft it for review.
+- **Sign-off on this note.** Nothing else is outstanding before the full spec.
+- **A review of the share-link wording** before release. *Not blocking the build.*
 
 ## Open questions affecting price
 
-1. **How the viewer looks.** It could follow the control panel's own look, which is quickest and
-   consistent with the rest of Craft. Or it could have its own design, which needs a designer and
-   takes longer to build.
-2. **The size of the first LLL set.** Four components prove the approach. Converting more is
-   straightforward, but it's project time spent on LLL, not on v2.
+None. The viewer's look, the first LLL set, the approver and who writes the wording are all
+decided above.
