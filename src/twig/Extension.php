@@ -14,6 +14,7 @@ final class Extension extends AbstractExtension
     {
         return [
             new ComponentTokenParser(),
+            new StoryTokenParser(),
         ];
     }
 }

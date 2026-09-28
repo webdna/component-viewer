@@ -2,7 +2,7 @@
 spec: Component Library v2
 slug: component-library-v2
 status: draft
-version: 0.4
+version: 0.5
 date: 2026-09-28
 author: Claude (for Sam Birch)
 client: webdna (internal)
@@ -13,7 +13,7 @@ related: [_scope/component-library-v2.md]
 
 # Component Library v2
 
-> **Status:** draft · **Version:** 0.3 · **Profile:** `_PROFILE.component-library.md`
+> **Status:** draft · **Version:** 0.5 · **Profile:** `_PROFILE.component-library.md`
 > The team browses and tries out every component in the control panel, previewed on each site's
 > own styling. Clients review the same library through a link that expires and can be cancelled.
 
@@ -513,8 +513,25 @@ touching other repositories.
       `json` shorthand default. Fixtures are `tests/fixtures/templates/ui/{good,bad-tag}.twig`, under
       `ui/` so derived handles have a `:`. A mutation run (node emitting output, validator accepting
       anything) failed 16 of TagTest's 41 tests.
-- [ ] **2.2 `story` tag and stories file**: `src/twig/StoryTokenParser.php`, `src/twig/StoryNode.php`, `src/models/Story.php`
+- [x] **2.2 `story` tag and stories file**: `src/twig/StoryTokenParser.php`, `src/twig/StoryNode.php`, `src/models/Story.php`
       Rules: BR-8, BR-9, BR-10 · Verify: Pest `StoryTest` (`nested` fixture)
+      *As built:* a story body that isn't blank compiles into a block of its stories file
+      (`cl_story_<n>`, on `Story::$block`), and the tag itself compiles to nothing. So
+      `Story::render()` runs `renderBlock()` on that one block, and BR-9 holds by construction: no
+      other story, and nothing at the file's top level, executes. A blank body (whitespace or
+      comments) has no block and renders the component with the props as its context. That's the
+      same path as BR-10's `Story::fromDefaults()` and 2.4's legacy variants. `render()` takes the
+      final props: merging defaults, the story's `with` and request values, and coercing them, is
+      3.1's. `StoryNode::findAll()` reads a parsed file's stories by name, in file order, for 2.3.
+      Beyond BR-8, these are `SyntaxError`s too: a story outside a `.stories.twig` file, inside a
+      block, macro or another story (embeds included), a missing or non-string name, a `with`
+      that isn't a hash, and a missing `endstory`. `with` is optional. The fixtures
+      `ui/good.stories.twig` and `ui/nested.{twig,stories.twig}` refer to components by handle
+      (`@ui:good`), so they resolve in Craft once 2.5's loader lands. StoryTest renders them
+      through an `ArrayLoader` keyed by handle and path. `FIXTURES`, `twigIn()`, `parseTag()` and
+      `parseStories()` moved to `tests/Pest.php`, which PHPStan now scans. A mutation run (the whole
+      file rendered instead of one block, `with` not literal-checked) failed 13 of StoryTest's 29
+      tests.
 - [ ] **2.3 Index service**: `src/services/Index.php` (roots, scan, handle derivation, precedence, cache, devMode mtime check, Clear Caches option, build counter)
       Rules: BR-11 to BR-14, BR-33 · Verify: TS-13, TN-8, TN-10
 - [ ] **2.4 Legacy adapter**: `src/legacy/ConfigJsonAdapter.php` (render as a template in site mode; `variables` → props, `variants` → stories, `readme.md` → notes; placeholders)
@@ -685,3 +702,4 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | 2026-09-28 | 0.2 | Task 1.1 built. BR-1: view permission is Craft's `accessPlugin-component-library`, not `accessComponentLibrary` (Craft's own gate made a separate one unusable). B5: `ddev --dir` does not exist, commands now `cd` first; ECS takes `--config`. | Claude, for Sam Birch |
 | 2026-09-28 | 0.3 | Task 1.2 built. Appendix A row 3 resolved: B5 #3 needs `-c` and `--test-directory`. `clViewers` fixture also holds `accessCp`. §7 fixtures table updated. | Claude, for Sam Birch |
 | 2026-09-28 | 0.4 | Task 2.1 built. BR-6 applied also to the shape of the tag (unknown keys, types, statuses, options), and one tag per file. See 2.1's as-built note. | Claude, for Sam Birch |
+| 2026-09-28 | 0.5 | Task 2.2 built. BR-8 applied also to where a story may sit: only at the top level of a `.stories.twig` file, never nested. A blank body counts as no body. See 2.2's as-built note. | Claude, for Sam Birch |

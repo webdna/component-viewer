@@ -1,0 +1,13 @@
+{# Stories for ui/nested.twig. "Custom panel" is the embed LLL's profile/company.twig makes of ui/dialog.twig. #}
+{% story 'Confirm' with { open: true, title: 'Delete saved search?' } %}{% endstory %}
+
+{% story 'Custom panel' with { id: 'invite', open: true, title: 'Invite somebody' } %}
+{% embed '@ui:nested' with props only %}
+    {% block panel %}
+    <div data-test="custom-panel">
+        <h2 id="{{ id }}-title">{{ title }}</h2>
+        {% include '@ui:good' with { label: 'Send invite', style: 'secondary' } only %}
+    </div>
+    {% endblock %}
+{% endembed %}
+{% endstory %}
