@@ -3,12 +3,15 @@
 namespace webdna\componentlibrary;
 
 use Craft;
+use craft\base\Element;
 use craft\base\Plugin;
+use craft\elements\User;
 use craft\events\CreateTwigEvent;
 use craft\events\RegisterCacheOptionsEvent;
 use craft\events\RegisterTemplateRootsEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
+use craft\services\Gc;
 use craft\services\UserPermissions;
 use craft\utilities\ClearCaches;
 use craft\web\UrlManager;
@@ -16,6 +19,7 @@ use craft\web\View;
 use webdna\componentlibrary\services\Index;
 use webdna\componentlibrary\services\Renderer;
 use webdna\componentlibrary\services\Resolver;
+use webdna\componentlibrary\services\Shares;
 use webdna\componentlibrary\services\Viewer;
 use webdna\componentlibrary\twig\Extension;
 use webdna\componentlibrary\twig\Loader;
@@ -30,6 +34,7 @@ use yii\base\InvalidConfigException;
  * @property-read Resolver $resolver
  * @property-read Renderer $renderer
  * @property-read Viewer $viewer
+ * @property-read Shares $shares
  * @author webdna
  * @copyright webdna
  * @license proprietary
@@ -77,6 +82,7 @@ class ComponentLibrary extends Plugin
                     'layout' => $config['layout'] ?? null,
                 ], fn($value) => $value !== null),
                 'viewer' => Viewer::class,
+                'shares' => Shares::class,
             ],
         ];
     }
@@ -101,6 +107,7 @@ class ComponentLibrary extends Plugin
         $this->registerCpRoutes();
         $this->registerSiteTemplateRoot();
         $this->registerCacheOption();
+        $this->registerShareCleanup();
 
         // Site and CP template modes both, since a component compiles wherever it's included.
         Craft::$app->getView()->registerTwigExtension(new Extension());
@@ -128,6 +135,12 @@ class ComponentLibrary extends Plugin
     public function getViewer(): Viewer
     {
         return $this->get('viewer');
+    }
+
+    /** Share links (BR-27, BR-28). */
+    public function getShares(): Shares
+    {
+        return $this->get('shares');
     }
 
     public function getCpNavItem(): ?array
@@ -215,6 +228,21 @@ class ComponentLibrary extends Plugin
                 ];
             },
         );
+    }
+
+    /**
+     * §4: Craft's garbage collection removes old links, and a deleted user's links go at once
+     * (TN-13). Users are soft-deleted, so the table's cascade only fires when one is purged.
+     */
+    private function registerShareCleanup(): void
+    {
+        Event::on(Gc::class, Gc::EVENT_RUN, fn() => $this->getShares()->gc());
+
+        Event::on(User::class, Element::EVENT_AFTER_DELETE, function(Event $event): void {
+            /** @var User $user */
+            $user = $event->sender;
+            $this->getShares()->deleteForUser((int)$user->id);
+        });
     }
 
     private function registerPermissions(): void

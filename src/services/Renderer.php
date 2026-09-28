@@ -4,7 +4,6 @@ namespace webdna\componentlibrary\services;
 
 use Craft;
 use craft\elements\User;
-use craft\helpers\Db;
 use craft\helpers\UrlHelper;
 use craft\models\Site;
 use craft\web\View;
@@ -18,7 +17,6 @@ use webdna\componentlibrary\legacy\ConfigJsonAdapter;
 use webdna\componentlibrary\models\Component;
 use webdna\componentlibrary\models\Prop;
 use webdna\componentlibrary\models\Story;
-use webdna\componentlibrary\records\ShareRecord;
 use yii\base\Component as BaseComponent;
 use yii\base\Exception;
 use yii\base\InvalidArgumentException;
@@ -138,10 +136,7 @@ class Renderer extends BaseComponent
                 && $user->can(ComponentLibrary::PERMISSION_VIEW);
         }
 
-        return ShareRecord::find()
-            ->where(['id' => $id, 'revokedAt' => null])
-            ->andWhere(['>', 'expiresAt', Db::prepareDateForDb(new DateTime())])
-            ->exists();
+        return ComponentLibrary::getInstance()->getShares()->active()->andWhere(['id' => $id])->exists();
     }
 
     /** Whether errors in this scope may show their detail (BR-26). */

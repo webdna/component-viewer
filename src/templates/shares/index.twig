@@ -1,9 +1,113 @@
-{# Placeholder until task 4.1 builds the share list and create form. #}
+{# Share links (§6, journey 2): the one-time address, the create form and the list. #}
 {% extends '_layouts/cp' %}
+{% import '_includes/forms' as forms %}
 
 {% set title = 'Share links'|t('component-library') %}
 {% set selectedSubnavItem = 'shares' %}
 
+{% set statusLabels = {
+    active: 'Active'|t('component-library'),
+    expired: 'Expired'|t('component-library'),
+    cancelled: 'Cancelled'|t('component-library'),
+} %}
+{# Craft's status colours: green, red, grey. #}
+{% set statusClasses = {active: 'enabled', expired: 'expired', cancelled: 'disabled'} %}
+
 {% block content %}
-    <p>{{ 'Share links are not built yet.'|t('component-library') }}</p>
+    {% if newUrl %}
+        <div class="readable" data-cl-share-url>
+            <h2>{{ 'Your new share link'|t('component-library') }}</h2>
+            {{ forms.copytextField({
+                id: 'cl-share-url',
+                label: 'Address'|t('component-library'),
+                instructions: 'Copy it now. It won’t be shown again. Anyone with this address can open the library, with no login, until it expires or you cancel it.'|t('component-library'),
+                value: newUrl,
+            }) }}
+        </div>
+        <hr>
+    {% endif %}
+
+    <form method="post" accept-charset="UTF-8" class="readable" id="cl-new-share">
+        {{ csrfInput() }}
+        {{ actionInput('component-library/shares/create') }}
+
+        <h2>{{ 'New share link'|t('component-library') }}</h2>
+
+        {{ forms.textField({
+            id: 'cl-share-label',
+            name: 'label',
+            label: 'Label'|t('component-library'),
+            instructions: 'Who or what it’s for. It’s shown on the link’s pages.'|t('component-library'),
+            value: share.label,
+            maxlength: constant('webdna\\componentlibrary\\models\\ShareForm::LABEL_MAX'),
+            required: true,
+            errors: share.getErrors('label'),
+        }) }}
+
+        {{ forms.textField({
+            id: 'cl-share-expiry',
+            name: 'expiry',
+            type: 'date',
+            label: 'Expires'|t('component-library'),
+            instructions: 'The link stops working at the end of this day (UTC). At most three months away.'|t('component-library'),
+            value: share.expiry,
+            min: minExpiry,
+            max: maxExpiry,
+            required: true,
+            errors: share.getErrors('expiry'),
+        }) }}
+
+        <button type="submit" class="btn submit">{{ 'Create share link'|t('component-library') }}</button>
+    </form>
+
+    <hr>
+
+    {% if rows is empty %}
+        <div class="zilch">
+            <p>{{ 'No share links yet'|t('component-library') }}</p>
+            <a class="btn" href="#cl-share-label">{{ 'New share link'|t('component-library') }}</a>
+        </div>
+    {% else %}
+        <div class="tableview">
+            <table class="data fullwidth">
+                <thead>
+                    <tr>
+                        <th scope="col">{{ 'Label'|t('component-library') }}</th>
+                        <th scope="col">{{ 'Created by'|t('component-library') }}</th>
+                        <th scope="col">{{ 'Expires'|t('component-library') }}</th>
+                        <th scope="col">{{ 'Status'|t('component-library') }}</th>
+                        <th scope="col">{{ 'Last used'|t('component-library') }}</th>
+                        <td class="thin"></td>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                        <tr data-cl-share="{{ row.id }}">
+                            <th scope="row">{{ row.label }}</th>
+                            <td>{{ row.creator }}</td>
+                            {# End of the chosen day in UTC, so shown in UTC to keep that day. #}
+                            <td>{{ row.expiresAt|date('short', 'UTC') }}</td>
+                            <td data-cl-share-state="{{ row.status }}">
+                                <span class="status {{ statusClasses[row.status] }}" aria-hidden="true"></span>{{ statusLabels[row.status] }}
+                            </td>
+                            <td>{{ row.lastUsedAt ? row.lastUsedAt|timestamp('short') : 'Never'|t('component-library') }}</td>
+                            <td class="thin">
+                                {% if row.status == 'active' %}
+                                    <button type="button" class="btn small formsubmit"
+                                        data-form="false"
+                                        data-action="component-library/shares/revoke"
+                                        data-param="id"
+                                        data-value="{{ row.id }}"
+                                        data-confirm="{{ 'Cancel “{label}”? It stops working straight away, for anyone who has it open too.'|t('component-library', {label: row.label}) }}"
+                                        aria-label="{{ 'Cancel link “{label}”'|t('component-library', {label: row.label}) }}">
+                                        {{- 'Cancel link'|t('component-library') -}}
+                                    </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
 {% endblock %}

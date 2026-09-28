@@ -237,7 +237,7 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 | # | Rule |
 |---|---|
 | BR-27 | A token is 32 random bytes, base64url (43 chars), looked up by SHA-256 hash and shown once in the create response. The URL is `<primary site>/component-library/share/<token>`. Unknown: 404. Cancelled: 410, cancelled page. Expired: 410, expired page. Active means `revokedAt` is null and `expiresAt` is in the future. |
-| BR-28 | The label is required, 1–100 chars, trimmed. The expiry is a date: default today + 14 days, minimum tomorrow, maximum today + 90 days, validated server-side. There's no limit on the number of links. |
+| BR-28 | The label is required, 1–100 chars, trimmed. The expiry is a date, counted in UTC days: default today + 14 days, minimum tomorrow, maximum today + 90 days, validated server-side. There's no limit on the number of links. |
 | BR-29 | The share viewer offers everything the CP viewer does except share management. It shows source and notes, never file paths or roots, and sends `Referrer-Policy: no-referrer`. |
 | BR-30 | Nothing is sent: no email, notification or webhook, for any event in this spec. |
 
@@ -705,8 +705,27 @@ touching other repositories.
       positive tabindex, every control named, and a visible ring on each (the iframe needed one, so it's
       on its frame). The window was in the background, so focus order came from a DOM audit, not real
       Tab presses: **Sam to confirm TS-14 by hand.** TS-3 step 3 (mw-core) waits for 6.2.
-- [ ] **4.1 Share service and management**: `src/services/Shares.php`, `src/controllers/SharesController.php`, `src/templates/shares/*`, GC hook, user-delete cascade
+- [x] **4.1 Share service and management**: `src/services/Shares.php`, `src/controllers/SharesController.php`, `src/templates/shares/*`, GC hook, user-delete cascade
       Rules: BR-3, BR-27, BR-28, BR-30, BR-36 · Verify: TS-4, TN-11 to TN-13
+      *As built:* validation lives in a form model, `src/models/ShareForm.php`. The expiry is a native
+      date input (`Y-m-d`), and "today" is the UTC day, since a link ends at 23:59:59 UTC on its day
+      (§4). The list shows expiry in UTC for the same reason. Only the list page pre-fills the two
+      weeks: a post with no date is refused, never defaulted. The new address rides a session flash
+      that the list reads and deletes in one go (`data-cl-share-url` on its panel). *Cancel link* is
+      Craft's `formsubmit` with `data-confirm`, on active rows only. Cancelling again never moves
+      `revokedAt`, an unknown id is 404, and a link both cancelled and expired shows *Cancelled*.
+      **Trap:** Craft soft-deletes users, so the table's `ON DELETE CASCADE` fires only when a user is
+      purged. A `User::EVENT_AFTER_DELETE` handler deletes the links at once (TN-13). GC is a
+      `Gc::EVENT_RUN` handler. `Renderer::scopeIsValid()` now asks `Shares::active()`, so "active" has
+      one definition. For 4.2 the service also has `find($token)` (hash lookup, `null` for any
+      malformed token), `status()`, `markUsed()` (once a minute) and `url($token)`.
+      `SharesTest` (29 tests) covers TS-4 steps 1-4, TN-12, TN-13, BR-30 (no mail, no queue job) and
+      BR-36 (the exact column list). TN-11 stays in `AccessTest`. A mutation run (19 mutations) failed
+      at least one test each, except two equivalent ones: a property default for `expiry` (the
+      controller always sets it) and a lookup by the raw value (the token pattern refuses a hash
+      first). Browser (sandbox, Chrome, admin): TS-4 steps 1, 3 and 4, then *Cancel link* through
+      Craft's `formsubmit` (confirm stubbed) set `revokedAt` and removed the button. Step 2's +91 is
+      refused by the date input's `max` in the browser and by the server in Pest.
 - [ ] **4.2 Share viewer**: `src/controllers/ShareViewerController.php` (site URL rule), share layout reusing the viewer templates with the CP stylesheet, and the expired, cancelled and unknown pages. Settle Appendix A row 2 first.
       Rules: BR-26, BR-27, BR-29 · Verify: TS-5, TS-6
 - [ ] **5.1 Check command**: `src/console/controllers/CheckController.php`
@@ -871,3 +890,4 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | 2026-09-28 | 0.10 | Task 3.1 built. BR-21 also refuses a suspended user. The render templates live in `src/templates/site/_render/`, so no plugin template is a public front-end URL. §7 fixtures complete. See 3.1's as-built note. | Claude, for Sam Birch |
 | 2026-09-28 | 0.11 | Task 3.2 built. BR-22: a checked `site` also chooses whose index the viewer lists, for AC-3's badge. The viewer's state lives in a new `Viewer` service for 4.2 to reuse. TS-14 focus order awaits a manual pass. See 3.2's as-built note. | Claude, for Sam Birch |
 | 2026-09-28 | 0.12 | Legacy configs are opt-in (Sam's decision): BR-12 b and BR-15 apply only with `'legacy' => true` in the config file, default off. §1, journey 5, TS-9 step 2 and task 5.3 updated. The sandbox fixture config turns it on. | Claude, for Sam Birch |
+| 2026-09-28 | 0.13 | Task 4.1 built. BR-28's "today" is the UTC day, matching §4's end-of-day-UTC expiry. §4's user-delete cascade needs an event handler, because Craft soft-deletes users. See 4.1's as-built note. | Claude, for Sam Birch |
