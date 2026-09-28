@@ -34,11 +34,11 @@ Nothing runs on the host except git and rsync. PHP, Composer and Craft run insid
 # "plugins/*"), not a symlink, so edits here are invisible there until this runs.
 rsync -a --delete --exclude .git --exclude vendor ./ ~/projects/craft5/plugins/component-library/
 
-ddev --dir ~/projects/craft5 composer <command>
-ddev --dir ~/projects/craft5 craft <command>          # e.g. plugin/install component-library
-ddev --dir ~/projects/craft5 craft clear-caches/all
-ddev --dir ~/projects/craft5 craft users/impersonate admin   # prints a login URL (see Traps)
-ddev --dir ~/projects/craft5 snapshot                  # before install/uninstall/migration work
+cd ~/projects/craft5 && ddev composer <command>
+cd ~/projects/craft5 && ddev craft <command>          # e.g. plugin/install component-library
+cd ~/projects/craft5 && ddev craft clear-caches/all
+cd ~/projects/craft5 && ddev craft users/impersonate admin   # prints a login URL (see Traps)
+cd ~/projects/craft5 && ddev snapshot                  # before install/uninstall/migration work
 ```
 
 ## 3. Where things go
@@ -64,19 +64,19 @@ overwritten by the next rsync.
 
 ```bash
 # 1. Static analysis
-ddev --dir ~/projects/craft5 exec vendor/bin/phpstan analyse -c plugins/component-library/phpstan.neon --no-progress
+cd ~/projects/craft5 && ddev exec vendor/bin/phpstan analyse -c plugins/component-library/phpstan.neon --no-progress --memory-limit=1G
 # expect: [OK] No errors
 
 # 2. Coding standard
-ddev --dir ~/projects/craft5 exec vendor/bin/ecs check plugins/component-library/src
+cd ~/projects/craft5 && ddev exec vendor/bin/ecs check --config plugins/component-library/ecs.php
 # expect: [OK] No errors found
 
 # 3. Tests
-ddev --dir ~/projects/craft5 exec vendor/bin/pest plugins/component-library/tests
+cd ~/projects/craft5 && ddev exec vendor/bin/pest plugins/component-library/tests
 # expect: Tests: N passed — no failed, no risky
 
 # 4. Component check
-ddev --dir ~/projects/craft5 craft component-library/check
+cd ~/projects/craft5 && ddev craft component-library/check
 # expect: exit 0, final line "0 problems"
 ```
 
@@ -95,6 +95,12 @@ Always rsync (section 2) before 1-4. A green run against a stale copy proves not
   fails to parse and every request fatals.
 - **The worktree guard rejects shell `for` loops and `bash -c` wrappers around ddev/mysql.** Put
   multi-step checks in a script under `$CLAUDE_JOB_DIR/tmp` and run it with `bash`.
+- **`ddev` has no `--dir` flag.** `cd ~/projects/craft5 && ddev …` works under the worktree guard.
+- **`craftcms/phpstan` does not install PHPStan.** The sandbox has `phpstan/phpstan ^2.1` (1.x
+  conflicts with its `composer/pcre`), `craftcms/phpstan` and `craftcms/ecs` as dev deps.
+- **Craft gates `admin/<plugin-handle>/…` itself.** Any CP request whose first segment is an
+  installed plugin's handle needs `accessPlugin-<handle>`, checked in `web/Application.php` before
+  the controller, whether or not the plugin has a CP section. That's why BR-1 uses it.
 - **The sandbox has one site (`default`).** Multi-site behaviour cannot be proved there without adding
   a second site as a fixture.
 

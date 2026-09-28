@@ -1,7 +1,16 @@
 {
     "name": "webdna/component-library",
-    "description": "Component library module",
-    "type": "craft-module",
+    "description": "Browse, try out and share a site's Twig components from the control panel.",
+    "type": "craft-plugin",
+    "keywords": [
+        "craft",
+        "cms",
+        "craftcms",
+        "craft-plugin",
+        "component-library",
+        "components",
+        "twig"
+    ],
     "license": "proprietary",
     "authors": [
         {
@@ -10,14 +19,26 @@
         }
     ],
     "require": {
-        "craftcms/cms": "^3.7|^4.0.0|^5.0.0"
+        "php": "^8.2",
+        "craftcms/cms": "^5.0"
     },
     "autoload": {
         "psr-4": {
             "webdna\\componentlibrary\\": "src/"
         }
     },
+    "extra": {
+        "name": "Component Library",
+        "handle": "component-library",
+        "developer": "webdna",
+        "developerUrl": "https://webdna.co.uk",
+        "class": "webdna\\componentlibrary\\ComponentLibrary"
+    },
     "config": {
+        "sort-packages": true,
+        "platform": {
+            "php": "8.2"
+        },
         "allow-plugins": {
             "craftcms/plugin-installer": true,
             "yiisoft/yii2-composer": true
