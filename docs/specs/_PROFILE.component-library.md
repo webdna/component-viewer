@@ -115,6 +115,12 @@ Always rsync (section 2) before 1-4. A green run against a stale copy proves not
   `pestphp/pest-plugin` is allowed in the sandbox's `allow-plugins`. Install with `-w`, never `-W`:
   `-W` also upgrades Craft.
 - **Pest 2 ignores `failOnRisky`** (`Result::exitCode` returns success first). Read the `Tests:` line.
+- **craft-pest rethrows HTTP exceptions by default.** Call `$this->withExceptionHandling()` to get a
+  403/400 back as a response status. `post()` adds a CSRF token. For a tokenless POST use
+  `http('post', $uri)->setBody([...])->send()`. `actingAs('<username>')` takes the sandbox users.
+- **Collision counts `@`-silenced warnings.** Yii's FileCache emits one on every cache miss.
+  `tests/Pest.php` puts Yii on PHPUnit's `ExcludeList`. Don't remove it, or every request test
+  reports warnings.
 
 ### Twig and Craft (from v1)
 

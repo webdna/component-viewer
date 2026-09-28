@@ -4,8 +4,10 @@ namespace webdna\componentlibrary;
 
 use Craft;
 use craft\base\Plugin;
+use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\services\UserPermissions;
+use craft\web\UrlManager;
 use yii\base\Event;
 use yii\base\InvalidConfigException;
 
@@ -55,6 +57,7 @@ class ComponentLibrary extends Plugin
         parent::init();
 
         $this->registerPermissions();
+        $this->registerCpRoutes();
     }
 
     public function getCpNavItem(): ?array
@@ -75,6 +78,18 @@ class ComponentLibrary extends Plugin
         }
 
         return $item;
+    }
+
+    private function registerCpRoutes(): void
+    {
+        Event::on(
+            UrlManager::class,
+            UrlManager::EVENT_REGISTER_CP_URL_RULES,
+            function(RegisterUrlRulesEvent $event): void {
+                $event->rules['component-library'] = 'component-library/viewer/index';
+                $event->rules['component-library/shares'] = 'component-library/shares/index';
+            },
+        );
     }
 
     private function registerPermissions(): void
