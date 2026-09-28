@@ -1,0 +1,29 @@
+{#
+ # A share link that shows nothing (§6 Screens): unknown, expired or cancelled, or a component the
+ # library doesn't have. One sentence and a suggestion, in the CP's look.
+ #
+ # Test hook (§7): data-cl-share-state, absent for an unknown link, which has no state.
+ #}
+<!DOCTYPE html>
+<html lang="{{ craft.app.language }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>{{ heading }}</title>
+    {{ head() }}
+</head>
+<body class="ltr cl-share">
+{{ beginBody() }}
+<main class="cl-share-message" {{ attr({data: {'cl-share-state': state ?? false}}) }}>
+    <div class="pane">
+        <h1>{{ heading }}</h1>
+        <p>{{ text }}</p>
+        {% if home %}
+            <p><a href="{{ home }}">{{ 'Back to the library'|t('component-library') }}</a></p>
+        {% endif %}
+    </div>
+</main>
+{{ endBody() }}
+</body>
+</html>

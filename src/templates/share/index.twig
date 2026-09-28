@@ -1,0 +1,80 @@
+{#
+ # The share viewer (§6 Screens): the CP viewer's partials on a page of its own, in the CP's look
+ # (CpStylesAsset) with none of its navigation. The ids and classes are the CP layout's, so its
+ # stylesheet lays the page out. share.js does what Craft's CP script does for the tabs and the
+ # sidebar toggle. No paths or roots appear (showPaths is off, BR-29).
+ #
+ # Test hook (§7): data-cl-share-state.
+ #}
+{% set heading = '{label} · expires {date}'|t('component-library', {
+    label: share.label,
+    date: expires|date('long', 'UTC'),
+}) %}
+{% set tabs = component ? {
+    'cl-settings': {label: 'Settings'|t('component-library'), url: '#cl-settings'},
+    'cl-examples': {label: 'Examples'|t('component-library'), url: '#cl-examples'},
+    'cl-source': {label: 'Source'|t('component-library'), url: '#cl-source'},
+    'cl-notes': {label: 'Notes'|t('component-library'), url: '#cl-notes'},
+} : null %}
+<!DOCTYPE html>
+<html lang="{{ craft.app.language }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>{{ (component ? (component.name ?? component.handle) ~ ' – ') ~ 'Component Library'|t('component-library') }}</title>
+    {{ head() }}
+</head>
+<body class="ltr cl-share">
+{{ beginBody() }}
+<div id="main-container">
+    <main id="main" data-cl-share-state="active">
+        <div id="header-container">
+            <header id="header">
+                <div id="page-title">
+                    <h1 id="page-heading" class="screen-title">{{ heading }}</h1>
+                </div>
+                <p class="light cl-share-product">{{ 'Component Library'|t('component-library') }}</p>
+            </header>
+        </div>
+
+        <div id="main-content" class="{{ tree ? 'has-sidebar' }}">
+            {% if tree %}
+                <div id="sidebar-container">
+                    <div id="sidebar-toggle-container">
+                        <button type="button" id="sidebar-toggle" class="btn menubtn chromeless"
+                                aria-controls="sidebar-container" aria-expanded="false"
+                                data-show-label="{{ 'Show sidebar'|t('app') }}"
+                                data-hide-label="{{ 'Hide sidebar'|t('app') }}">
+                            {{- 'Show sidebar'|t('app') -}}
+                        </button>
+                    </div>
+                    <div id="sidebar" class="sidebar">
+                        {% include 'component-library/viewer/_tree' %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <div id="content-container" tabindex="-1">
+                <div class="content-grid">
+                    <div class="content-grid__main">
+                        <div id="content" class="content-pane">
+                            {% if tabs %}
+                                <header id="content-header" class="pane-header">
+                                    {% include '_includes/tabs' with {
+                                        tablistLabel: 'Component details'|t('component-library'),
+                                        containerAttributes: {id: 'tabs'},
+                                    } %}
+                                </header>
+                            {% endif %}
+                            {% include component ? 'component-library/viewer/_component' : 'component-library/viewer/_empty' %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{{ endBody() }}
+</body>
+</html>

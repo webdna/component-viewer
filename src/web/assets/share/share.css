@@ -1,0 +1,31 @@
+/*
+ * The share viewer's page, outside the CP layout: only what the CP's own layout styles would
+ * otherwise supply. Everything else comes from the CP stylesheet and viewer.css.
+ */
+
+body.cl-share {
+    background: var(--body-bg);
+    min-height: 100vh;
+}
+
+.cl-share #header {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--m);
+}
+
+.cl-share-product {
+    margin: 0;
+}
+
+.cl-share-message {
+    margin: 10vh auto 0;
+    max-width: 32rem;
+    padding: 0 16px;
+}
+
+.cl-share-message h1 {
+    font-size: 1.25rem;
+    margin-bottom: var(--s);
+}

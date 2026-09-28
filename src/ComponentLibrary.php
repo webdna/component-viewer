@@ -105,6 +105,7 @@ class ComponentLibrary extends Plugin
 
         $this->registerPermissions();
         $this->registerCpRoutes();
+        $this->registerSiteRoutes();
         $this->registerSiteTemplateRoot();
         $this->registerCacheOption();
         $this->registerShareCleanup();
@@ -173,6 +174,22 @@ class ComponentLibrary extends Plugin
                 $event->rules['component-library/shares'] = 'component-library/shares/index';
                 // Owned handles only (BR-17), so `shares` and any other word can never be one.
                 $event->rules['component-library/<handle:@[A-Za-z0-9_:-]+>'] = 'component-library/viewer/index';
+            },
+        );
+    }
+
+    /**
+     * The share viewer (BR-27). Any token and handle reach the controller, so every refusal is its
+     * own page with its headers, not the site's 404.
+     */
+    private function registerSiteRoutes(): void
+    {
+        Event::on(
+            UrlManager::class,
+            UrlManager::EVENT_REGISTER_SITE_URL_RULES,
+            function(RegisterUrlRulesEvent $event): void {
+                $event->rules[Shares::URL_PATH . '<shareToken:[^/]+>'] = 'component-library/share-viewer/index';
+                $event->rules[Shares::URL_PATH . '<shareToken:[^/]+>/<handle:[^/]+>'] = 'component-library/share-viewer/index';
             },
         );
     }
