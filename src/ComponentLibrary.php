@@ -8,6 +8,7 @@ use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\services\UserPermissions;
 use craft\web\UrlManager;
+use webdna\componentlibrary\twig\Extension;
 use yii\base\Event;
 use yii\base\InvalidConfigException;
 
@@ -58,6 +59,9 @@ class ComponentLibrary extends Plugin
 
         $this->registerPermissions();
         $this->registerCpRoutes();
+
+        // Site and CP template modes both, since a component compiles wherever it's included.
+        Craft::$app->getView()->registerTwigExtension(new Extension());
     }
 
     public function getCpNavItem(): ?array

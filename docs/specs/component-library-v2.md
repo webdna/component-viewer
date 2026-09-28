@@ -2,7 +2,7 @@
 spec: Component Library v2
 slug: component-library-v2
 status: draft
-version: 0.3
+version: 0.4
 date: 2026-09-28
 author: Claude (for Sam Birch)
 client: webdna (internal)
@@ -500,8 +500,19 @@ touching other repositories.
       (Craft 5 `requirePostRequest()`). `tests/Pest.php` adds Yii to PHPUnit's exclude list, because
       Collision counted Yii's `@`-silenced FileCache warnings on every request. A mutation run with
       the manage check removed failed exactly the 4 viewer-vs-manager tests.
-- [ ] **2.1 `component` tag**: `src/twig/ComponentTokenParser.php`, `src/twig/ComponentNode.php` (compiles to nothing), `src/models/{Component,Prop}.php`, the literal-only validator
+- [x] **2.1 `component` tag**: `src/twig/ComponentTokenParser.php`, `src/twig/ComponentNode.php` (compiles to nothing), `src/models/{Component,Prop}.php`, the literal-only validator
       Rules: BR-5, BR-6, BR-7 · Verify: TN-7, Pest `TagTest`
+      *As built:* the validator is `src/twig/Literal.php` (`toValue()`, reused by 2.2's `with`), and
+      `src/twig/Extension.php` registers the tag through `View::registerTwigExtension()`, so site and
+      CP modes both have it. The node holds the `Component` model as an attribute, and
+      `ComponentNode::find()` pulls it from a parsed tree: that's how 2.3 reads a file without rendering
+      it. Beyond BR-6, a hash that doesn't describe a component is also a compile-time `SyntaxError`
+      (unknown key, bad `status` or type, `select` without `options`, a default of the wrong type or
+      outside its options, a second tag in one file). A tag `handle` may omit the `@` and is stored
+      with it. A prop hash is the full form only when it has `type` and no other keys, otherwise it's a
+      `json` shorthand default. Fixtures are `tests/fixtures/templates/ui/{good,bad-tag}.twig`, under
+      `ui/` so derived handles have a `:`. A mutation run (node emitting output, validator accepting
+      anything) failed 16 of TagTest's 41 tests.
 - [ ] **2.2 `story` tag and stories file**: `src/twig/StoryTokenParser.php`, `src/twig/StoryNode.php`, `src/models/Story.php`
       Rules: BR-8, BR-9, BR-10 · Verify: Pest `StoryTest` (`nested` fixture)
 - [ ] **2.3 Index service**: `src/services/Index.php` (roots, scan, handle derivation, precedence, cache, devMode mtime check, Clear Caches option, build counter)
@@ -673,3 +684,4 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | 2026-09-28 | 0.1 | First draft, from the agreed scope note and design decisions | Claude, for Sam Birch |
 | 2026-09-28 | 0.2 | Task 1.1 built. BR-1: view permission is Craft's `accessPlugin-component-library`, not `accessComponentLibrary` (Craft's own gate made a separate one unusable). B5: `ddev --dir` does not exist, commands now `cd` first; ECS takes `--config`. | Claude, for Sam Birch |
 | 2026-09-28 | 0.3 | Task 1.2 built. Appendix A row 3 resolved: B5 #3 needs `-c` and `--test-directory`. `clViewers` fixture also holds `accessCp`. §7 fixtures table updated. | Claude, for Sam Birch |
+| 2026-09-28 | 0.4 | Task 2.1 built. BR-6 applied also to the shape of the tag (unknown keys, types, statuses, options), and one tag per file. See 2.1's as-built note. | Claude, for Sam Birch |
