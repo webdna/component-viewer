@@ -121,8 +121,8 @@ it('gives each prop a labelled control and each story a button', function() {
         ->and($html)->toContain('<textarea')
         ->and($html)->toContain('<option value="sm">Small</option>');
 
-    expect($html)->toContain('data-cl-story="Default"' . "\n" . '                            aria-pressed="true"')
-        ->and($html)->toContain('data-cl-story="Secondary"' . "\n" . '                            aria-pressed="false"')
+    expect($html)->toMatch('/data-cl-story="Default"\s+aria-pressed="true"/')
+        ->and($html)->toMatch('/data-cl-story="Secondary"\s+aria-pressed="false"/')
         ->and($html)->toContain('data-cl-story="In a toolbar"');
 });
 
@@ -136,7 +136,7 @@ it('points the preview at the primary site with a token scoped to the viewing us
         ->and($query['component'])->toBe('@ui:good')
         ->and($query['story'])->toBe('Default')
         ->and($query)->not->toHaveKey('props')
-        ->and($html)->toContain('title="Preview of Good button, example “Default”"');
+        ->and($html)->toContain('title="Preview of Good button, example “Default”, Desktop"');
 
     $route = (new Query())->select('route')->from(Table::TOKENS)
         ->where(['token' => $query[Craft::$app->getConfig()->getGeneral()->tokenParam]])->scalar();
@@ -151,8 +151,8 @@ it('restores the story and settings from the address', function() {
 
     expect($query['story'])->toBe('Secondary')
         ->and($query['props'])->toBe('{"label":"Hello"}')
-        ->and($html)->toContain('title="Preview of Good button, example “Secondary”"')
-        ->and($html)->toContain('data-cl-story="Secondary"' . "\n" . '                            aria-pressed="true"')
+        ->and($html)->toContain('title="Preview of Good button, example “Secondary”, Desktop"')
+        ->and($html)->toMatch('/data-cl-story="Secondary"\s+aria-pressed="true"/')
         ->and($html)->toMatch('/id="cl-prop-label"[^>]*value="Hello"|value="Hello"[^>]*id="cl-prop-label"/')
         ->and($html)->toContain('<option value="secondary" selected>')
         ->and($html)->not->toContain('dropped');
@@ -200,13 +200,13 @@ it('previews on the chosen site and marks its own version', function() {
 
     expect(previewSrc($html))->toStartWith(rtrim((string)$second->getBaseUrl(), '/') . '/?')
         ->and($html)->toContain('data-cl-site-version')
-        ->and($html)->toContain('<h2 class="cl-title">Good button (second site)</h2>')
+        ->and($html)->toContain('<h1 class="cl-heading">Good button (second site)</h1>')
         ->and($html)->toContain('<option value="second" selected>')
         ->and($html)->toContain('href="' . UrlHelper::cpUrl('component-library/@ui:good', ['site' => 'second']) . '"');
 
     $shared = $this->actingAs('admin')->get(GOOD)->assertOk()->content;
     expect($shared)->not->toContain('data-cl-site-version')
-        ->and($shared)->toContain('<h2 class="cl-title">Good button</h2>');
+        ->and($shared)->toContain('<h1 class="cl-heading">Good button</h1>');
 });
 
 // Craft's cpUrl() adds the requested site to any CP URL without `site`. craft-pest keeps
@@ -311,7 +311,7 @@ it('shows the empty state with the folders searched and the create command', fun
                 ->and($html)->toContain('php craft component-library/make ui/button')
                 ->and($html)->toContain('href="' . Viewer::FORMAT_GUIDE . '"')
                 ->and($html)->not->toContain('data-cl-preview')
-                ->and($html)->not->toContain('id="tabs"');
+                ->and($html)->not->toContain('id="cl-tabs"');
         });
     } finally {
         rmdir($empty);
@@ -346,4 +346,93 @@ it('loads the viewer script as a module', function() {
         ->and($bundle->js)->toBe(['viewer.js'])
         ->and($bundle->jsOptions)->toBe(['type' => 'module'])
         ->and($bundle->css)->toBe(['viewer.css']);
+});
+
+describe('TS-15 preview workspace', function() {
+    // TS-15 step 1, BR-37
+    it('fills the page with the workspace, and no CP nav or header', function() {
+        $html = $this->actingAs('clviewer')->get(GOOD)->assertOk()->content;
+
+        expect($html)->toMatch('/<body [^>]*class="[^"]*cl-workspace-page/')
+            ->and($html)->toContain('<div class="cl-workspace" data-cl-workspace>')
+            ->and($html)->toContain('<h1 class="cl-heading">Good button</h1>')
+            ->and($html)->toContain('href="' . UrlHelper::cpUrl('dashboard') . '"')
+            ->and($html)->not->toContain('global-sidebar')
+            ->and($html)->not->toContain('id="global-header"')
+            ->and($html)->not->toContain('data-cl-width');
+        foreach (Viewer::DEVICES as $device) {
+            expect($html)->toContain("data-cl-device=\"$device\"");
+        }
+        foreach (['data-cl-rotate', 'data-cl-divider', 'data-cl-tree-toggle', 'data-cl-refresh', 'data-cl-open', 'data-cl-drawer', 'data-cl-drawer-toggle', 'data-cl-site-submit'] as $hook) {
+            expect($html)->toContain($hook);
+        }
+    });
+
+    // BR-34: the divider and the device group are operable controls with names
+    it('makes the divider a focusable separator, the drawer a toggled region and the devices one pressed group', function() {
+        $html = $this->actingAs('admin')->get(GOOD)->assertOk()->content;
+
+        expect($html)->toMatch('/<div class="cl-ws-divider" role="separator" tabindex="0" aria-orientation="horizontal" aria-controls="cl-drawer-content"\s+aria-label="[^"]+"/')
+            ->and($html)->toContain('<section id="cl-drawer" class="cl-drawer cl-drawer-closed"')
+            ->and($html)->toMatch('/aria-controls="cl-drawer-content" aria-expanded="false"\s+title="Show details" data-cl-drawer-toggle/')
+            // The preview comes first, then the drawer with its tabs (BR-34's order).
+            ->and(strpos($html, 'data-cl-preview'))->toBeLessThan((int)strpos($html, 'id="cl-tabs"'))
+            ->and($html)->toContain('<div class="cl-devices" role="group" aria-label="Device">')
+            ->and($html)->toMatch('/data-cl-device="desktop"\s+aria-pressed="true" tabindex="0"/')
+            ->and($html)->toMatch('/data-cl-device="phone"\s+aria-pressed="false" tabindex="-1"/')
+            ->and($html)->toMatch('/data-cl-rotate\s+aria-pressed="false" disabled/')
+            ->and($html)->toContain('data-device="desktop" data-orientation="portrait"');
+    });
+
+    // TS-15 step 4, BR-39: the address's device opens, stays in the viewer's links, and never
+    // reaches the preview
+    it('opens on the device in the address, and keeps it out of the preview', function() {
+        $html = $this->actingAs('admin')->get(GOOD . '?device=tablet&orientation=landscape&story=Secondary')->assertOk()->content;
+        $config = Json::decode(html_entity_decode((string)preg_replace('/.*data-cl-viewer="([^"]*)".*/s', '$1', $html)));
+
+        expect($html)->toMatch('/data-cl-device="tablet"\s+aria-pressed="true" tabindex="0"/')
+            ->and($html)->toMatch('/data-cl-rotate\s+aria-pressed="true" >/')
+            ->and($html)->toContain('data-device="tablet" data-orientation="landscape"')
+            ->and($html)->toContain('title="Preview of Good button, example “Secondary”, Tablet, landscape"')
+            ->and($html)->toContain('href="' . htmlspecialchars(UrlHelper::cpUrl('component-library/@ui:nested', ['site' => 'default', 'device' => 'tablet', 'orientation' => 'landscape'])) . '"')
+            ->and($config)->toMatchArray(['device' => 'tablet', 'orientation' => 'landscape'])
+            ->and(previewQuery($html))->not->toHaveKey('device')
+            ->and(previewQuery($html))->not->toHaveKey('orientation');
+    });
+
+    it('carries the device through the site switch', function() {
+        $html = $this->actingAs('admin')->get(GOOD . '?device=phone&orientation=portrait')->assertOk()->content;
+        $desktop = $this->actingAs('admin')->get(GOOD)->assertOk()->content;
+
+        expect($html)->toContain('<input type="hidden" name="device" value="phone" data-cl-site-device >')
+            ->and($html)->toContain('<input type="hidden" name="orientation" value="portrait" data-cl-site-orientation >')
+            ->and($desktop)->toContain('<input type="hidden" name="device" value="desktop" data-cl-site-device disabled>');
+    });
+
+    it('keeps a known device when only the orientation is unusable', function() {
+        $html = $this->actingAs('admin')->get(GOOD . '?device=tablet&orientation=sideways')->assertOk()->content;
+
+        expect($html)->toContain('data-device="tablet" data-orientation="portrait"')
+            ->and($html)->not->toContain('sideways');
+    });
+
+    // TS-15 step 5, TN-18
+    it('treats a device it doesn’t offer as desktop portrait, and never echoes it', function(string $query, string $needle) {
+        $html = $this->actingAs('admin')->get(GOOD . "?$query")->assertOk()->content;
+
+        expect($html)->toContain('data-device="desktop" data-orientation="portrait"')
+            ->and($html)->toMatch('/data-cl-device="desktop"\s+aria-pressed="true"/')
+            ->and($html)->not->toContain($needle)
+            ->and(previewSrc($html))->not->toContain('device');
+    })->with('unusable devices');
+
+    it('settles the device server-side, whatever it was given', function(mixed $device, mixed $orientation, array $expected) {
+        expect(Viewer::device($device, $orientation))->toBe($expected);
+    })->with([
+        'phone landscape' => ['phone', 'landscape', ['device' => 'phone', 'orientation' => 'landscape']],
+        'tablet portrait' => ['tablet', 'portrait', ['device' => 'tablet', 'orientation' => 'portrait']],
+        'none' => [null, null, ['device' => 'desktop', 'orientation' => 'portrait']],
+        'desktop turned' => ['desktop', 'landscape', ['device' => 'desktop', 'orientation' => 'portrait']],
+        'array' => [['phone'], 'landscape', ['device' => 'desktop', 'orientation' => 'portrait']],
+    ]);
 });

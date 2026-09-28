@@ -23,6 +23,7 @@ use webdna\componentlibrary\models\ShareForm;
 use webdna\componentlibrary\records\ShareRecord;
 use webdna\componentlibrary\services\Index;
 use webdna\componentlibrary\services\Shares;
+use webdna\componentlibrary\services\Viewer;
 use webdna\componentlibrary\web\assets\share\CpStylesAsset;
 use webdna\componentlibrary\web\assets\share\ShareAsset;
 use webdna\componentlibrary\web\assets\viewer\ViewerAsset;
@@ -216,9 +217,49 @@ describe('TS-5 use a share link', function() {
         expect($bundles)->toContain(ShareAsset::class, CpStylesAsset::class)
             ->and($bundles)->not->toContain(CpAsset::class)
             ->and($bundles)->not->toContain(ViewerAsset::class)
-            ->and((new ShareAsset())->js)->toBe(['viewer/viewer.js', 'share/share.js'])
+            ->and((new ShareAsset())->js)->toBe(['viewer/viewer.js'])
             ->and($html)->not->toContain('window.Craft');
     });
+});
+
+describe('TS-15 preview workspace on a share link', function() {
+    // TS-15 step 1
+    it('is the same workspace as the CP viewer, headed with the label', function() {
+        [$token] = newShare('Acme review');
+        $html = $this->get(sharePath($token, '@ui:good'))->assertOk()->content;
+
+        expect($html)->toMatch('/<div class="cl-workspace" data-cl-workspace data-cl-share-state="active">/')
+            ->and($html)->toContain('<h1 class="cl-heading">Acme review · expires')
+            ->and($html)->toContain('<span class="cl-ws-component">Good button</span>');
+        foreach (Viewer::DEVICES as $device) {
+            expect($html)->toContain("data-cl-device=\"$device\"");
+        }
+        foreach (['data-cl-rotate', 'data-cl-divider', 'data-cl-tree-toggle', 'data-cl-refresh', 'data-cl-open', 'data-cl-drawer', 'data-cl-drawer-toggle', 'id="cl-tabs"'] as $hook) {
+            expect($html)->toContain($hook);
+        }
+    });
+
+    // TS-15 steps 4 and 8, BR-39: the address's device, kept in share links, never in the preview
+    it('opens on the device in the address and keeps it in share links only', function() {
+        [$token] = newShare();
+        $html = $this->get(sharePath($token, '@ui:good') . '?device=phone&orientation=landscape')->assertOk()->content;
+
+        expect($html)->toMatch('/data-cl-device="phone"\s+aria-pressed="true"/')
+            ->and($html)->toContain('data-device="phone" data-orientation="landscape"')
+            ->and($html)->toMatch('#href="[^"]*' . Shares::URL_PATH . $token . '/@ui:nested\?[^"]*device=phone&amp;orientation=landscape"#')
+            ->and(sharePreviewSrc($html))->not->toContain('device')
+            ->and(sharePreviewSrc($html))->not->toContain('orientation');
+    });
+
+    // TS-15 step 5, TN-18
+    it('treats a device it doesn’t offer as desktop portrait, and never echoes it', function(string $query, string $needle) {
+        [$token] = newShare();
+        $html = $this->get(sharePath($token, '@ui:good') . "?$query")->assertOk()->content;
+
+        expect($html)->toContain('data-device="desktop" data-orientation="portrait"')
+            ->and($html)->toMatch('/data-cl-device="desktop"\s+aria-pressed="true"/')
+            ->and($html)->not->toContain($needle);
+    })->with('unusable devices');
 });
 
 describe('TS-6 cancel and expiry', function() {

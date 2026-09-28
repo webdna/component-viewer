@@ -2,7 +2,7 @@
 spec: Component Library v2
 slug: component-library-v2
 status: draft
-version: 0.16
+version: 0.17
 date: 2026-09-28
 author: Claude (for Sam Birch)
 client: webdna (internal)
@@ -13,7 +13,7 @@ related: [_scope/component-library-v2.md]
 
 # Component Library v2
 
-> **Status:** draft · **Version:** 0.16 · **Profile:** `_PROFILE.component-library.md`
+> **Status:** draft · **Version:** 0.17 · **Profile:** `_PROFILE.component-library.md`
 > The team browses and tries out every component in the control panel, previewed on each site's
 > own styling. Clients review the same library through a link that expires and can be cancelled.
 
@@ -25,8 +25,9 @@ The team can open **Component Library** in the control panel and browse every co
 has, by category or by search. Opening one shows it rendered with the chosen site's real styling,
 next to its settings, examples, source and notes. Changing a setting, example or site updates the
 preview in place. The viewer works like Craft's entry preview: it fills the whole screen, with the
-list, the controls and the preview side by side. The preview can show the component on a desktop,
-tablet or phone, turned either way, scaled to fit. Every view has its own address, device
+list beside the preview. As in v1, the settings, examples, source and notes sit in a row of tabs
+along the bottom of the preview, which opens upward. The preview can show the component on a
+desktop, tablet or phone, turned either way, always at real size. Every view has its own address, device
 included, to bookmark or paste into a ticket. Only people
 given the new library permission see it. Control-panel access alone is not enough.
 
@@ -123,11 +124,12 @@ examples across sites.
 
 **1. Try out a component**
    1. In the control panel, open *Component Library* and find the component in the tree or by search.
-   2. See the preview, its settings, its examples, the source and the notes.
+   2. See the preview. Open the tab row below it for the settings, examples, source and notes.
    3. Change a setting or pick an example. The preview updates without leaving the page.
-   4. Switch site. The preview reloads in that site's styling. A site's own version is shown and marked.
-   5. Pick *Tablet* or *Phone*, and turn it. The preview takes that shape, shrunk to fit if needed.
-      Hide the list or drag the divider for more room. Both are remembered next time.
+   4. Pick another site. The preview reloads in that site's styling. A site's own version is shown and marked.
+   5. Pick *Tablet* or *Phone*, and turn it. The preview takes that shape at real size, scrolling
+      if it's bigger than the space. Hide the list, close the tabs or drag them taller. All of it is
+      remembered next time.
    6. Copy the address. Anyone with the permission who opens it sees the same view, on the same device.
 
 **2. Share the library**
@@ -263,7 +265,7 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 | # | Rule |
 |---|---|
 | BR-33 | Once the index is warm, a page with 50 `@handle` includes does no directory iteration and no config rendering. A cold build of LLL's 103 files completes within one request. |
-| BR-34 | The viewer is built from Craft CP form macros and components. Every control is labelled and keyboard-reachable, with visible focus and a logical order: the tree toggle, the tree, the controls, the divider, and the preview toolbar. The device buttons are one group operated by arrow keys, with `aria-pressed`. The divider is a focusable `role="separator"` that the arrow keys move. The iframe `title` names the component, story and device. It's usable at 375 px wide (BR-37). |
+| BR-34 | The viewer is built from Craft CP form macros and components. Every control is labelled and keyboard-reachable, with visible focus and a logical order: the tree toggle, the tree, the preview toolbar, the preview, the divider, and the details drawer's tabs, toggle and panel. The device buttons are one group operated by arrow keys, with `aria-pressed`. The drawer's toggle has `aria-expanded`. The divider is a focusable `role="separator"` that the arrow keys move. The iframe `title` names the component, story and device. It's usable at 375 px wide (BR-37). |
 | BR-35 | Craft `^5.0`, PHP `^8.2`. Single-site installs show no site switch and otherwise work unchanged. |
 | BR-36 | A share row holds a label, the creator id and timestamps, and nothing about the recipient. |
 
@@ -271,10 +273,10 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 
 | # | Rule |
 |---|---|
-| BR-37 | Both viewers are one full-viewport page, with no CP nav, CP header or page scroll. It has a header, then three columns: tree, controls (the Settings, Examples, Source and Notes tabs) and preview. The CP header carries the component name, a link back to the control panel and, with `manageComponentLibraryShares`, *Share links*. The share header is unchanged (label and expiry). The CP page keeps every gate of BR-1 and BR-2. Below 768 px the columns stack, with the preview above the controls and the tree behind its toggle. Nothing scrolls sideways at 375 px. |
-| BR-38 | The preview toolbar has the device group (*Desktop*, *Tablet* 768×1024, *Phone* 375×667), *Rotate* (off for Desktop), the site switch (BR-35), *Refresh* and *Open in a new tab*. *Desktop* fills the preview column. Tablet and phone render at their real size inside a bezel, landscape swaps the two sizes, and the whole device is scaled to fit the column, never above 100%. It rescales when the column resizes. The bezel is plugin-owned CSS drawing Craft's published preview SVGs. It never uses Craft's `lp-*` classes, `Craft.Preview` or any CP script, which the share page doesn't have (§6 *Screens*). *Open in a new tab* opens the current preview URL, whose token lapses as BR-20 says. |
+| BR-37 | Both viewers are one full-viewport page, with no CP nav, CP header or page scroll. It has a header, then the tree beside the preview, and below the preview the details drawer, as in v1: a row of tabs (Settings, Examples, Source and Notes) that opens upward. A tab opens the drawer on that tab, the open tab closes it, and a toggle at the row's end does either. The drawer starts closed. The CP header carries the component name, a link back to the control panel and, with `manageComponentLibraryShares`, *Share links*. The share header is unchanged (label and expiry). The CP page keeps every gate of BR-1 and BR-2. Below 768 px the tree stacks above the preview, behind its toggle, and an open drawer takes the height its content needs. Nothing scrolls sideways at 375 px. |
+| BR-38 | The preview toolbar has the device group (*Desktop*, *Tablet* 768×1024, *Phone* 375×667), *Rotate* (off for Desktop), the site switch (BR-35), *Refresh* and *Open in a new tab*. The site switch changes site as soon as a site is picked. Its button shows only without script. *Desktop* fills the preview area. Tablet and phone always render at their real size, 100%, inside a bezel, and landscape swaps the two sizes. A device bigger than the preview area scrolls there, centred when it fits, and is never scaled. The bezel is plugin-owned CSS drawing Craft's published preview SVGs. It never uses Craft's `lp-*` classes, `Craft.Preview` or any CP script, which the share page doesn't have (§6 *Screens*). *Open in a new tab* opens the current preview URL, whose token lapses as BR-20 says. |
 | BR-39 | The address carries `device` (`desktop`\|`tablet`\|`phone`) and `orientation` (`portrait`\|`landscape`) beside `story` and `props`, and a copied address restores them. Any other value, or none, means desktop portrait. Neither value reaches the server's render, a path or a template name. Only the viewer page reads them. |
-| BR-40 | The tree's hidden state and the controls column's width are remembered per browser under keys prefixed `cl.`, with read failures ignored, and the page works without them. The column defaults to a third of the width, at least 320 px, and the preview keeps at least 320 px. Dragging, the arrow keys or a double-click (which resets) change it. Below 768 px neither applies. |
+| BR-40 | The tree's hidden state, whether the drawer is open, and the open drawer's height are remembered per browser under keys prefixed `cl.`, with read failures ignored, and the page works without them. The divider sits on top of an open drawer. The drawer defaults to 40% of the height, at least 120 px, and the preview keeps at least 200 px. Dragging, the arrow keys or a double-click (which resets) change it. Below 768 px neither the tree's state nor the height applies. |
 
 ---
 
@@ -297,7 +299,7 @@ v1's front-end `component-library` and `component-library/render` URLs and the
 
 | Surface | New or reuse | Notes |
 |---|---|---|
-| Viewer (CP) | New, full-screen workspace (BR-37) | Not on the CP layout: a bare CP page with Craft's CP stylesheets. Header, then a collapsible tree and search, the controls column (tabs Settings, Examples, Source and Notes, driven by the viewer's own script), a draggable divider, and the preview with its toolbar (BR-38). Site-version and duplicate badges in the header. |
+| Viewer (CP) | New, full-screen workspace (BR-37) | Not on the CP layout: a bare CP page with Craft's CP stylesheets. Header, then a collapsible tree and search beside the preview with its toolbar (BR-38), and under the preview the details drawer (tabs Settings, Examples, Source and Notes, driven by the viewer's own script) with a draggable divider on top when open. Site-version and duplicate badges in the header. |
 | Share links (CP) | New, CP table and form | One-time URL panel with copy. Cancel with confirmation. |
 | Share viewer | New, same templates outside the CP | CP stylesheets only (Craft's reset, CP theme and `cp.css`, published from Craft's own folders), none of the CP's JS: `CpAsset` would write the visitor's email and user id into `window.Craft` on a public page. No CP nav. The same workspace as the CP viewer (BR-37), with the header showing label and expiry. |
 | Expired, cancelled and unknown link pages | New | Plain: one sentence and a suggestion |
@@ -305,9 +307,10 @@ v1's front-end `component-library` and `component-library/render` URLs and the
 
 **Design source.** No bespoke design. The developer builds in Craft's CP look with its form macros,
 and the share viewer reuses the same templates and CP stylesheet. The workspace follows Craft 5's
-entry preview screen: its column split, 44 px pane headers, device buttons, rotate, bezels and
-scale-to-fit (`Craft.Preview`, read from `cp/dist/cp.js.map`, and its `_preview.scss`). Both
-viewers share one workspace template and one script, so they can't drift apart.
+entry preview screen: its full screen, 44 px pane headers, device buttons, rotate and bezels
+(`Craft.Preview`, read from `cp/dist/cp.js.map`, and its `_preview.scss`), but not its
+scale-to-fit (Sam: previews always at 100%). The details drawer below the preview follows v1's
+bottom panel. Both viewers share one workspace template and one script, so they can't drift apart.
 
 **Copy ownership.** The developer drafts all copy. Sam reviews the share-link wording before
 release: the viewer header, the expired, cancelled and unknown pages, and the one-time URL notice.
@@ -334,7 +337,7 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 | AC-12 | The create command's component appears in the library on the next page load. | TS-12 |
 | AC-13 | A page using many components doesn't rebuild the component list on each use. | TS-13 |
 | AC-14 | The whole viewer works by keyboard alone and on a phone-width screen. | TS-14 |
-| AC-15 | The viewer fills the screen like Craft's entry preview. The preview switches to tablet or phone, turns, and always fits. A copied address reopens on the same device, and a share link behaves the same way. | TS-15 |
+| AC-15 | The viewer fills the screen like Craft's entry preview, with v1's row of tabs below the preview. The preview switches to tablet or phone, turns, and always shows at real size. A copied address reopens on the same device, and a share link behaves the same way. | TS-15 |
 
 ### Test data and preconditions
 
@@ -435,17 +438,17 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 
 **TS-14 · Keyboard and small screen** · AC-14 · BR-34, BR-35, BR-37 · *manual browser*
 *Success criterion: journey 1 is complete by keyboard and at 375 px.*
-1. Tab from the top through the tree toggle, tree, search, controls, tabs, divider and preview toolbar. Every control is reachable with visible focus in a logical order, and Enter or Space operates each. The arrow keys move between devices and move the focused divider.
-2. At 375 px, do journey 1. The columns stack with the preview above the controls, there's no horizontal page scroll, and the tree is behind its toggle.
+1. Tab from the top through the tree toggle, search, tree, preview toolbar, preview, divider, and the drawer's tabs, toggle and controls. Every control is reachable with visible focus in a logical order, and Enter or Space operates each. The arrow keys move between devices, between tabs, and move the focused divider.
+2. At 375 px, do journey 1. The tree is behind its toggle above the preview, the open drawer sits below it, and there's no horizontal page scroll.
 
 **TS-15 · Preview workspace** · AC-15 · BR-37, BR-38, BR-39, BR-40 · *Pest (step 1, 5) + browser*
-*Success criterion: device, fit and address agree, in both viewers.*
-1. Load the viewer on `good`, and a share link on `good`. Each page has `data-cl-workspace`, three `data-cl-device` buttons, `data-cl-rotate`, `data-cl-divider`, `data-cl-tree-toggle`, `data-cl-refresh` and `data-cl-open`, and no CP nav (`#global-sidebar`). The CP page links to *Share links* for admin and not for `clviewer`.
-2. At 1440×900, pick *Phone*. The preview is 375×667 inside a bezel at 100%, and *Phone* has `aria-pressed="true"`. *Rotate* makes it 667×375. On *Desktop*, *Rotate* is disabled and the preview fills the column.
-3. Drag the divider until the tablet no longer fits. The device shrinks below 100% and keeps its shape. Widen the column again, and it returns to 100% and no larger.
+*Success criterion: device, size, drawer and address agree, in both viewers.*
+1. Load the viewer on `good`, and a share link on `good`. Each page has `data-cl-workspace`, three `data-cl-device` buttons, `data-cl-rotate`, `data-cl-divider`, `data-cl-drawer`, `data-cl-drawer-toggle`, `data-cl-tree-toggle`, `data-cl-refresh` and `data-cl-open`, the preview before the tabs, and no CP nav (`#global-sidebar`). The CP page links to *Share links* for admin and not for `clviewer`.
+2. Pick *Phone*. The preview is 375×667 inside a bezel at 100%, and *Phone* has `aria-pressed="true"`. *Rotate* makes it 667×375. On *Desktop*, *Rotate* is disabled and the preview fills its area.
+3. Open *Settings*, drag the divider up until the tablet no longer fits, and scroll the preview. The tablet stays 768×1024, and its top isn't cut off. The divider stops with 200 px of preview left. Click *Settings* again, and the drawer closes to its row.
 4. The address now carries `device=tablet&orientation=landscape`. Open it in a new tab. The same device, orientation, story and props appear.
 5. Open `?device=watch&orientation=sideways`. The viewer shows desktop portrait with no error, and neither value appears in the page.
-6. Hide the tree and move the divider, then reload. Both are kept. Clear the site data and reload. The defaults return and the page works.
+6. Hide the tree, open the drawer and move the divider, then reload. All three are kept. Clear the site data and reload. The defaults return and the page works.
 7. *Refresh* reloads the iframe. *Open in a new tab* opens the preview URL on its own.
 8. Repeat steps 2, 4 and 7 on the share link.
 
@@ -490,7 +493,8 @@ e2e runner targets the plugin (the sandbox has Playwright, but nothing points at
 - `data-cl-preview` (iframe), `data-cl-error` (error panel), `data-cl-site-version` (badge)
 - `data-cl-share-state="active|expired|cancelled"`, `data-cl-share-url` (one-time URL)
 - `data-cl-workspace` (the page root), `data-cl-device="desktop|tablet|phone"` (buttons), `data-cl-rotate`,
-  `data-cl-divider`, `data-cl-tree-toggle`, `data-cl-refresh`, `data-cl-open`. These replace 3.2's `data-cl-width`.
+  `data-cl-divider`, `data-cl-drawer`, `data-cl-drawer-toggle`, `data-cl-tree-toggle`, `data-cl-refresh`,
+  `data-cl-open`, `data-cl-site-submit`. These replace 3.2's `data-cl-width`.
 - A test-only index build counter, reset per test
 
 ### Regression checks
@@ -746,7 +750,7 @@ reviewed in it.
       positive tabindex, every control named, and a visible ring on each (the iframe needed one, so it's
       on its frame). The window was in the background, so focus order came from a DOM audit, not real
       Tab presses: **Sam to confirm TS-14 by hand.** TS-3 step 3 (mw-core) waits for 6.2.
-- [ ] **3.3 Preview workspace** (added v0.16, built next, before 5.2): one workspace partial used by
+- [x] **3.3 Preview workspace** (added v0.16, built next, before 5.2): one workspace partial used by
       both viewers (`src/templates/viewer/`, `src/templates/share/index.twig`). The CP page leaves
       `_layouts/cp` for a bare CP page, and the controllers are unchanged. `viewer.js` takes over the tabs
       and sidebar toggle from `share.js` and adds the devices, scale-to-fit, divider and `cl.`
@@ -754,6 +758,35 @@ reviewed in it.
       carry `device` and `orientation`. `ViewerTest` and `ShareViewerTest` hooks are updated.
       Rules: BR-34, BR-37, BR-38, BR-39, BR-40 · Verify: TS-15, TN-18, TN-19, TS-14, TS-2 and TS-3
       steps 1–2 re-run in both viewers, B5 #1-3
+      *As built:* three changes from Sam during the build (v0.17). The controls column became v1's
+      **details drawer**: a row of tabs under the preview that opens upward, with the divider on
+      top of it. **Previews are always 100%**: no scale-to-fit, and a bigger device scrolls in the
+      stage. The **site select switches on change**: its button is hidden by script and shows
+      only without it (3.2 had the button so that arrowing through a closed select wouldn't
+      navigate, and that trade-off is now Sam's). The page is `viewer/_workspace.twig` (header,
+      tree, body), embedded by the CP `viewer/index.twig` on `_layouts/basecp` (Craft's CP styles
+      and script, no nav) and by `share/index.twig`. `viewer/_component.twig` holds the preview,
+      divider and drawer. The tabs are `_includes/tabs` under the id `cl-tabs`, because Craft's CP
+      script binds `#tabs` only. `share.js` is deleted. `Viewer::device()` settles `device` and
+      `orientation` (anything unlisted is desktop portrait, and desktop is never turned), and
+      `deviceParams()` puts them in tree links and the site form, never the preview URL.
+      **Trap:** Craft's CP layouts set a Twig variable `orientation` (the text direction, `ltr`),
+      which overwrote the state's, so the state's key is `deviceOrientation`. The icons come from
+      `iconSvg()`, which exists on the share page because it renders in CP template mode. The bezel
+      art is Craft's published `cp/dist/images/preview` SVGs, passed as CSS custom properties.
+      `ViewerTest` (+14) and `ShareViewerTest` (+10) cover TS-15 steps 1, 4 and 5 and TN-18, with a
+      shared `unusable devices` dataset in `tests/Pest.php`. A mutation run (7 mutations: any
+      device accepted, desktop turned, links drop the device, device sent to the preview, the
+      `orientation` clash, no device group, the site form's device sent on desktop) failed at least
+      one test each. Browser (sandbox, Chrome), in both viewers: phone 375×667 and landscape
+      667×375 at 100%, and tablet 768×1024 scrolling with its top in view. Rotate is off on Desktop.
+      The address restores device, orientation, story and props, and tree links keep the device.
+      The drawer opens at 40%, clamps at 120 px and at a 200 px preview, closes from the open tab,
+      and is remembered. The tree state is kept. Garbage `cl.` values give defaults with no script
+      error (TN-19). Refresh reloads the frame, and Open matches it. The site switch keeps the view.
+      At 375 px there's no sideways scroll, and the tree is behind its toggle. `window.Craft` is
+      undefined on the share page. The Chrome window was backgrounded, so resize-driven layout was
+      read after a forced render, and **TS-14's keyboard pass is still Sam's**.
 - [x] **4.1 Share service and management**: `src/services/Shares.php`, `src/controllers/SharesController.php`, `src/templates/shares/*`, GC hook, user-delete cascade
       Rules: BR-3, BR-27, BR-28, BR-30, BR-36 · Verify: TS-4, TN-11 to TN-13
       *As built:* validation lives in a form model, `src/models/ShareForm.php`. The expiry is a native
@@ -1013,3 +1046,4 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | 2026-09-28 | 0.14 | Task 4.2 built. Appendix A row 2 resolved: the share viewer loads Craft's CP stylesheets without `CpAsset` or any CP JS (§6 *Screens*). Share pages also send `no-store` and `noindex`. See 4.2's as-built note. | Claude, for Sam Birch |
 | 2026-09-28 | 0.15 | Task 5.1 built. BR-31 as specified: handles are known if any site has them, and CL008 covers only runtime names that start like a handle. B5 #4 now expects the one deliberate `bad-tag` CL001 and exit 1 (the 0-problems case is TS-11 step 2). §7 fixtures table updated. See 5.1's as-built note. | Claude, for Sam Birch |
 | 2026-09-28 | 0.16 | Preview workspace added (Sam's request): both viewers become one full-screen workspace like Craft's entry preview, with a collapsible tree, a draggable split, and Desktop, Tablet and Phone with rotate and scale-to-fit. §1, vocabulary, §2, journey 1, BR-34 amended, new BR-37 to BR-40, §6 route and *Screens*, AC-15, TS-14, new TS-15, TN-18, TN-19, test hooks, regression row, new task 3.3, B2 item 10, two B3 guardrails, one assumption. | Claude, for Sam Birch |
+| 2026-09-28 | 0.17 | Task 3.3 built, with three changes from Sam: the controls column is now v1's details drawer below the preview (a tab row that opens upward, the divider on top), tablet and phone always render at 100% and scroll rather than scale, and the site select switches on change. §1, journey 1, BR-34, BR-37, BR-38, BR-40, §6 *Screens* and *Design source*, AC-15, TS-14, TS-15 steps 1-3 and 6, test hooks. See 3.3's as-built note. | Claude, for Sam Birch |

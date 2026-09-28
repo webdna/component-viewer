@@ -14,7 +14,7 @@ use webdna\componentlibrary\web\assets\share\ShareAsset;
 use yii\web\Response;
 
 /**
- * The share viewer (§6): `<primary site>/component-library/share/<token>[/<handle>]?story=&site=&props=`.
+ * The share viewer (§6): `<primary site>/component-library/share/<token>[/<handle>]?story=&site=&props=&device=&orientation=`.
  *
  * Anonymous: the link is the credential (BR-27). It shows what the CP viewer does, with the same
  * templates, but no paths or roots (BR-29), and previews under a `share:` token, so cancelling the
@@ -75,7 +75,8 @@ class ShareViewerController extends Controller
         $site = $viewer->site($request->getQueryParam('site'));
         $token = $plugin->getRenderer()->createToken('share:' . $share->id, $expires);
         $url = fn(string $handle, array $params) => UrlHelper::urlWithParams("$home/$handle", $params);
-        $state = $viewer->state($site, $handle, $request->getQueryParam('story'), $request->getQueryParam('props'), $token, $url);
+        $state = $viewer->state($site, $handle, $request->getQueryParam('story'), $request->getQueryParam('props'), $token, $url,
+            $request->getQueryParam('device'), $request->getQueryParam('orientation'));
 
         if ($state === null) {
             return $this->message(404, $status, Craft::t('component-library', 'There’s no such component'),

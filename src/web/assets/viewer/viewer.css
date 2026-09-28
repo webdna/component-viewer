@@ -1,26 +1,403 @@
 /*
- * The viewer's layout on top of the CP styles (BR-34). Nothing here may widen the page: the
- * preview and code scroll inside their own boxes, so 375 px has no horizontal page scroll.
+ * The preview workspace on top of the CP styles (BR-37, BR-38), after Craft's entry preview
+ * (`_preview.scss`): 44 px pane headers, a details drawer below the preview, and tablet and phone in Craft's bezel
+ * art at real size. The classes are the plugin's own, never Craft's `lp-*` ones, which are
+ * fixed-position overlays. Nothing here may widen the page: panes scroll inside themselves, so
+ * 375 px has no horizontal page scroll.
  */
 
-.cl-viewer {
+/* The page: the workspace fills the viewport and the page itself never scrolls. */
+body.cl-workspace-page {
+    overflow: hidden;
+    background: var(--white, #fff);
+}
+
+.cl-workspace {
     display: flex;
     flex-direction: column;
-    gap: var(--m, 16px);
+    height: 100vh;
+    height: 100dvh;
+}
+
+.cl-ws-header {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex: none;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    min-height: 44px;
+    padding: 5px var(--xl, 24px) 5px 8px;
+    box-sizing: border-box;
+    background: var(--gray-100, #eef0f3);
+    box-shadow: 0 1px 0 rgba(51, 64, 77, 0.2);
+}
+
+.cl-ws-title {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 12px;
     min-width: 0;
 }
 
-.cl-header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 6px 12px;
+.cl-heading {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.4;
 }
 
-.cl-title {
+.cl-ws-component {
+    font-weight: 600;
+}
+
+.cl-ws-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+}
+
+.cl-ws-actions .btn {
     margin: 0;
 }
 
+.cl-ws-body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+
+.cl-ws-tree {
+    flex: none;
+    width: 240px;
+    overflow: auto;
+    padding: 16px 12px;
+    box-sizing: border-box;
+    border-inline-end: 1px solid var(--hairline-color, rgba(51, 64, 77, 0.1));
+    background: var(--gray-050, #f3f7fc);
+}
+
+.cl-tree-hidden .cl-ws-tree {
+    display: none;
+}
+
+.cl-ws-tree nav ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.cl-ws-tree .heading {
+    margin: 14px 0 4px;
+    color: var(--light-text-color, #606d7b);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.cl-ws-tree nav a {
+    display: block;
+    padding: 4px 8px;
+    border-radius: var(--small-border-radius, 4px);
+    color: var(--text-color, #3f4d5a);
+    overflow-wrap: anywhere;
+}
+
+.cl-ws-tree nav a.sel {
+    background: var(--gray-200, #dfe5ec);
+    color: var(--text-color, #1f2933);
+    font-weight: 600;
+}
+
+.cl-icon,
+.cl-icon svg {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+    vertical-align: middle;
+}
+
+.cl-empty {
+    flex: 1;
+    min-width: 0;
+    overflow: auto;
+    padding: var(--xl, 24px);
+}
+
+/*
+ * The preview, then the divider and the details drawer below it, as in v1. A closed drawer is its
+ * row of tabs only. An open one grows upward to its height (BR-40), and the preview gives way.
+ */
+.cl-viewer {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+}
+
+.cl-drawer {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.cl-drawer-bar {
+    flex-wrap: nowrap;
+    box-shadow: inset 0 1px 0 var(--hairline-color, rgba(51, 64, 77, 0.1));
+}
+
+.cl-drawer-bar .pane-tabs {
+    flex: 1;
+}
+
+.cl-drawer-toggle .cl-icon {
+    transition: transform 0.2s;
+}
+
+.cl-drawer:not(.cl-drawer-closed) .cl-drawer-toggle .cl-icon {
+    transform: rotate(180deg);
+}
+
+/* Not the pane's flex: 1, whose zero basis would override the height. */
+.cl-drawer #cl-drawer-content {
+    flex: none;
+    height: var(--cl-drawer-height, 40vh);
+}
+
+.cl-drawer-closed #cl-drawer-content {
+    display: none;
+}
+
+.cl-viewer:has(.cl-drawer-closed) .cl-ws-divider {
+    display: none;
+}
+
+/* Settings sit side by side when the drawer is wide enough. */
+.cl-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+    gap: 0 var(--xl, 24px);
+    margin-bottom: var(--m, 16px);
+}
+
+.cl-fields .field {
+    margin: 0 0 var(--m, 16px);
+}
+
+.cl-pane-header {
+    display: flex;
+    flex: none;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+    min-height: 44px;
+    padding: 5px 12px;
+    box-sizing: border-box;
+    background: var(--gray-100, #eef0f3);
+    box-shadow: inset 0 -1px 0 var(--hairline-color, rgba(51, 64, 77, 0.1));
+}
+
+.cl-pane-header .pane-tabs {
+    min-width: 0;
+    margin: -5px 0;
+}
+
+.cl-pane-header .btn {
+    margin: 0;
+}
+
+.cl-pane-content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--m, 16px);
+    overflow: auto;
+    padding: var(--xl, 24px);
+}
+
+.cl-ws-divider {
+    flex: none;
+    height: 5px;
+    cursor: row-resize;
+    background: var(--hairline-color, rgba(51, 64, 77, 0.1));
+    touch-action: none;
+}
+
+.cl-ws-divider:hover,
+.cl-dragging .cl-ws-divider {
+    background: var(--gray-300, #cdd8e4);
+}
+
+.cl-ws-divider:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring, 0 0 0 1px #0f74f5, 0 0 0 3px rgba(15, 116, 245, 0.5));
+}
+
+/* The iframe keeps pointer events away from a drag in progress. */
+.cl-dragging iframe {
+    pointer-events: none;
+}
+
+.cl-dragging {
+    cursor: row-resize;
+    user-select: none;
+}
+
+.cl-ws-preview {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+}
+
+.cl-devices {
+    display: flex;
+    gap: 2px;
+}
+
+.cl-device-btn {
+    padding: 0 6px;
+}
+
+/* Craft's icons have different shapes: each is fitted to one box, as Craft's `::before` does. */
+.cl-device-btn img {
+    display: block;
+    width: 27px;
+    height: 22px;
+    object-fit: contain;
+    opacity: 0.6;
+}
+
+.cl-device-btn[aria-pressed='true'] {
+    background: var(--gray-300, #cdd8e4);
+}
+
+.cl-device-btn[aria-pressed='true'] img {
+    opacity: 1;
+}
+
+.cl-icon-btn[aria-pressed='true'] {
+    background: var(--gray-300, #cdd8e4);
+}
+
+.cl-icon-btn[disabled] {
+    opacity: 0.35;
+    cursor: default;
+}
+
+.cl-toolbar-end {
+    display: flex;
+    gap: 7px;
+    margin-inline-start: auto;
+}
+
+.cl-site {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+}
+
+.cl-site label {
+    font-weight: 600;
+}
+
+/*
+ * The stage. Desktop fills it. Tablet and phone sit centred in Craft's bezel, always at real
+ * size, and viewer.js sizes `.cl-device` to the whole device. One bigger than the stage scrolls
+ * there: `margin: auto` centres it without clipping its top or left, as centring by flex would.
+ */
+.cl-stage {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--gray-100, #eef0f3);
+}
+
+.cl-stage[data-device='desktop'] {
+    background: var(--white, #fff);
+}
+
+.cl-stage[data-device='desktop'] .cl-device,
+.cl-stage[data-device='desktop'] .cl-device-inner,
+.cl-stage[data-device='desktop'] .cl-device-screen {
+    position: absolute;
+    inset: 0;
+    width: auto !important;
+    height: auto !important;
+    transform: none !important;
+}
+
+.cl-stage[data-device='desktop'] .cl-device-mask {
+    display: none;
+}
+
+.cl-stage:not([data-device='desktop']) {
+    display: flex;
+    overflow: auto;
+    padding: 24px;
+    box-sizing: border-box;
+}
+
+.cl-device {
+    position: relative;
+    flex: none;
+    margin: auto;
+}
+
+.cl-device-inner {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.cl-device-mask,
+.cl-device-screen {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+}
+
+.cl-device-mask {
+    border-radius: 18px;
+    background-color: #fff;
+    background-image: var(--cl-phone-top), var(--cl-phone-bottom);
+    background-position: top center, bottom center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    box-shadow: 0 0 58px rgba(6, 67, 117, 0.3);
+}
+
+.cl-stage[data-device='tablet'] .cl-device-mask {
+    background-image: var(--cl-tablet-top), var(--cl-tablet-bottom);
+}
+
+.cl-device-screen {
+    background: #fff;
+}
+
+/* The iframe takes focus but draws no ring of its own (TS-14). */
+.cl-device-screen:focus-within {
+    box-shadow: var(--focus-ring, 0 0 0 1px #0f74f5, 0 0 0 3px rgba(15, 116, 245, 0.5));
+}
+
+.cl-device-screen iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+/* The controls' content. */
 .cl-handle {
     overflow-wrap: anywhere;
 }
@@ -29,7 +406,7 @@
     display: inline-block;
     padding: 1px 8px;
     border-radius: 10px;
-    background: var(--gray-100, #eef0f3);
+    background: var(--gray-200, #dfe5ec);
     color: var(--gray-700, #3f4d5a);
     font-size: 12px;
     font-weight: 600;
@@ -66,55 +443,6 @@
 .cl-problems code {
     margin-right: 6px;
     overflow-wrap: anywhere;
-}
-
-.cl-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px 24px;
-}
-
-.cl-site,
-.cl-width {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    margin: 0;
-}
-
-.cl-site label,
-.cl-width label {
-    font-weight: 600;
-}
-
-/* The iframe keeps a chosen width, and the frame scrolls when that's wider than the pane. */
-.cl-frame {
-    overflow: auto;
-    min-height: 120px;
-    height: 420px;
-    border: 1px solid var(--hairline-color, rgba(51, 64, 77, 0.1));
-    border-radius: var(--small-border-radius, 4px);
-    background: #fff;
-    resize: vertical;
-}
-
-/* The iframe takes focus but draws no ring of its own (TS-14). */
-.cl-frame:focus-within {
-    box-shadow: var(--focus-ring, 0 0 0 1px #0f74f5, 0 0 0 3px rgba(15, 116, 245, 0.5));
-}
-
-.cl-frame iframe {
-    display: block;
-    width: 100%;
-    height: 100%;
-    border: 0;
-    margin: 0 auto;
-}
-
-.cl-panel .field {
-    max-width: 40rem;
 }
 
 .cl-stories {
@@ -154,4 +482,49 @@
 .cl-empty code,
 .cl-roots code {
     overflow-wrap: anywhere;
+}
+
+/*
+ * Below 768 px the tree stacks above the preview, behind its toggle, and the body scrolls instead
+ * of the panes: an open drawer takes the height its content needs. Neither the drawer's height
+ * nor the tree's remembered state applies (BR-37, BR-40).
+ */
+@media (max-width: 767.98px) {
+    .cl-ws-header {
+        padding-inline-end: 12px;
+    }
+
+    .cl-ws-body {
+        flex-direction: column;
+    }
+
+    .cl-ws-body {
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    .cl-ws-tree {
+        width: auto;
+        border-inline-end: 0;
+        border-bottom: 1px solid var(--hairline-color, rgba(51, 64, 77, 0.1));
+    }
+
+    .cl-viewer,
+    .cl-empty {
+        flex: none;
+    }
+
+    .cl-ws-preview {
+        flex: none;
+        height: min(75vh, 700px);
+    }
+
+    .cl-drawer #cl-drawer-content {
+        height: auto;
+        overflow: visible;
+    }
+
+    .cl-ws-divider {
+        display: none;
+    }
 }
