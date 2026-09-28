@@ -1,0 +1,8 @@
+# Run from the sandbox root, where the plugin sits at plugins/component-library (profile §4).
+includes:
+    - ../../vendor/craftcms/phpstan/phpstan.neon
+
+parameters:
+    level: 5
+    paths:
+        - src

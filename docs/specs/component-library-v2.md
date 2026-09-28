@@ -2,7 +2,7 @@
 spec: Component Library v2
 slug: component-library-v2
 status: draft
-version: 0.1
+version: 0.2
 date: 2026-09-28
 author: Claude (for Sam Birch)
 client: webdna (internal)
@@ -13,7 +13,7 @@ related: [_scope/component-library-v2.md]
 
 # Component Library v2
 
-> **Status:** draft · **Version:** 0.1 · **Profile:** `_PROFILE.component-library.md`
+> **Status:** draft · **Version:** 0.2 · **Profile:** `_PROFILE.component-library.md`
 > The team browses and tries out every component in the control panel, previewed on each site's
 > own styling. Clients review the same library through a link that expires and can be cancelled.
 
@@ -188,8 +188,8 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 
 | # | Rule |
 |---|---|
-| BR-1 | The plugin registers `accessComponentLibrary` (view) and, nested under it, `manageComponentLibraryShares`. Admins hold both implicitly. `accessCp` alone grants **neither**. |
-| BR-2 | Every CP viewer route requires `accessComponentLibrary`. Share-management routes and actions also require `manageComponentLibraryShares`. Both are enforced in the controller, not the template. The CP nav item shows only with `accessComponentLibrary`. |
+| BR-1 | The view permission is Craft's own section permission `accessPlugin-component-library` (the plugin has a CP section). The plugin registers `manageComponentLibraryShares` nested under it. Admins hold both implicitly. `accessCp` alone grants **neither**. *Why Craft's and not our own:* Craft refuses any CP request whose first segment is a plugin handle without `accessPlugin-<handle>` (`web/Application.php`), before a controller runs, so a separate view permission could never be enough on its own. |
+| BR-2 | Every CP viewer route requires `accessPlugin-component-library`. Share-management routes and actions also require `manageComponentLibraryShares`. Both are enforced in the controller, not the template. The CP nav item shows only with `accessPlugin-component-library`. |
 | BR-3 | Create and cancel are POST-only and CSRF-validated. No controller disables CSRF. The only anonymous actions are the render and share-viewer actions in §6. |
 | BR-4 | Loaded as a module (listed in `config/app.php`) instead of installed as a plugin, the class throws `InvalidConfigException` naming the line to remove. It never half-works. |
 
@@ -223,7 +223,7 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 | # | Rule |
 |---|---|
 | BR-20 | The preview is an iframe on the target site's base URL, carrying a Craft token (`tokens->createToken`) routed to the render action. Token params hold only the scope, `user:<id>` or `share:<id>`. The lifetime is 1 hour or the share's remaining life, whichever is shorter, with no usage limit. The component, story and props travel as the query params `component`, `story`, `props`. |
-| BR-21 | Every render request rechecks the scope: the user still exists and holds `accessComponentLibrary`, or the share is active. On failure it returns 403, "Preview expired, reload the page". |
+| BR-21 | Every render request rechecks the scope: the user still exists and holds `accessPlugin-component-library`, or the share is active. On failure it returns 403, "Preview expired, reload the page". |
 | BR-22 | The site rendered, and the index used, is the site the request was served on. No request value selects a site for rendering, indexing or a path. The viewer's `site` address parameter only chooses the iframe's base URL, and it's accepted only once `getSiteByHandle()` returns a site (otherwise the primary site). |
 | BR-23 | Previews render as a guest. The identity is cleared in memory for the request only, with no session write, so `currentUser` is null whoever's browser it is. |
 | BR-24 | `props` is a JSON object of at most 8 KB. Each key is coerced to its declared type: strings ≤ 2,000 chars, text ≤ 10,000, `select` must be one of `options` (else the default), `json` depth ≤ 5. Undeclared keys are dropped. **Every request-supplied string reaches the component as inert, pre-escaped text** (`Twig\Markup` of the HTML-escaped value), so `\|raw` cannot inject markup. It's never passed to `renderString`, placeholder-parsed or used in a path. HTML in props comes only from files. |
@@ -261,8 +261,8 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 
 | Method | Path | Purpose | Auth | Returns |
 |---|---|---|---|---|
-| GET | `admin/component-library` | Viewer: first component or empty state | `accessComponentLibrary` | CP page |
-| GET | `admin/component-library/<handle>?story=&site=&props=` | Viewer on one component (`site` picks the iframe base URL only, per BR-22) | `accessComponentLibrary` | CP page |
+| GET | `admin/component-library` | Viewer: first component or empty state | `accessPlugin-component-library` | CP page |
+| GET | `admin/component-library/<handle>?story=&site=&props=` | Viewer on one component (`site` picks the iframe base URL only, per BR-22) | `accessPlugin-component-library` | CP page |
 | GET | `admin/component-library/shares` | Share list and create form | + `manageComponentLibraryShares` | CP page |
 | POST | `actions/component-library/shares/create` | Create a link | + manage, CSRF | Redirect, one-time URL in the flash |
 | POST | `actions/component-library/shares/revoke` | Cancel a link | + manage, CSRF | Redirect |
@@ -317,7 +317,7 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 |---|---|
 | Sandbox `~/projects/craft5`, admin via `users/impersonate admin` | Yes |
 | `restricted` user: has `accessCp`, lacks the new permission, so it is the refused user | Yes |
-| Group `clViewers` with `accessComponentLibrary` only, and user `clviewer` | **No, task 1.2** |
+| Group `clViewers` with `accessPlugin-component-library` only, and user `clviewer` | **No, task 1.2** |
 | Second sandbox site `second` with its own base URL | **No, task 1.2** |
 | `tests/fixtures/templates/`: `good` (tag + stories), `nested` (a story embedding another component with a block override), `bad-tag`, `legacy` (Twig-wrapped config with `variants`, `variables`, `{include:}`, `{ref:}`), `throws`, `raw-prop` (`\|raw` on a string prop), `_sites/second/` overriding `good`, and a page with 50 `@handle` includes | **No, tasks 1.2 onward** |
 | Active, expired and cancelled share rows | Created per test |
@@ -478,9 +478,10 @@ touching other repositories.
 
 ### Tasks
 
-- [ ] **1.1 Plugin skeleton**: `composer.json` (`craft-plugin`, `^5.0`, `^8.2`, `extra.handle`), `src/ComponentLibrary.php` (Plugin, permissions, CP nav, module-registration guard), `src/migrations/Install.php`, `src/records/ShareRecord.php`. Delete v1's `src/base/`, `src/helpers/`, `src/controllers/ComponentViewerController.php`, and the v1 templates and assets.
+- [x] **1.1 Plugin skeleton**: `composer.json` (`craft-plugin`, `^5.0`, `^8.2`, `extra.handle`), `src/ComponentLibrary.php` (Plugin, permissions, CP nav, module-registration guard), `src/migrations/Install.php`, `src/records/ShareRecord.php`. Delete v1's `src/base/`, `src/helpers/`, `src/controllers/ComponentViewerController.php`, and the v1 templates and assets.
       Rules: BR-1, BR-2, BR-4, BR-35 · Verify: B5 #1-3, TN-14
-- [ ] **1.2 Harness and sandbox fixtures**: `tests/Pest.php`, `phpunit.xml`, `phpstan.neon`, `ecs.php`, `tests/fixtures/setup.sh` (group `clViewers` + user `clviewer`, site `second`, roots pointed at the fixtures, sandbox `config/app.php` module lines removed). Run `ddev snapshot` first. Settle Appendix A row 3 here.
+      *As built:* also deleted v1's `src/twig/` (it called the removed `formatters` service) and `src/config.php` (v1 keys). `phpstan.neon` and `ecs.php` landed here so B5 #1-2 could run. B5 #3 waits for 1.2's harness.
+- [ ] **1.2 Harness and sandbox fixtures**: `tests/Pest.php`, `phpunit.xml`, extend `phpstan.neon` and `ecs.php` to `tests/`, `tests/fixtures/setup.sh` (group `clViewers` + user `clviewer`, site `second`, roots pointed at the fixtures, sandbox `config/app.php` module lines removed). Run `ddev snapshot` first. Settle Appendix A row 3 here.
       Rules: — · Verify: B5 #1-3 green on an empty suite
 - [ ] **1.3 Permission tests**: `tests/Feature/AccessTest.php`
       Rules: BR-1, BR-2, BR-3 · Verify: TS-1, TN-11
@@ -549,6 +550,9 @@ cut from `spec-component-library-v2`. Commit, never push.
 
 ## B2. Context to load
 
+Task 1.1 deleted the v1 files named in items 2-5. Read them from history:
+`git show 8c32afa:<path>`.
+
 1. `git show 5824487`: the four v1 holes and the shape of each patch. v2 makes each one
    structurally impossible rather than re-patching it.
 2. `src/ComponentLibrary.php:43` (the app-wide loader swap task 2.5 must not repeat) and
@@ -606,23 +610,23 @@ cut from `spec-component-library-v2`. Commit, never push.
 rsync -a --delete --exclude .git --exclude vendor ./ ~/projects/craft5/plugins/component-library/
 
 # 1. Static analysis
-ddev --dir ~/projects/craft5 exec vendor/bin/phpstan analyse -c plugins/component-library/phpstan.neon --no-progress
+cd ~/projects/craft5 && ddev exec vendor/bin/phpstan analyse -c plugins/component-library/phpstan.neon --no-progress --memory-limit=1G
 # expect: [OK] No errors
 
 # 2. Coding standard
-ddev --dir ~/projects/craft5 exec vendor/bin/ecs check plugins/component-library/src
+cd ~/projects/craft5 && ddev exec vendor/bin/ecs check --config plugins/component-library/ecs.php
 # expect: [OK] No errors found
 
 # 3. Tests
-ddev --dir ~/projects/craft5 exec vendor/bin/pest plugins/component-library/tests
+cd ~/projects/craft5 && ddev exec vendor/bin/pest plugins/component-library/tests
 # expect: "Tests: N passed", 0 failed
 
 # 4. Library check on the clean fixture config
-ddev --dir ~/projects/craft5 craft component-library/check
+cd ~/projects/craft5 && ddev craft component-library/check
 # expect: last line "0 problems", exit 0
 
 # 5. LLL pilot
-ddev --dir ~/Projects/lll craft component-library/check
+cd ~/Projects/lll && ddev craft component-library/check
 # expect: last line "0 problems"
 
 # 6. Consumer back-compat (TS-9)
@@ -652,3 +656,4 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | Date | Version | Change | By |
 |---|---|---|---|
 | 2026-09-28 | 0.1 | First draft, from the agreed scope note and design decisions | Claude, for Sam Birch |
+| 2026-09-28 | 0.2 | Task 1.1 built. BR-1: view permission is Craft's `accessPlugin-component-library`, not `accessComponentLibrary` (Craft's own gate made a separate one unusable). B5: `ddev --dir` does not exist, commands now `cd` first; ECS takes `--config`. | Claude, for Sam Birch |
