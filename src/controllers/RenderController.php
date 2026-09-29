@@ -18,11 +18,12 @@ use yii\base\InvalidArgumentException;
 use yii\web\Response;
 
 /**
- * The preview render (§6): `<site base URL>?token=<craft token>&component=&story=&props=`.
+ * The preview render (§6): `<site base URL>?token=<craft token>&component=&story=&props=[&bg=]`.
  *
  * Anonymous, because the iframe carries no session of its own, and reachable only through a
  * preview token (BR-20). The token row holds the scope, which is rechecked on every request
- * (BR-21). Nothing in the query string picks a site, a path or a scope.
+ * (BR-21). Nothing in the query string picks a site, a path or a scope, and `bg` only chooses
+ * between fixed backgrounds (BR-42).
  */
 class RenderController extends Controller
 {
@@ -61,7 +62,7 @@ class RenderController extends Controller
         }
 
         try {
-            return $this->page(200, $renderer->render($component, $story, $props));
+            return $this->page(200, $renderer->render($component, $story, $props, Renderer::background($component, $this->request->getQueryParam('bg'))));
         } catch (Throwable $e) {
             Craft::warning(sprintf('Preview of %s “%s” failed: %s', $component->handle, $story->name, $e->getMessage()), __METHOD__);
 

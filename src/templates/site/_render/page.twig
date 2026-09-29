@@ -1,9 +1,19 @@
 {#
  # A preview page (BR-25): the story, already rendered, in the configured layout's `component`
  # block. The variables carry a prefix so they can't shadow a layout's own.
+ #
+ # BR-42: on a light or dark background, `clCanvas` is that word (from Component::BACKGROUNDS,
+ # never the request) and the block opens with the plugin's preview.css. Otherwise the block is
+ # exactly `clHtml`, byte for byte, as before backgrounds existed.
  #}
 {% extends clLayout %}
 
 {% block viewClass %}{% if clViewClass is not null %}{{ clViewClass }}{% else %}{{ parent() }}{% endif %}{% endblock %}
 
-{% block component %}{{ clHtml }}{% endblock %}
+{% block component %}
+    {%- if clCanvas -%}
+        <link rel="stylesheet" href="{{ clPreviewCss }}"><div class="cl-canvas" data-cl-canvas="{{ clCanvas }}">{{ clHtml }}</div>
+    {%- else -%}
+        {{ clHtml }}
+    {%- endif -%}
+{% endblock %}

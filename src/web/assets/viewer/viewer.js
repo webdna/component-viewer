@@ -6,9 +6,11 @@
  * Plain ES module with no build step and no CP globals: the share page has no CP script, so this
  * also drives the details drawer and its tabs, and the tree toggle, in both viewers. The server gives the state
  * in data-cl-viewer: the component, the current story, each story's file values and each prop's
- * type, the settings changed so far (`overrides`), the device and orientation, and the preview
- * URL, which carries a token with no usage limit, so only its `story` and `props` change here.
- * The device never reaches the preview URL (BR-39).
+ * type, the settings changed so far (`overrides`), the device and orientation, the background and
+ * the component's own (`defaultBackground`), and the preview URL, which carries a token with no
+ * usage limit, so only its `story`, `props` and `bg` change here. The device never reaches the
+ * preview URL (BR-39). The background does, as `bg`, only when it isn't the component's own
+ * (BR-41), and the tree's links never carry it, so each component opens on its own.
  */
 
 const DEBOUNCE_MS = 250;
@@ -57,6 +59,42 @@ const store = {
 };
 
 const rtl = () => document.documentElement.dir === 'rtl' || document.body.classList.contains('rtl');
+
+/**
+ * BR-34: a group of pressed buttons is one tab stop, and the arrow keys, Home and End move
+ * between them, choosing as they go.
+ */
+function pressedGroup(buttons, choose) {
+    buttons.forEach((button, index) => {
+        button.addEventListener('click', () => choose(button));
+        button.addEventListener('keydown', (event) => {
+            const forward = rtl() ? -1 : 1;
+            const next = {
+                ArrowRight: index + forward,
+                ArrowDown: index + 1,
+                ArrowLeft: index - forward,
+                ArrowUp: index - 1,
+                Home: 0,
+                End: buttons.length - 1,
+            }[event.key];
+            if (next === undefined) {
+                return;
+            }
+            event.preventDefault();
+            const target = buttons[(next + buttons.length) % buttons.length];
+            choose(target);
+            target.focus();
+        });
+    });
+}
+
+/** Marks `on` as the pressed button of its group, and the group's one tab stop. */
+function press(buttons, on) {
+    for (const button of buttons) {
+        button.setAttribute('aria-pressed', button === on ? 'true' : 'false');
+        button.tabIndex = button === on ? 0 : -1;
+    }
+}
 
 function initSearch() {
     const input = document.querySelector('[data-cl-search]');
@@ -296,6 +334,7 @@ function initViewer(root) {
     const fields = [...root.querySelectorAll('[data-cl-prop]')];
     const storyButtons = [...root.querySelectorAll('[data-cl-story]')];
     const deviceButtons = [...root.querySelectorAll('[data-cl-device]')];
+    const backgroundButtons = [...root.querySelectorAll('[data-cl-background]')];
     const rotate = root.querySelector('[data-cl-rotate]');
     const open = root.querySelector('[data-cl-open]');
     const stage = root.querySelector('[data-cl-stage]');
@@ -308,11 +347,13 @@ function initViewer(root) {
         props: root.querySelector('[data-cl-site-props]'),
         device: root.querySelector('[data-cl-site-device]'),
         orientation: root.querySelector('[data-cl-site-orientation]'),
+        background: root.querySelector('[data-cl-site-background]'),
     };
     let story = config.story;
     let overrides = {...config.overrides};
     let device = config.device;
     let orientation = config.orientation;
+    let background = config.background;
     let timer = null;
 
     const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
@@ -361,10 +402,18 @@ function initViewer(root) {
         return {...config.stories[story], ...overrides};
     }
 
-    /** The preview's address: the story and settings only, never the device (BR-39). */
+    /** `bg` on an address, as the server reads it: only when it isn't the component's own (BR-41). */
+    function withBackground(href) {
+        const url = new URL(href, window.location.href);
+        background === config.defaultBackground ? url.searchParams.delete('bg') : url.searchParams.set('bg', background);
+
+        return url.href;
+    }
+
+    /** The preview's address: the story, settings and background, never the device (BR-39). */
     function previewUrl() {
         const props = Object.keys(overrides).length ? JSON.stringify(overrides) : null;
-        const preview = new URL(config.previewUrl);
+        const preview = new URL(withBackground(config.previewUrl));
         preview.searchParams.set('story', story);
         props ? preview.searchParams.set('props', props) : preview.searchParams.delete('props');
 
@@ -399,12 +448,12 @@ function initViewer(root) {
             .replace('{story}', story)
             .replace('{device}', deviceLabel);
 
-        const address = new URL(withDevice(window.location.href));
+        const address = new URL(withBackground(withDevice(window.location.href)));
         address.searchParams.set('story', story);
         props ? address.searchParams.set('props', props) : address.searchParams.delete('props');
         window.history.replaceState(null, '', address.href);
 
-        // The tree keeps the device, and the site switch keeps the whole view.
+        // The tree keeps the device but not the background, and the site switch keeps the whole view.
         for (const link of document.querySelectorAll('a[data-cl-component]')) {
             link.href = withDevice(link.href);
         }
@@ -415,6 +464,8 @@ function initViewer(root) {
             site.device.value = device;
             site.orientation.value = orientation;
             site.device.disabled = site.orientation.disabled = device === 'desktop';
+            site.background.value = background;
+            site.background.disabled = background === config.defaultBackground;
         }
     }
 
@@ -461,11 +512,7 @@ function initViewer(root) {
         if (device === 'desktop') {
             orientation = 'portrait';
         }
-        for (const button of deviceButtons) {
-            const on = button.dataset.clDevice === device;
-            button.setAttribute('aria-pressed', on ? 'true' : 'false');
-            button.tabIndex = on ? 0 : -1;
-        }
+        press(deviceButtons, deviceButtons.find((button) => button.dataset.clDevice === device));
         rotate.disabled = device === 'desktop';
         rotate.setAttribute('aria-pressed', orientation === 'landscape' ? 'true' : 'false');
         fit();
@@ -526,27 +573,13 @@ function initViewer(root) {
         update();
     });
 
-    // BR-34: one group, the arrow keys moving between devices and choosing as they go.
-    deviceButtons.forEach((button, index) => {
-        button.addEventListener('click', () => setDevice(button.dataset.clDevice));
-        button.addEventListener('keydown', (event) => {
-            const forward = rtl() ? -1 : 1;
-            const next = {
-                ArrowRight: index + forward,
-                ArrowDown: index + 1,
-                ArrowLeft: index - forward,
-                ArrowUp: index - 1,
-                Home: 0,
-                End: deviceButtons.length - 1,
-            }[event.key];
-            if (next === undefined) {
-                return;
-            }
-            event.preventDefault();
-            const target = deviceButtons[(next + deviceButtons.length) % deviceButtons.length];
-            setDevice(target.dataset.clDevice);
-            target.focus();
-        });
+    pressedGroup(deviceButtons, (button) => setDevice(button.dataset.clDevice));
+
+    // BR-41: a pick reloads the preview on that background. A story switch keeps it.
+    pressedGroup(backgroundButtons, (button) => {
+        background = button.dataset.clBackground;
+        press(backgroundButtons, button);
+        update();
     });
 
     rotate.addEventListener('click', () => {
@@ -569,8 +602,8 @@ function initViewer(root) {
 
     initDrawer(root);
     fit();
-    // The server has already settled the device, so an unusable one leaves the address too.
-    window.history.replaceState(null, '', withDevice(window.location.href));
+    // The server has already settled the device and background, so an unusable one leaves the address too.
+    window.history.replaceState(null, '', withBackground(withDevice(window.location.href)));
 }
 
 initSearch();

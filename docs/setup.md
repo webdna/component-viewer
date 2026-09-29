@@ -79,6 +79,16 @@ Previews render on each site's own front end, so they can use the site's real st
 - `viewClass` receives the component's `viewClass` setting, for padding or a background colour
   around it.
 
+The preview toolbar's *Background* switch shows a component on the site's own background, on
+white (`#ffffff`) or on near-black (`#111111`). A component opens on its tag's `background`
+([format](format.md)), and a copied address or share link keeps a different choice. On *Site* the
+page is exactly your layout. On *Light* or *Dark*, block `component` also holds a link to the
+plugin's `preview.css` and a wrapper, `<div class="cl-canvas" data-cl-canvas="light">` (or
+`"dark"`), which is `display: contents` so it never changes your layout. That stylesheet sets the
+background of `html` and `body` only, with `!important`. Any other element in your layout that
+paints its own background still shows, and the component's own colours are untouched. Padding and
+centring stay with `viewClass`.
+
 These are v1's block names, so a v1 layout works unchanged. Start the file name with `_` (as
 `_preview.twig` above), or keep it in a folder whose name starts with `_`, so Craft doesn't serve it
 as a page of its own.

@@ -283,6 +283,43 @@ body.cl-workspace-page {
     opacity: 1;
 }
 
+/* BR-41: the background group, styled as the device group, each with a swatch of its colour. */
+.cl-backgrounds {
+    display: flex;
+    gap: 2px;
+}
+
+.cl-background-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 8px;
+}
+
+.cl-background-btn[aria-pressed='true'] {
+    background: var(--gray-300, #cdd8e4);
+}
+
+.cl-chip {
+    width: 12px;
+    height: 12px;
+    border: 1px solid var(--gray-500, #8b96a2);
+    border-radius: 50%;
+}
+
+/* The site's own background could be either, so its swatch is half of each. */
+.cl-chip-site {
+    background: linear-gradient(135deg, #ffffff 50%, #111111 50%);
+}
+
+.cl-chip-light {
+    background: #ffffff;
+}
+
+.cl-chip-dark {
+    background: #111111;
+}
+
 .cl-icon-btn[aria-pressed='true'] {
     background: var(--gray-300, #cdd8e4);
 }

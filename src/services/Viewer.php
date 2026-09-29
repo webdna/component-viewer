@@ -39,6 +39,8 @@ use yii\base\InvalidArgumentException;
  *     config:array<string,mixed>|null,
  *     device:string,
  *     deviceOrientation:string,
+ *     background:string,
+ *     defaultBackground:string,
  * }
  */
 class Viewer extends BaseComponent
@@ -88,9 +90,11 @@ class Viewer extends BaseComponent
      * site to any CP URL that doesn't.
      * @param mixed $device The requested `device`, for the page only (BR-39)
      * @param mixed $orientation The requested `orientation`, likewise
+     * @param mixed $background The requested `bg` (BR-41). Unlike the device, the preview gets it
+     * too, as a closed value, when it differs from the component's own `background`.
      * @return State|null
      */
-    public function state(Site $site, ?string $handle, mixed $story, mixed $props, string $token, Closure $url, mixed $device = null, mixed $orientation = null): ?array
+    public function state(Site $site, ?string $handle, mixed $story, mixed $props, string $token, Closure $url, mixed $device = null, mixed $orientation = null, mixed $background = null): ?array
     {
         $components = $this->components($site);
         $view = self::device($device, $orientation);
@@ -120,6 +124,8 @@ class Viewer extends BaseComponent
             // Not `orientation`: Craft's CP layouts set that variable to the text direction.
             'device' => $view['device'],
             'deviceOrientation' => $view['orientation'],
+            'background' => Component::BACKGROUNDS[0],
+            'defaultBackground' => Component::BACKGROUNDS[0],
         ];
 
         if ($component === null) {
@@ -128,8 +134,9 @@ class Viewer extends BaseComponent
 
         $current = $this->story($component, $story);
         $overrides = $this->overrides($component, $props);
+        $backgrounds = self::background($component, $background);
         $previewUrl = ComponentLibrary::getInstance()->getRenderer()
-            ->previewUrl($site, $token, (string)$component->handle, $current->name, $overrides ?: null);
+            ->previewUrl($site, $token, (string)$component->handle, $current->name, $overrides ?: null, self::backgroundParams($backgrounds)['bg'] ?? null);
 
         return array_merge($state, [
             'story' => $current,
@@ -147,14 +154,14 @@ class Viewer extends BaseComponent
                 'types' => array_map(fn(Prop $prop) => $prop->type, $component->props),
                 'overrides' => (object)$overrides,
                 'previewUrl' => $previewUrl,
-            ] + $view,
-        ]);
+            ] + $view + $backgrounds,
+        ] + $backgrounds);
     }
 
     /**
      * BR-39: the device and orientation a page opens on. Anything but a listed value is the
      * default, desktop portrait, and desktop is never turned. Neither reaches the render: the
-     * preview URL carries only `component`, `story` and `props` (BR-20).
+     * preview URL carries only `component`, `story`, `props` and `bg` (BR-20).
      *
      * @return array{device:string,orientation:string}
      */
@@ -164,6 +171,32 @@ class Viewer extends BaseComponent
         $turned = $device !== self::DEVICES[0] && in_array($orientation, self::ORIENTATIONS, true);
 
         return ['device' => $device, 'orientation' => $turned ? $orientation : self::ORIENTATIONS[0]];
+    }
+
+    /**
+     * BR-41: the background a page opens on, and the component's own. The request's counts only
+     * when it's one of Component::BACKGROUNDS (Renderer::background()).
+     *
+     * @return array{background:string,defaultBackground:string}
+     */
+    public static function background(Component $component, mixed $requested): array
+    {
+        return [
+            'background' => Renderer::background($component, $requested),
+            'defaultBackground' => Renderer::background($component),
+        ];
+    }
+
+    /**
+     * The `bg` param for a page address and the preview, as viewer.js writes it: none when it's
+     * the component's own, so a component opens on its tag's `background`.
+     *
+     * @param array{background:string,defaultBackground:string} $backgrounds
+     * @return array<string,string>
+     */
+    public static function backgroundParams(array $backgrounds): array
+    {
+        return $backgrounds['background'] === $backgrounds['defaultBackground'] ? [] : ['bg' => $backgrounds['background']];
     }
 
     /**
@@ -296,7 +329,7 @@ class Viewer extends BaseComponent
     /**
      * A GET form for `$url`. Browsers drop the query of a GET form's action, so it's split into
      * the path and hidden fields (e.g. `p` without pretty URLs). The form's own fields replace
-     * `site`, `story`, `props`, `device` and `orientation`.
+     * `site`, `story`, `props`, `device`, `orientation` and `bg`.
      *
      * @return array{action:string,hidden:array<string,string>}
      */
@@ -308,7 +341,7 @@ class Viewer extends BaseComponent
         return [
             'action' => $action,
             'hidden' => array_filter(
-                array_diff_key($hidden, ['site' => 1, 'story' => 1, 'props' => 1, 'device' => 1, 'orientation' => 1]),
+                array_diff_key($hidden, ['site' => 1, 'story' => 1, 'props' => 1, 'device' => 1, 'orientation' => 1, 'bg' => 1]),
                 fn($value) => is_string($value),
             ),
         ];

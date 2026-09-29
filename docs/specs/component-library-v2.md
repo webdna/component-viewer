@@ -2,7 +2,7 @@
 spec: Component Library v2
 slug: component-library-v2
 status: draft
-version: 0.21
+version: 0.22
 date: 2026-09-28
 author: Claude (for Sam Birch)
 client: webdna (internal)
@@ -236,7 +236,7 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 
 | # | Rule |
 |---|---|
-| BR-20 | The preview is an iframe on the target site's base URL, carrying a Craft token (`tokens->createToken`) routed to the render action. Token params hold only the scope, `user:<id>` or `share:<id>`. The lifetime is 1 hour or the share's remaining life, whichever is shorter, with no usage limit. The component, story and props travel as the query params `component`, `story`, `props`, plus `bg` when the viewer's background is light or dark (BR-42). |
+| BR-20 | The preview is an iframe on the target site's base URL, carrying a Craft token (`tokens->createToken`) routed to the render action. Token params hold only the scope, `user:<id>` or `share:<id>`. The lifetime is 1 hour or the share's remaining life, whichever is shorter, with no usage limit. The component, story and props travel as the query params `component`, `story`, `props`, plus `bg` when the viewer's background isn't the component's own (BR-41, BR-42). |
 | BR-21 | Every render request rechecks the scope: the user still exists, is active (not suspended) and holds `accessPlugin-component-library`, or the share is active. On failure it returns 403, "Preview expired, reload the page". |
 | BR-22 | The site rendered, and the index used, is the site the request was served on. No request value selects a site for rendering, indexing or a path. The viewer's `site` address parameter only chooses the iframe's base URL, and it's accepted only once `getSiteByHandle()` returns a site (otherwise the primary site). |
 | BR-23 | Previews render as a guest. The identity is cleared in memory for the request only, with no session write, so `currentUser` is null whoever's browser it is. |
@@ -282,8 +282,8 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 
 | # | Rule |
 |---|---|
-| BR-41 | The preview background is `site` (the layout's own, untouched), `light` or `dark`. A component opens on its tag's `background` (BR-5, default `site`). The preview toolbar has a *Background* group (*Site*, *Light*, *Dark*) after the device group, in both viewers. It's one group operated by arrow keys, with `aria-pressed` on the value in effect (BR-34). A pick reloads the iframe and puts `bg` in the address beside `device` and `orientation`, and a copied address restores it. A story switch keeps `bg`. Picking another component in the tree drops it, so each component opens on its own `background`. The choice is not remembered per browser, because that would hide every component's own setting. |
-| BR-42 | The render reads `bg` as exactly `light` or `dark`. Anything else (`site`, an array, markup, any other string) means the component's `background`. When the value in effect is `light` or `dark`, block `component` begins with a `<link rel="stylesheet">` to the plugin's published `preview.css` and wraps the story in `<div class="cl-canvas" data-cl-canvas="light\|dark">`. The class and attribute come from that fixed pair, never from the request. `preview.css` is the plugin's own base stylesheet for the preview. The wrapper is `display: contents`, so it never changes layout, and `html` and `body` of a page holding it get the background with `!important` (light `#ffffff`, dark `#111111`). The component's own colours are untouched. With `site`, the render is byte-identical to one without this feature: no link and no wrapper. A layout element other than `html` or `body` that paints its own background still shows. Container layout (padding, centring) stays with `viewClass`. |
+| BR-41 | The preview background is `site` (the layout's own, untouched), `light` or `dark`. A component opens on its tag's `background` (BR-5, default `site`). The preview toolbar has a *Background* group (*Site*, *Light*, *Dark*) after the device group, in both viewers. It's one group operated by arrow keys, with `aria-pressed` on the value in effect (BR-34). A pick reloads the iframe and puts `bg` in the address beside `device` and `orientation` when it isn't the component's own `background` (and takes it out when it is), and a copied address restores it. A story switch keeps `bg`. Picking another component in the tree drops it, so each component opens on its own `background`. The choice is not remembered per browser, because that would hide every component's own setting. |
+| BR-42 | The render reads `bg` as exactly `site`, `light` or `dark`. Anything else (an array, markup, another case, any other string) means the component's `background`. `site` is a choice of its own (v0.22), so *Site* works on a component whose tag says `dark`. When the value in effect is `light` or `dark`, block `component` begins with a `<link rel="stylesheet">` to the plugin's published `preview.css` and wraps the story in `<div class="cl-canvas" data-cl-canvas="light\|dark">`. The class and attribute come from that fixed pair, never from the request. `preview.css` is the plugin's own base stylesheet for the preview. The wrapper is `display: contents`, so it never changes layout, and `html` and `body` of a page holding it get the background with `!important` (light `#ffffff`, dark `#111111`). The component's own colours are untouched. With `site`, the render is byte-identical to one without this feature: no link and no wrapper. A layout element other than `html` or `body` that paints its own background still shows. Container layout (padding, centring) stays with `viewClass`. |
 
 ---
 
@@ -297,7 +297,7 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 | POST | `actions/component-library/shares/create` | Create a link | + manage, CSRF | Redirect, one-time URL in the flash |
 | POST | `actions/component-library/shares/revoke` | Cancel a link | + manage, CSRF | Redirect |
 | GET | `<primary site>/component-library/share/<token>[/<handle>]` | Share viewer | Anonymous, active token | Page / 404 / 410 |
-| GET | `<site base URL>?token=<craft token>&component=&story=&props=[&bg=light\|dark]` | Preview render (`bg` per BR-42) | Anonymous, valid Craft token, scope rechecked | HTML / 403 / 500 |
+| GET | `<site base URL>?token=<craft token>&component=&story=&props=[&bg=site\|light\|dark]` | Preview render (`bg` per BR-42) | Anonymous, valid Craft token, scope rechecked | HTML / 403 / 500 |
 
 v1's front-end `component-library` and `component-library/render` URLs and the
 `get-component-info` action are **removed**.
@@ -807,8 +807,27 @@ review. It's built next, before 6.1 is installed in LLL, so the pilot's tags can
       At 375 px there's no sideways scroll, and the tree is behind its toggle. `window.Craft` is
       undefined on the share page. The Chrome window was backgrounded, so resize-driven layout was
       read after a forced render, and **TS-14's keyboard pass is still Sam's**.
-- [ ] **3.4 Preview background** (added v0.21): the `background` tag key in `src/twig/ComponentTokenParser.php` and `src/models/Component.php`; `bg` and the canvas wrapper in `src/services/Renderer.php` and `src/templates/site/_render/*`; the new `src/web/assets/preview/dist/preview.css`, published and linked from the render; the *Background* group in `src/templates/viewer/_workspace.twig`, `src/services/Viewer.php` and `src/web/assets/viewer/viewer.js` (address, iframe URL, tree links without `bg`); fixture `tests/fixtures/edge/ui/on-dark.twig`; `docs/format.md` (the key) and `docs/setup.md` §3 (the switch, and that it overrides only `html` and `body`)
+- [x] **3.4 Preview background** (added v0.21): the `background` tag key in `src/twig/ComponentTokenParser.php` and `src/models/Component.php`; `bg` and the canvas wrapper in `src/services/Renderer.php` and `src/templates/site/_render/*`; the new `src/web/assets/preview/dist/preview.css`, published and linked from the render; the *Background* group in `src/templates/viewer/_workspace.twig`, `src/services/Viewer.php` and `src/web/assets/viewer/viewer.js` (address, iframe URL, tree links without `bg`); fixture `tests/fixtures/edge/ui/on-dark.twig`; `docs/format.md` (the key) and `docs/setup.md` §3 (the switch, and that it overrides only `html` and `body`)
       Rules: BR-5, BR-20, BR-41, BR-42 · Verify: TS-16, TN-20, B5 #1-4
+      *As built (29 Sep 2026, v0.22):* B5 #1-4 green (PHPStan OK, ECS OK, Pest 505 passed, check =
+      the one bad-tag CL001). `Renderer::background()` is the one place a request `bg` is read:
+      it returns a `Component::BACKGROUNDS` constant, else the tag's `background`, else `site`.
+      **Spec change:** v0.21's BR-42 read `bg=site` as "the component's own", which left *Site*
+      unable to show the site background on a `dark` component. `site` is now a choice, and the
+      address and preview carry `bg` only when it differs from the component's own, which for
+      `good` is exactly TS-16 as written. The toolbar lives in `viewer/_component.twig` (3.3 moved
+      it out of `_workspace.twig`). `preview.css` is published by `Renderer::previewCssUrl()`,
+      not an asset bundle, since the layout's head isn't the plugin's. `Index` has a `FORMAT`
+      constant in its cache key, because a cached `Component` from before the new property would
+      unserialize with it uninitialised. The toolbar chip class is `cl-chip`, not `cl-swatch`:
+      TN-18 proves the page never echoes `watch`. `BackgroundTest` plus rows in TagTest
+      and CheckTest. 16 mutations each caught. HTTP: no `bg`, `bg=site` and `bg=purple` renders
+      are byte-identical (`cmp`) to the render captured before the change, 607 bytes. Browser
+      (sandbox, Chrome), in both viewers: *Light* whitened the page in 92 ms with the button
+      unchanged, `aria-pressed` and the tab stop followed, `bg` reached the address, the iframe
+      and *Open*. The arrow keys moved within the group. A story switch kept dark, the tree links
+      carried no `bg`, and `@ui:nested` opened on *Site*. A copied `bg=light` address reopened
+      light. *Site* took `bg` out. The share page did the same with `window.Craft` undefined.
 - [x] **4.1 Share service and management**: `src/services/Shares.php`, `src/controllers/SharesController.php`, `src/templates/shares/*`, GC hook, user-delete cascade
       Rules: BR-3, BR-27, BR-28, BR-30, BR-36 · Verify: TS-4, TN-11 to TN-13
       *As built:* validation lives in a form model, `src/models/ShareForm.php`. The expiry is a native
@@ -1064,8 +1083,8 @@ Task 1.1 deleted the v1 files named in items 2-5. Read them from history:
   every client. The `lp-*` panes are also fixed-position overlays that can change in any Craft release.
 - **Do not send `device` or `orientation` to the render.** The render URL only ever carries
   `component`, `story`, `props` and `bg` (BR-20). A new request value there is a new hostile input.
-  `bg` is allowed because it's a closed pair: the render compares it to `light` and `dark` and
-  otherwise ignores it. Never build a class, attribute, path or template name from its text (BR-42).
+  `bg` is allowed because it's a closed set: the render compares it to `site`, `light` and `dark`
+  and otherwise ignores it. Never build a class, attribute, path or template name from its text (BR-42).
 
 ## B4. Definition of done
 
@@ -1155,3 +1174,4 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | 2026-09-29 | 0.19 | Task 5.3 built: README, five guides and the 2.0.0 CHANGELOG entry (dated *Unreleased*). The v1 leftover `src/README.md` is deleted. The upgrade guide awaits Sam's read against TS-9. See 5.3's as-built note. | Claude, for Sam Birch |
 | 2026-09-29 | 0.20 | Task 6.1 staged, not ticked. It's built on LLL branch `feature/component-library-v2` (23e07e24), but by Sam's decision it isn't installed in LLL until he approves the pilot, which runs for review in the craft5 sandbox. BR-24 now says escaping protects HTML only: a prop used as script, a URL, a file path or a template name is a `select` or set only in stories, and the format guide says so too. TS-8 evidence is in 6.1's as-built note. | Claude, for Sam Birch |
 | 2026-09-29 | 0.21 | Preview background added (Sam's request): BR-41 and BR-42, AC-16, TS-16, TN-20, task 3.4. The tag gains `background` (BR-5), and the render accepts a closed `bg=light|dark` (BR-20, §6, B3). v1 had no such switch (its `app.css` styled only the viewer), so the plugin's own `preview.css` is new. It sets only the page background. Container layout stays with `viewClass`, and the choice is not remembered per browser, so each component's default shows. | Claude, for Sam Birch |
+| 2026-09-29 | 0.22 | Task 3.4 built. BR-42 amended: `bg` is read as exactly `site`, `light` or `dark`, so *Site* can show the site background on a component whose tag says `dark`. BR-20, BR-41, §6 and B3 now say `bg` is sent only when it differs from the component's own `background`. For a component on the default `site`, TS-16 is unchanged. See 3.4's as-built note. | Claude, for Sam Birch |

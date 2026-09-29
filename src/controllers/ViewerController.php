@@ -11,7 +11,7 @@ use yii\web\NotFoundHttpException;
 use yii\web\Response;
 
 /**
- * The CP viewer (§6): `admin/component-library[/<handle>]?story=&site=&props=&device=&orientation=`.
+ * The CP viewer (§6): `admin/component-library[/<handle>]?story=&site=&props=&device=&orientation=&bg=`.
  *
  * The address holds the whole view, so a copied link reopens it (AC-2). `site` only picks the
  * preview's base URL and whose index is listed, and only once Craft returns a site for it (BR-22).
@@ -38,7 +38,7 @@ class ViewerController extends Controller
         $token = $plugin->getRenderer()->createToken('user:' . Craft::$app->getUser()->getId());
         $url = fn(string $handle, array $params) => UrlHelper::cpUrl("component-library/$handle", $params);
         $state = $viewer->state($site, $handle, $request->getQueryParam('story'), $request->getQueryParam('props'), $token, $url,
-            $request->getQueryParam('device'), $request->getQueryParam('orientation'));
+            $request->getQueryParam('device'), $request->getQueryParam('orientation'), $request->getQueryParam('bg'));
 
         if ($state === null) {
             throw new NotFoundHttpException(Craft::t('component-library', 'There’s no component {handle} on {site}.', [

@@ -4,10 +4,12 @@
  # v1. The divider on top of an open drawer sets its height.
  #
  # Test hooks (§7): data-cl-story, data-cl-prop, data-cl-preview, data-cl-device, data-cl-rotate,
- # data-cl-divider, data-cl-drawer, data-cl-drawer-toggle, data-cl-refresh, data-cl-open. Paths
- # show only with showPaths, which the share viewer leaves off (BR-29). `device` and
- # `deviceOrientation` are the page's only (BR-39): the preview URL never carries them. (Craft's
- # CP layouts own a variable called `orientation`.)
+ # data-cl-divider, data-cl-drawer, data-cl-drawer-toggle, data-cl-refresh, data-cl-open,
+ # data-cl-background. Paths show only with showPaths, which the share viewer leaves off (BR-29).
+ # `device` and `deviceOrientation` are the page's only (BR-39): the preview URL never carries
+ # them. (Craft's CP layouts own a variable called `orientation`.) `background` is the preview's
+ # (BR-41): the address and the preview carry it only when it isn't `defaultBackground`, the
+ # component's own.
  #}
 {% import '_includes/forms' as forms %}
 
@@ -27,6 +29,11 @@
     ? labels.landscape|replace({'{device}': deviceLabels[device]})
     : deviceLabels[device] %}
 {% set frameTitle = labels.frameTitle|replace({'{component}': name, '{story}': story.name, '{device}': deviceLabel}) %}
+{% set backgroundLabels = {
+    site: 'Site'|t('component-library'),
+    light: 'Light'|t('component-library'),
+    dark: 'Dark'|t('component-library'),
+} %}
 {% set tabs = {
     'cl-settings': {label: 'Settings'|t('component-library'), url: '#cl-settings'},
     'cl-examples': {label: 'Examples'|t('component-library'), url: '#cl-examples'},
@@ -55,6 +62,19 @@
                 <span class="visually-hidden">{{ 'Rotate'|t('component-library') }}</span>
             </button>
 
+            {# BR-41: one group, like the devices, operated by the arrow keys. #}
+            <div class="cl-backgrounds" role="group" aria-label="{{ 'Background'|t('component-library') }}">
+                {% for option, label in backgroundLabels %}
+                    {% set on = option == background %}
+                    <button type="button" class="btn cl-background-btn" data-cl-background="{{ option }}"
+                            aria-pressed="{{ on ? 'true' : 'false' }}" tabindex="{{ on ? '0' : '-1' }}">
+                        {# Not "swatch": TN-18 proves the page never echoes "watch". #}
+                        <span class="cl-chip cl-chip-{{ option }}" aria-hidden="true"></span>
+                        {{- label -}}
+                    </button>
+                {% endfor %}
+            </div>
+
             {#
              # BR-35: a single site has nothing to switch to. viewer.js switches as soon as the
              # select changes and hides the button, which is there for a page without script.
@@ -77,6 +97,7 @@
                            {{ overrides ? '' : 'disabled' }}>
                     <input type="hidden" name="device" value="{{ device }}" data-cl-site-device {{ device == 'desktop' ? 'disabled' }}>
                     <input type="hidden" name="orientation" value="{{ deviceOrientation }}" data-cl-site-orientation {{ device == 'desktop' ? 'disabled' }}>
+                    <input type="hidden" name="bg" value="{{ background }}" data-cl-site-background {{ background == defaultBackground ? 'disabled' }}>
                     <button type="submit" class="btn" data-cl-site-submit>{{ 'Switch site'|t('component-library') }}</button>
                 </form>
             {% endif %}
