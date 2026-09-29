@@ -398,7 +398,7 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 *Success criterion: an active link's address can be copied, and nothing else's.*
 1. With "Acme" active, the list shows *Copy link* beside *Cancel link* on its row. POST `component-library/shares/url` with its id. Expect JSON whose `url` is the address step 3 of TS-4 showed.
 2. Cancel it, or let it expire. The row has no *Copy link*, and the action returns 404. So does a row with no stored token, and an unknown id.
-3. Without *Create and cancel share links*, the action is 403. A GET is 400 (Craft's POST-only guard), and a POST without a CSRF token is 400.
+3. Without *Create and cancel share links*, the action is 403. A GET is 405, as for the other share actions, and a POST without a CSRF token is 400.
 4. In a browser: *Copy link* opens Craft's copy prompt holding the address, as *Copy impersonation URL* does. Creating a link opens the same prompt once.
 
 **TS-5 · Use a share link** · AC-5 · BR-20, BR-26, BR-29 · *Pest + browser*
@@ -516,7 +516,7 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 | TN-19 | Browser storage blocked, or holding a garbage `cl.` value | Defaults, and no script error (BR-40) |
 | TN-20 | `bg` set to markup, `light<script>`, a 5 KB string or an array, on the render and on the CP and share viewers | The component's own `background`. The value isn't echoed, and no class, attribute or path is built from it (BR-41, BR-42) |
 | TN-21 | A request `props` key for a `control: false` prop, or an `icon` value that isn't a listed name (a path, `../`, markup, an array), on the render and on both viewers | Dropped. The story's value renders, the control shows the story's value, and the request value is never echoed (BR-24, BR-44) |
-| TN-22 | `component-library/shares/url` with an expired, cancelled, pre-v0.26 or unknown id, a non-numeric id, a GET, no CSRF token, or a user without the manage permission | 404 for the first four (a non-numeric id is 0, so unknown), 400 for a GET or no CSRF, 403 without the permission. No token in the response or the log (BR-2, BR-3, BR-45) |
+| TN-22 | `component-library/shares/url` with an expired, cancelled, pre-v0.26 or unknown id, a non-numeric id, a GET, no CSRF token, or a user without the manage permission | 404 for the first four (a non-numeric id is 0, so unknown), 405 for a GET, 400 for no CSRF, 403 without the permission. No token in the response or the log (BR-2, BR-3, BR-45) |
 
 ### Automated checks
 
@@ -928,8 +928,24 @@ review. It's built next, before 6.1 is installed in LLL, so the pilot's tags can
       the preview and the address, examples and tabs switched, and arrow keys moved between tabs.
       At 375 px there's no horizontal scroll and the toggle shows the tree. `window.Craft` is
       undefined, and no path appears. Sam still reviews the wording (Appendix A row 1).
-- [ ] **4.3 Copy a share link again** (added v0.26, Sam's request): `tokenEncrypted` in `src/migrations/Install.php` plus a new migration (`schemaVersion` 2.0.1), `src/records/ShareRecord.php`; encrypt on create and `copyUrl()` in `src/services/Shares.php`; `actionUrl()` in `src/controllers/SharesController.php`; *Copy link* and both copy prompts in `src/templates/shares/index.twig`; `docs/share-links.md`
+- [x] **4.3 Copy a share link again** (added v0.26, Sam's request): `tokenEncrypted` in `src/migrations/Install.php` plus a new migration (`schemaVersion` 2.0.1), `src/records/ShareRecord.php`; encrypt on create and `copyUrl()` in `src/services/Shares.php`; `actionUrl()` in `src/controllers/SharesController.php`; *Copy link* and both copy prompts in `src/templates/shares/index.twig`; `docs/share-links.md`
       Rules: BR-2, BR-3, BR-27, BR-45 · Verify: TS-4, TS-18, TN-22, B5 #1-3
+      *As built (29 Sep 2026, v0.26):* B5 #1-4 green (PHPStan OK, ECS OK, Pest 539 passed, check
+      = the one bad-tag CL001). Migration `m260929_000000_share_token_encrypted` (guarded by
+      `columnExists`) applied in the sandbox after snapshot `pre-cl-v2-4-3`. `Shares::copyUrl()`
+      returns an address only for an active link whose stored token decrypts to a 43-char token
+      with the row's own hash (`hash_equals`), else null → 404. Rows carry `copyable`, never the
+      token. The page's script opens `Craft.ui.createCopyTextPrompt` from the `data-cl-share-url`
+      hook after a create, and from `Craft.sendActionRequest` on *Copy link*. The old one-time
+      panel is gone. `ShareCopyTest` (15) plus SharesTest updated (decrypt check, column list,
+      hook regex). Attribute assertions use `data-…="`, because the script names both selectors.
+      7 mutations each caught (`mutate-4-3.sh`). Browser (sandbox, Chrome): *Copy link* opened
+      Craft's `modal fitted` prompt, holding a read-only field with the probe's address and a
+      copy button. A link made before the migration showed no *Copy link*. Probe row deleted.
+      **Not browser-run:** the prompt after *Create share link*, since submitting the form is
+      Sam's to do. Pest proves the hook and the script reach that page once. If
+      `CRAFT_SECURITY_KEY` changes, a stored token won't decrypt: the row still shows *Copy
+      link*, and it answers 404 with Craft's error toast.
 - [x] **5.1 Check command**: `src/console/controllers/CheckController.php`
       Rules: BR-31 · Verify: TS-11, B5 #4
       *As built:* the check invalidates the index and builds it fresh for every site, so it reports

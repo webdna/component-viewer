@@ -1,4 +1,4 @@
-{# Share links (§6, journey 2): the one-time address, the create form and the list. #}
+{# Share links (§6, journey 2): the create form, the list, and the copy prompts (BR-45). #}
 {% extends '_layouts/cp' %}
 {% import '_includes/forms' as forms %}
 
@@ -14,17 +14,9 @@
 {% set statusClasses = {active: 'enabled', expired: 'expired', cancelled: 'disabled'} %}
 
 {% block content %}
+    {# BR-45: the new address, once, for the copy prompt below. #}
     {% if newUrl %}
-        <div data-cl-share-url>
-            <h2>{{ 'Your new share link'|t('component-library') }}</h2>
-            {{ forms.copytextField({
-                id: 'cl-share-url',
-                label: 'Address'|t('component-library'),
-                instructions: 'Copy it now. It won’t be shown again. Anyone with this address can open the library, with no login, until it expires or you cancel it.'|t('component-library'),
-                value: newUrl,
-            }) }}
-        </div>
-        <hr>
+        <div class="hidden" data-cl-share-url="{{ newUrl }}"></div>
     {% endif %}
 
     <form method="post" accept-charset="UTF-8" id="cl-new-share">
@@ -92,7 +84,13 @@
                                 <span class="status {{ statusClasses[row.status] }}" aria-hidden="true"></span>{{ statusLabels[row.status] }}
                             </td>
                             <td>{{ row.lastUsedAt ? row.lastUsedAt|timestamp('short') : 'Never'|t('component-library') }}</td>
-                            <td class="thin">
+                            <td class="thin nowrap">
+                                {% if row.copyable %}
+                                    <button type="button" class="btn small" data-cl-copy-share="{{ row.id }}"
+                                        aria-label="{{ 'Copy link “{label}”'|t('component-library', {label: row.label}) }}">
+                                        {{- 'Copy link'|t('component-library') -}}
+                                    </button>
+                                {% endif %}
                                 {% if row.status == 'active' %}
                                     <button type="button" class="btn small formsubmit"
                                         data-form="false"
@@ -111,4 +109,26 @@
             </table>
         </div>
     {% endif %}
+
+    {#
+     # BR-45: both addresses open in Craft's copy prompt, as its Copy impersonation URL action does.
+     # A row's comes from the url action (POST, CSRF, both permissions), never from this page.
+     #}
+    {% js %}
+(() => {
+    const label = {{ 'Anyone with this address can open the library, with no login, until it expires or you cancel it.'|t('component-library')|json_encode|raw }};
+    const prompt = (url) => Craft.ui.createCopyTextPrompt({label, value: url});
+    const created = document.querySelector('[data-cl-share-url]');
+    if (created) {
+        prompt(created.dataset.clShareUrl);
+    }
+    for (const button of document.querySelectorAll('[data-cl-copy-share]')) {
+        button.addEventListener('click', () => {
+            Craft.sendActionRequest('POST', 'component-library/shares/url', {data: {id: button.dataset.clCopyShare}})
+                .then((response) => prompt(response.data.url))
+                .catch(({response}) => Craft.cp.displayError(response?.data?.message));
+        });
+    }
+})();
+    {% endjs %}
 {% endblock %}

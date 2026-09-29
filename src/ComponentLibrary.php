@@ -57,7 +57,7 @@ class ComponentLibrary extends Plugin
      */
     public const PERMISSION_MANAGE_SHARES = 'manageComponentLibraryShares';
 
-    public string $schemaVersion = '2.0.0';
+    public string $schemaVersion = '2.0.1';
     public bool $hasCpSection = true;
 
     /**

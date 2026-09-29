@@ -12,7 +12,8 @@ A rewrite as a Craft 5 plugin. See [Upgrading from v1](docs/upgrading-from-v1.md
   `component` tag for the one a component opens on.
 - A *Props* tab listing each component's whole API from its tag, `control: false` for code-only
   props that get no control, and an `icon` prop type that picks by name from one `icons` folder.
-- Share links: expiring, cancellable addresses that open the library with no account.
+- Share links: expiring, cancellable addresses that open the library with no account. A new
+  link's address opens in a copy prompt, and *Copy link* shows an active link's again.
 - The `{% component %}` tag, which describes a component in its own file and renders nothing.
 - Stories in `<name>.stories.twig`, which can embed components and fill their blocks.
 - `component-library/check [--strict]`, for automated builds.

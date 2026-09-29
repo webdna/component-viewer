@@ -17,8 +17,11 @@ Creating and cancelling links needs the **Create and cancel share links** permis
    tomorrow to three months away. The link stops working at the end of that day, UTC.
 4. Choose **Create share link**.
 
-The full address is shown **once**, with a copy button. Copy it then: it can't be shown again,
-because only a fingerprint of it is stored. If it's lost, cancel the link and make another.
+The full address opens in a copy prompt, like Craft's *Copy impersonation URL*. To copy it again
+later, choose **Copy link** on an active link's row. The address is stored only encrypted with the
+site's security key (`CRAFT_SECURITY_KEY`), so a copy of the database alone can't open a link.
+Changing that key makes existing links uncopyable (they still work), so cancel and remake any
+you need to copy again.
 
 Nothing is emailed. Send the address yourself, the way you'd send any link.
 
