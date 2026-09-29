@@ -86,7 +86,7 @@ describe('TS-11 step 1: the fixture roots with the edge cases', function() {
         $count = array_pop($lines);
 
         expect($count)->toBe(count($lines) . ' problems')
-            ->and($lines)->each->toMatch('/^CL00[1-8] \S+ \S.*$/');
+            ->and($lines)->each->toMatch('/^CL00[1-9] \S+ \S.*$/');
     });
 
     it('reports every code the fixtures hold', function(string $line) {

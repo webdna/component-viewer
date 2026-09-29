@@ -39,10 +39,10 @@ class Index extends BaseComponent
     public const CACHE_TAG = 'component-library-index';
 
     /**
-     * In the cache key: bump it when Component gains or loses a property, or a cached index from
-     * before the change unserializes with that property uninitialised.
+     * In the cache key: bump it when Component or Prop gains or loses a property, or a cached
+     * index from before the change unserializes with that property uninitialised.
      */
-    private const FORMAT = 2;
+    private const FORMAT = 3;
 
     /** BR-12's pre-filter: only a file that might hold a component tag is parsed. */
     private const TAG_PATTERN = '/\{%-?\s*component\b/';
@@ -63,6 +63,9 @@ class Index extends BaseComponent
      */
     public bool $legacy = false;
 
+    /** The folder of icons that `icon` props pick from, by name (BR-44). Alias allowed. */
+    public ?string $icons = null;
+
     /** Test hook: index builds since the last reset(). */
     public int $builds = 0;
 
@@ -71,6 +74,9 @@ class Index extends BaseComponent
 
     /** @var array<string,array<string,Component>> This request's indexes, by cache key */
     private array $loaded = [];
+
+    /** @var list<string>|null This request's icon names */
+    private ?array $iconNames = null;
 
     /**
      * Every component on the current site, by handle, sorted.
@@ -98,6 +104,7 @@ class Index extends BaseComponent
     {
         TagDependency::invalidate(Craft::$app->getCache(), self::CACHE_TAG);
         $this->loaded = [];
+        $this->iconNames = null;
     }
 
     /**
@@ -107,6 +114,7 @@ class Index extends BaseComponent
     public function reset(): void
     {
         $this->loaded = [];
+        $this->iconNames = null;
         $this->builds = 0;
         $this->walks = 0;
     }
@@ -129,6 +137,33 @@ class Index extends BaseComponent
         }
 
         return array_values(array_unique($roots));
+    }
+
+    /**
+     * The icon names `icon` props offer (BR-44): the basenames of the `.svg` files and `.twig`
+     * templates directly in the `icons` folder, sorted, each once. `_` files and stories files
+     * are skipped. One directory read per request, so it isn't cached.
+     *
+     * @return list<string>
+     */
+    public function iconNames(): array
+    {
+        if ($this->iconNames !== null) {
+            return $this->iconNames;
+        }
+
+        $folder = $this->icons !== null ? $this->absolute($this->icons) : null;
+        $names = [];
+        foreach ($folder !== null && is_dir($folder) ? (scandir($folder) ?: []) : [] as $file) {
+            if (!str_starts_with($file, '_') && !str_ends_with($file, '.stories.twig')
+                && preg_match('/^(.+)\.(svg|twig)$/', $file, $match) && is_file("$folder/$file")) {
+                $names[$match[1]] = true;
+            }
+        }
+        $names = array_map('strval', array_keys($names));
+        sort($names, SORT_STRING);
+
+        return $this->iconNames = $names;
     }
 
     /** The folder of site versions as an absolute path, or null if site versions aren't used. */

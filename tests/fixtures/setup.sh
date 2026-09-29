@@ -50,6 +50,8 @@ return [
     'sites' => '@root/plugins/component-library/tests/fixtures/templates/_sites',
     // The fixtures include a v1 component (legacy/button), so they read v1 configs.
     'legacy' => true,
+    // icon-button's `icon` prop picks from these (BR-44).
+    'icons' => '@root/plugins/component-library/tests/fixtures/icons',
 ];
 PHP
 echo "config     roots at tests/fixtures/templates"

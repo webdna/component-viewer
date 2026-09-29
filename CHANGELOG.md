@@ -6,10 +6,12 @@ A rewrite as a Craft 5 plugin. See [Upgrading from v1](docs/upgrading-from-v1.md
 
 ### Added
 - A control-panel library: a full-screen workspace with a searchable tree, a preview on each site's
-  own styling, desktop, tablet and phone devices with rotate, and a drawer of settings, examples,
+  own styling, desktop, tablet and phone devices with rotate, and a drawer of settings, props, examples,
   source and notes. Every view has its own address.
 - A preview *Mode* dropdown for the background (the site's own, light or dark), and a `background` key in the
   `component` tag for the one a component opens on.
+- A *Props* tab listing each component's whole API from its tag, `control: false` for code-only
+  props that get no control, and an `icon` prop type that picks by name from one `icons` folder.
 - Share links: expiring, cancellable addresses that open the library with no account.
 - The `{% component %}` tag, which describes a component in its own file and renders nothing.
 - Stories in `<name>.stories.twig`, which can embed components and fill their blocks.

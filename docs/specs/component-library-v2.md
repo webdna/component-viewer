@@ -847,8 +847,23 @@ review. It's built next, before 6.1 is installed in LLL, so the pilot's tags can
       change reloads the preview. The swatch chips and the arrow-key group are gone. Pest 505
       passed; Chrome, CP viewer on `good`: *Light* and *Dark* set `bg` on the iframe and the
       address and the canvas, and *Site* took all three out.
-- [ ] **3.5 Code-only props, Props tab and icons** (added v0.25, Sam's request): `control` and type `icon` in `src/models/Prop.php`; the `icons` setting and its names in `src/ComponentLibrary.php` and `src/services/Index.php` (`FORMAT` bumped); request props in `src/services/Renderer.php` and `Viewer.php`; CL009 in `src/console/controllers/CheckController.php`; the Props tab and icon control in `src/templates/viewer/_component.twig` and `viewer.css`; fixtures `tests/fixtures/icons/`, `tests/fixtures/templates/ui/icon-button.twig` (+ stories) and the `icons` line in `setup.sh`; `docs/format.md`, `docs/setup.md`, CHANGELOG
+- [x] **3.5 Code-only props, Props tab and icons** (added v0.25, Sam's request): `control` and type `icon` in `src/models/Prop.php`; the `icons` setting and its names in `src/ComponentLibrary.php` and `src/services/Index.php` (`FORMAT` bumped); request props in `src/services/Renderer.php` and `Viewer.php`; CL009 in `src/console/controllers/CheckController.php`; the Props tab and icon control in `src/templates/viewer/_component.twig` and `viewer.css`; fixtures `tests/fixtures/icons/`, `tests/fixtures/templates/ui/icon-button.twig` (+ stories) and the `icons` line in `setup.sh`; `docs/format.md`, `docs/setup.md`, CHANGELOG
       Rules: BR-5, BR-24, BR-31, BR-43, BR-44 · Verify: TS-17, TN-21, B5 #1-4
+      *As built (29 Sep 2026, v0.25):* B5 #1-4 green (PHPStan OK, ECS OK, Pest 526 passed, check
+      = the one bad-tag CL001). `PropsTest` (21 tests) plus two existing tests widened for the new
+      fixture: CheckTest's line pattern takes CL009, IndexTest's handle list has
+      `@ui:icon-button`. 7 mutations each caught (`mutate-3-5.sh`). A first run let "no CL009"
+      survive, because the no-icons case fell through to the default message, so the test now
+      asserts the exact message. `Index::iconNames()` reads one folder per request, memoised and
+      uncached, and `reset()` and `invalidate()` forget it. `FORMAT` is 3, since `Prop` gained
+      `control`. `Viewer::controlled()` is the one filter for controls, overrides and `types`.
+      The icon default is checked by the check (CL009), not at compile time, because the names
+      are config. Browser (sandbox, Chrome), in both viewers: picking `close` reached the preview
+      in 641 ms (CP) and 781 ms (share, `window.Craft` undefined), and the address's `props`
+      carried `"icon":"close"`. Controls were `label` and `icon`, and *Props* showed four rows
+      with `href` and `type` code-only. **Not verified:** the 375 px width. The automation
+      window wouldn't resize, so that's left with TS-14 for Sam. The probe share row was deleted
+      (0 rows).
 - [x] **4.1 Share service and management**: `src/services/Shares.php`, `src/controllers/SharesController.php`, `src/templates/shares/*`, GC hook, user-delete cascade
       Rules: BR-3, BR-27, BR-28, BR-30, BR-36 · Verify: TS-4, TN-11 to TN-13
       *As built:* validation lives in a form model, `src/models/ShareForm.php`. The expiry is a native

@@ -193,8 +193,8 @@ class Renderer extends BaseComponent
 
     /**
      * The props a story renders with: prop defaults, then the story's own, then the request's
-     * (BR-24). A request value for an undeclared prop, or one that doesn't coerce to its prop's
-     * type, is dropped, and the story's value stands.
+     * (BR-24). A request value for an undeclared or code-only (`control: false`) prop, or one
+     * that doesn't coerce to its prop's type, is dropped, and the story's value stands.
      *
      * @param array<int|string,mixed> $request Decoded by decodeProps()
      * @return array<string,mixed>
@@ -205,7 +205,7 @@ class Renderer extends BaseComponent
 
         foreach ($request as $name => $value) {
             $prop = $component->props[$name] ?? null;
-            if ($prop !== null && ($coerced = $this->coerce($prop, $value)) !== null) {
+            if ($prop !== null && $prop->control && ($coerced = $this->coerce($prop, $value)) !== null) {
                 $props[$prop->name] = $coerced[0];
             }
         }
@@ -437,6 +437,8 @@ class Renderer extends BaseComponent
                 ? self::wrap(filter_var($value, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE) ?? filter_var($value, FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE))
                 : null),
             'select' => self::option($prop, $value),
+            // BR-44: exactly one of the names, which come from the icons folder, never the request.
+            'icon' => is_string($value) && in_array($value, $this->index()->iconNames(), true) ? [$value] : null,
             'json' => self::depth($value) <= self::MAX_JSON_DEPTH ? [self::inert($value)] : null,
             default => null,
         };

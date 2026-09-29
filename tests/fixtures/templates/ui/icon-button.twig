@@ -1,0 +1,17 @@
+{% component {
+    name: 'Icon button',
+    status: 'ready',
+    notes: 'A fixture for code-only props and icons (BR-43, BR-44).',
+    props: {
+        label: 'Go',
+        icon: { type: 'icon', default: 'arrow', description: 'The icon, by name.' },
+        href: { type: 'string', control: false, description: 'If set, renders an <a>.' },
+        type: { type: 'select', default: 'button', options: ['button', 'submit', 'reset'], control: false },
+    },
+} %}
+{% set glyph %}<span class="icon" data-icon="{{ icon ?? '' }}"></span>{% endset %}
+{% if href ?? false %}
+    <a href="{{ href }}">{{ glyph }}{{ label ?? 'Go' }}</a>
+{% else %}
+    <button type="{{ type ?? 'button' }}">{{ glyph }}{{ label ?? 'Go' }}</button>
+{% endif %}
