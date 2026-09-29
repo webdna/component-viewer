@@ -10,7 +10,7 @@ use yii\web\NotFoundHttpException;
 use yii\web\Response;
 
 /**
- * Share-link management (§6): the list and create form, create, and cancel.
+ * Share-link management (§6): the list and create form, create, copy, and revoke (which deletes).
  */
 class SharesController extends Controller
 {
@@ -92,7 +92,7 @@ class SharesController extends Controller
         }
 
         return $this->asSuccess(
-            Craft::t('component-library', 'Share link cancelled.'),
+            Craft::t('component-library', 'Share link revoked.'),
             redirect: 'component-library/shares',
         );
     }

@@ -43,7 +43,7 @@ v1, and every existing include (`@handle`, file paths, site versions) resolves a
 
 5. **Grant the permission.** In v1, everyone with control-panel access could see the library. In
    v2, only groups with **Access Component Library** can (admins always can). Decide which groups
-   keep it. Customer-service or editor groups usually shouldn't. Grant **Create and cancel share
+   keep it. Customer-service or editor groups usually shouldn't. Grant **Create and revoke share
    links** to whoever sends the library to clients.
 
 6. **Check.** Open *Component Library* in the control panel. Every v1 component is listed, each

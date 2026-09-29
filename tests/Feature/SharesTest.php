@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * TS-4, TN-12 and TN-13: creating, listing, cancelling and cleaning up share links (BR-27, BR-28,
+ * TS-4, TN-12 and TN-13: creating, listing, revoking (deleting) and cleaning up share links (BR-27, BR-28,
  * BR-30, BR-36). The gates and CSRF (TN-11) are AccessTest's.
  *
  * Share rows are made per test and rolled back with it. Forms post to the list page with an
@@ -39,13 +39,12 @@ function sharesPost(array $body, string $action = 'create'): array
     return ['action' => "component-library/shares/$action"] + $body;
 }
 
-function shareRow(string $expires = '+14 days', ?string $revoked = null, string $label = 'Acme', ?int $creator = null): ShareRecord
+function shareRow(string $expires = '+14 days', string $label = 'Acme', ?int $creator = null): ShareRecord
 {
     $share = new ShareRecord();
     $share->label = $label;
     $share->tokenHash = hash('sha256', random_bytes(32));
     $share->expiresAt = Db::prepareDateForDb(new DateTime($expires));
-    $share->revokedAt = $revoked === null ? null : Db::prepareDateForDb(new DateTime($revoked));
     $share->createdById = $creator ?? (int)User::find()->username('admin')->one()->id;
     $share->save(false);
 
@@ -109,7 +108,6 @@ describe('TS-4 create', function() {
             ->and($row->label)->toBe('Acme')
             ->and((int)$row->createdById)->toBe((int)User::find()->username('admin')->one()->id)
             ->and($row->expiresAt)->toBe(ShareForm::day(14) . ' 23:59:59')
-            ->and($row->revokedAt)->toBeNull()
             ->and($row->lastUsedAt)->toBeNull()
             ->and(implode('|', $row->getAttributes()))->not->toContain($token)
             // BR-45: kept only encrypted with Craft's security key.
@@ -177,7 +175,7 @@ describe('TS-4 create', function() {
         $columns = Craft::$app->getDb()->getTableSchema(ShareRecord::TABLE, true)->getColumnNames();
         sort($columns);
 
-        expect($columns)->toBe(['createdById', 'dateCreated', 'dateUpdated', 'expiresAt', 'id', 'label', 'lastUsedAt', 'revokedAt', 'tokenEncrypted', 'tokenHash', 'uid']);
+        expect($columns)->toBe(['createdById', 'dateCreated', 'dateUpdated', 'expiresAt', 'id', 'label', 'lastUsedAt', 'tokenEncrypted', 'tokenHash', 'uid']);
     });
 });
 
@@ -212,37 +210,36 @@ describe('TN-12 validation', function() {
     });
 });
 
-describe('cancel', function() {
-    it('cancels a link at once, previews included, and keeps its first cancel time', function() {
+describe('revoke', function() {
+    it('deletes a link at once, previews included', function() {
         $share = shareRow();
+        $other = shareRow(label: 'Other');
         $renderer = ComponentLibrary::getInstance()->getRenderer();
         expect($renderer->scopeIsValid("share:$share->id"))->toBeTrue();
 
         $this->actingAs('admin')->post(SHARES_PAGE, sharesPost(['id' => $share->id], 'revoke'))->assertStatus(302);
-        $share->refresh();
-        expect($share->revokedAt)->not->toBeNull()
-            ->and($renderer->scopeIsValid("share:$share->id"))->toBeFalse()
-            ->and($this->shares->status($share))->toBe(Shares::STATUS_CANCELLED);
 
-        $share->revokedAt = '2026-01-01 00:00:00';
-        $share->save(false);
-        $this->post(SHARES_PAGE, sharesPost(['id' => $share->id], 'revoke'))->assertStatus(302);
-        expect($share->refresh() ? $share->revokedAt : null)->toBe('2026-01-01 00:00:00');
+        expect(ShareRecord::findOne($share->id))->toBeNull()
+            ->and($renderer->scopeIsValid("share:$share->id"))->toBeFalse()
+            ->and(ShareRecord::findOne($other->id))->not->toBeNull();
+        // Already gone: nothing to revoke.
+        $this->post(SHARES_PAGE, sharesPost(['id' => $share->id], 'revoke'))->assertStatus(404);
     });
 
-    it('offers cancel on active links only, with a confirmation', function() {
+    it('offers Revoke link on every row, with a confirmation', function() {
         $active = shareRow(label: 'Live');
-        shareRow('-1 day', label: 'Old');
-        shareRow(revoked: '-1 hour', label: 'Gone');
+        $old = shareRow('-1 day', label: 'Old');
 
         $html = $this->actingAs('admin')->get(SHARES_PAGE)->assertOk()->content;
 
-        expect(substr_count($html, 'data-action="component-library/shares/revoke"'))->toBe(1)
+        expect(substr_count($html, 'data-action="component-library/shares/revoke"'))->toBe(2)
             ->and($html)->toContain('data-value="' . $active->id . '"')
-            ->and($html)->toContain('data-confirm="Cancel “Live”?')
+            ->and($html)->toContain('data-value="' . $old->id . '"')
+            ->and($html)->toContain('data-confirm="Revoke “Live”? The link is deleted')
+            ->and($html)->toContain('>Revoke link</button>')
+            ->and($html)->not->toContain('Cancel link')
             ->and($html)->toContain('data-cl-share-state="active"')
-            ->and($html)->toContain('data-cl-share-state="expired"')
-            ->and($html)->toContain('data-cl-share-state="cancelled"');
+            ->and($html)->toContain('data-cl-share-state="expired"');
     });
 
     it('404s an unknown link', function() {
@@ -251,17 +248,15 @@ describe('cancel', function() {
 });
 
 // BR-27, §4 States
-it('derives the status from the clock and the cancel time', function(string $expires, ?string $revoked, string $status) {
-    $share = shareRow($expires, $revoked);
+it('derives the status from the clock', function(string $expires, string $status) {
+    $share = shareRow($expires);
 
     expect(ComponentLibrary::getInstance()->getShares()->status($share))->toBe($status)
         ->and(ComponentLibrary::getInstance()->getShares()->active()->andWhere(['id' => $share->id])->exists())
         ->toBe($status === Shares::STATUS_ACTIVE);
 })->with([
-    'active' => ['+1 hour', null, Shares::STATUS_ACTIVE],
-    'expired' => ['-1 second', null, Shares::STATUS_EXPIRED],
-    'cancelled' => ['+1 day', '-1 hour', Shares::STATUS_CANCELLED],
-    'cancelled, then expired' => ['-1 day', '-2 days', Shares::STATUS_CANCELLED],
+    'active' => ['+1 hour', Shares::STATUS_ACTIVE],
+    'expired' => ['-1 second', Shares::STATUS_EXPIRED],
 ]);
 
 // §4 lastUsedAt
@@ -286,14 +281,12 @@ it('records use at most once a minute', function() {
 });
 
 // §4 On deletion
-it('garbage-collects links 30 days after they expire or are cancelled', function() {
+it('garbage-collects links 30 days after they expire', function() {
     $kept = [
         shareRow()->id,
         shareRow('-29 days')->id,
-        shareRow('+1 day', '-29 days')->id,
     ];
     shareRow('-31 days');
-    shareRow('+1 day', '-31 days');
 
     Craft::$app->getGc()->trigger(Gc::EVENT_RUN);
 

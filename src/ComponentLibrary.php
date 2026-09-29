@@ -53,11 +53,11 @@ class ComponentLibrary extends Plugin
     public const PERMISSION_VIEW = 'accessPlugin-component-library';
 
     /**
-     * Create and cancel share links (BR-1), nested under PERMISSION_VIEW.
+     * Create and revoke share links (BR-1), nested under PERMISSION_VIEW.
      */
     public const PERMISSION_MANAGE_SHARES = 'manageComponentLibraryShares';
 
-    public string $schemaVersion = '2.0.1';
+    public string $schemaVersion = '2.0.2';
     public bool $hasCpSection = true;
 
     /**
@@ -271,7 +271,7 @@ class ComponentLibrary extends Plugin
             function(RegisterUserPermissionsEvent $event): void {
                 $nested = [
                     self::PERMISSION_MANAGE_SHARES => [
-                        'label' => Craft::t('component-library', 'Create and cancel share links'),
+                        'label' => Craft::t('component-library', 'Create and revoke share links'),
                     ],
                 ];
 

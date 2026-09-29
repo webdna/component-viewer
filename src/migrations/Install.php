@@ -21,7 +21,6 @@ class Install extends Migration
             // The token encrypted with Craft's security key, for Copy link only (BR-45).
             'tokenEncrypted' => $this->text(),
             'expiresAt' => $this->dateTime()->notNull(),
-            'revokedAt' => $this->dateTime(),
             'createdById' => $this->integer()->notNull(),
             'lastUsedAt' => $this->dateTime(),
             'dateCreated' => $this->dateTime()->notNull(),

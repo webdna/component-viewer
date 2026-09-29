@@ -68,10 +68,9 @@ function previewScope(string $src): ?string
     return $route[1]['scope'] ?? null;
 }
 
-function setShareDates(ShareRecord $share, string $expires, ?string $revoked = null): void
+function setShareExpiry(ShareRecord $share, string $expires): void
 {
     $share->expiresAt = Db::prepareDateForDb(new DateTime($expires));
-    $share->revokedAt = $revoked === null ? null : Db::prepareDateForDb(new DateTime($revoked));
     $share->save(false);
 }
 
@@ -137,7 +136,7 @@ describe('TS-5 use a share link', function() {
     // TS-5 step 2: the preview token lasts the link's remaining life when that's under an hour
     it('never outlives a link about to expire', function() {
         [$token, $share] = newShare();
-        setShareDates($share, '+10 minutes');
+        setShareExpiry($share, '+10 minutes');
         $src = sharePreviewSrc($this->get(sharePath($token))->assertOk()->content);
 
         parse_str((string)parse_url($src, PHP_URL_QUERY), $query);
@@ -262,9 +261,9 @@ describe('TS-15 preview workspace on a share link', function() {
     })->with('unusable devices');
 });
 
-describe('TS-6 cancel and expiry', function() {
-    // TS-6 step 1
-    it('stops an open preview as soon as the link is cancelled', function() {
+describe('TS-6 revoke and expiry', function() {
+    // TS-6 steps 1-2
+    it('stops an open preview as soon as the link is revoked, and the address is then unknown', function() {
         [$token, $share] = newShare();
         $preview = '?' . parse_url(sharePreviewSrc($this->get(sharePath($token, '@ui:good'))->assertOk()->content), PHP_URL_QUERY);
         $this->get($preview)->assertOk();
@@ -272,27 +271,28 @@ describe('TS-6 cancel and expiry', function() {
         $this->shares->revoke((int)$share->id);
 
         $this->get($preview)->assertStatus(403)->assertSee('Preview expired');
+        $this->get(sharePath($token, '@ui:good'))->assertStatus(404)
+            ->assertSee('This link doesn’t work')
+            ->assertDontSee('data-cl-share-state', false)
+            ->assertDontSee('Acme');
     });
 
-    // TS-6 steps 2-3, BR-27
-    it('refuses a link that is not active, with the page for its state', function(string $expires, ?string $revoked, string $state) {
+    // TS-6 step 3, BR-27
+    it('refuses an expired link with the expired page', function() {
         [$token, $share] = newShare();
-        setShareDates($share, $expires, $revoked);
+        setShareExpiry($share, '-1 minute');
 
         $response = $this->get(sharePath($token, '@ui:good'))->assertStatus(410)
             ->assertHeader('Referrer-Policy', 'no-referrer')
-            ->assertSee("data-cl-share-state=\"$state\"", false)
+            ->assertSee('data-cl-share-state="' . Shares::STATUS_EXPIRED . '"', false)
+            ->assertSee('This link has expired')
             ->assertSee('Ask whoever sent it for a new link.')
             ->assertDontSee('data-cl-preview', false)
             ->assertDontSee('Acme');
 
         expect(ShareRecord::findOne($share->id)->lastUsedAt)->toBeNull()
             ->and($response->content)->not->toContain('data-cl-component');
-    })->with([
-        'cancelled' => ['+14 days', '-1 minute', Shares::STATUS_CANCELLED],
-        'expired' => ['-1 minute', null, Shares::STATUS_EXPIRED],
-        'both, cancelled wins' => ['-1 day', '-2 days', Shares::STATUS_CANCELLED],
-    ]);
+    });
 
     // TS-6 step 3, BR-27
     it('is 404 for a token it doesn’t know, of any shape', function(string $token) {
@@ -320,8 +320,8 @@ describe('TS-6 cancel and expiry', function() {
     it('sends its headers on every state', function(string $state) {
         [$token, $share] = newShare();
         match ($state) {
-            'expired' => setShareDates($share, '-1 minute'),
-            'cancelled' => setShareDates($share, '+1 day', '-1 minute'),
+            'expired' => setShareExpiry($share, '-1 minute'),
+            'revoked' => $this->shares->revoke((int)$share->id),
             default => null,
         };
 
@@ -329,5 +329,5 @@ describe('TS-6 cancel and expiry', function() {
         foreach (ShareViewerController::HEADERS as $name => $value) {
             $response->assertHeader($name, $value);
         }
-    })->with(['active', 'expired', 'cancelled', 'unknown']);
+    })->with(['active', 'expired', 'revoked', 'unknown']);
 });

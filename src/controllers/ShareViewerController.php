@@ -17,8 +17,8 @@ use yii\web\Response;
  * The share viewer (§6): `<primary site>/component-library/share/<token>[/<handle>]?story=&site=&props=&device=&orientation=&bg=`.
  *
  * Anonymous: the link is the credential (BR-27). It shows what the CP viewer does, with the same
- * templates, but no paths or roots (BR-29), and previews under a `share:` token, so cancelling the
- * link stops them too (BR-21). Unknown links are 404, expired and cancelled ones 410.
+ * templates, but no paths or roots (BR-29), and previews under a `share:` token, so revoking the
+ * link stops them too (BR-21). Unknown links, revoked ones included, are 404, and expired ones 410.
  *
  * The route param isn't called `token`: Yii copies route params into the query string, where
  * Craft reads `token` as a token of its own.
@@ -28,7 +28,7 @@ class ShareViewerController extends Controller
     /**
      * Sent with every share page, whatever its state. The address is the credential, so no
      * request from the page (the preview included) may carry it in a Referer (BR-29), and no
-     * cache may keep a page after its link is cancelled.
+     * cache may keep a page after its link is revoked.
      */
     public const HEADERS = [
         'Referrer-Policy' => 'no-referrer',
@@ -55,11 +55,8 @@ class ShareViewerController extends Controller
                 Craft::t('component-library', 'Check that the address is complete, or ask whoever sent it for a new link.'));
         }
 
+        // A revoked link has no row, so it was the unknown page above.
         $status = $shares->status($share);
-        if ($status === Shares::STATUS_CANCELLED) {
-            return $this->message(410, $status, Craft::t('component-library', 'This link has been cancelled'),
-                Craft::t('component-library', 'Ask whoever sent it for a new link.'));
-        }
         if ($status === Shares::STATUS_EXPIRED) {
             return $this->message(410, $status, Craft::t('component-library', 'This link has expired'),
                 Craft::t('component-library', 'Ask whoever sent it for a new link.'));

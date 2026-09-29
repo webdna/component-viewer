@@ -7,14 +7,13 @@ use craft\records\User;
 use yii\db\ActiveQueryInterface;
 
 /**
- * A share link. Status is derived from expiresAt and revokedAt, never stored (spec §4).
+ * A share link. Status is derived from expiresAt, never stored, and revoking deletes the row (spec §4).
  *
  * @property int $id
  * @property string $label
  * @property string $tokenHash
  * @property string|null $tokenEncrypted
  * @property string $expiresAt
- * @property string|null $revokedAt
  * @property int $createdById
  * @property string|null $lastUsedAt
  * @property string $dateCreated
