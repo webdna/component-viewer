@@ -2,7 +2,7 @@
 spec: Component Library v2
 slug: component-library-v2
 status: draft
-version: 0.20
+version: 0.21
 date: 2026-09-28
 author: Claude (for Sam Birch)
 client: webdna (internal)
@@ -211,7 +211,7 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 
 | # | Rule |
 |---|---|
-| BR-5 | A component declares itself with `{% component { … } %}` anywhere in its file. Keys: `name`, `handle`, `status` (`prototype`\|`wip`\|`ready`\|`deprecated`), `notes` (Markdown), `viewClass`, `props`. Each prop is a shorthand default (`label: 'Save'`, type inferred) or `{type, default, options, required, description}`. Types: `string`, `text`, `bool`, `number`, `select` (needs `options`), `json`. |
+| BR-5 | A component declares itself with `{% component { … } %}` anywhere in its file. Keys: `name`, `handle`, `status` (`prototype`\|`wip`\|`ready`\|`deprecated`), `notes` (Markdown), `viewClass`, `background` (`site`\|`light`\|`dark`, default `site`, BR-41), `props`. Each prop is a shorthand default (`label: 'Save'`, type inferred) or `{type, default, options, required, description}`. Types: `string`, `text`, `bool`, `number`, `select` (needs `options`), `json`. |
 | BR-6 | The tag's argument must be a hash of literals, recursively (strings, numbers, booleans, null, arrays, hashes). A variable, filter, function call or concatenation is a Twig **syntax error at compile time**, naming the file and line. The library reads the tag by parsing, never by rendering. |
 | BR-7 | The tag compiles to nothing. A converted component renders byte-identical output to the same file without the tag. Defaults feed the viewer only. |
 | BR-8 | Stories live in `<name>.stories.twig` beside the component. `{% story 'Name' with { … } %}{% endstory %}` renders the component with those props. A body, if given, renders instead: any Twig, including `include`/`embed` of any component with block overrides. The current props are available to the body as `props`. Names are unique per file, and `with` follows BR-6. |
@@ -236,7 +236,7 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 
 | # | Rule |
 |---|---|
-| BR-20 | The preview is an iframe on the target site's base URL, carrying a Craft token (`tokens->createToken`) routed to the render action. Token params hold only the scope, `user:<id>` or `share:<id>`. The lifetime is 1 hour or the share's remaining life, whichever is shorter, with no usage limit. The component, story and props travel as the query params `component`, `story`, `props`. |
+| BR-20 | The preview is an iframe on the target site's base URL, carrying a Craft token (`tokens->createToken`) routed to the render action. Token params hold only the scope, `user:<id>` or `share:<id>`. The lifetime is 1 hour or the share's remaining life, whichever is shorter, with no usage limit. The component, story and props travel as the query params `component`, `story`, `props`, plus `bg` when the viewer's background is light or dark (BR-42). |
 | BR-21 | Every render request rechecks the scope: the user still exists, is active (not suspended) and holds `accessPlugin-component-library`, or the share is active. On failure it returns 403, "Preview expired, reload the page". |
 | BR-22 | The site rendered, and the index used, is the site the request was served on. No request value selects a site for rendering, indexing or a path. The viewer's `site` address parameter only chooses the iframe's base URL, and it's accepted only once `getSiteByHandle()` returns a site (otherwise the primary site). |
 | BR-23 | Previews render as a guest. The identity is cleared in memory for the request only, with no session write, so `currentUser` is null whoever's browser it is. |
@@ -278,6 +278,13 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 | BR-39 | The address carries `device` (`desktop`\|`tablet`\|`phone`) and `orientation` (`portrait`\|`landscape`) beside `story` and `props`, and a copied address restores them. Any other value, or none, means desktop portrait. Neither value reaches the server's render, a path or a template name. Only the viewer page reads them. |
 | BR-40 | The tree's hidden state, whether the drawer is open, and the open drawer's height are remembered per browser under keys prefixed `cl.`, with read failures ignored, and the page works without them. The divider sits on top of an open drawer. The drawer defaults to 40% of the height, at least 120 px, and the preview keeps at least 200 px. Dragging, the arrow keys or a double-click (which resets) change it. Below 768 px neither the tree's state nor the height applies. |
 
+**Preview background** (added in v0.21, Sam's request)
+
+| # | Rule |
+|---|---|
+| BR-41 | The preview background is `site` (the layout's own, untouched), `light` or `dark`. A component opens on its tag's `background` (BR-5, default `site`). The preview toolbar has a *Background* group (*Site*, *Light*, *Dark*) after the device group, in both viewers. It's one group operated by arrow keys, with `aria-pressed` on the value in effect (BR-34). A pick reloads the iframe and puts `bg` in the address beside `device` and `orientation`, and a copied address restores it. A story switch keeps `bg`. Picking another component in the tree drops it, so each component opens on its own `background`. The choice is not remembered per browser, because that would hide every component's own setting. |
+| BR-42 | The render reads `bg` as exactly `light` or `dark`. Anything else (`site`, an array, markup, any other string) means the component's `background`. When the value in effect is `light` or `dark`, block `component` begins with a `<link rel="stylesheet">` to the plugin's published `preview.css` and wraps the story in `<div class="cl-canvas" data-cl-canvas="light\|dark">`. The class and attribute come from that fixed pair, never from the request. `preview.css` is the plugin's own base stylesheet for the preview. The wrapper is `display: contents`, so it never changes layout, and `html` and `body` of a page holding it get the background with `!important` (light `#ffffff`, dark `#111111`). The component's own colours are untouched. With `site`, the render is byte-identical to one without this feature: no link and no wrapper. A layout element other than `html` or `body` that paints its own background still shows. Container layout (padding, centring) stays with `viewClass`. |
+
 ---
 
 ## 6. Interfaces
@@ -285,12 +292,12 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 | Method | Path | Purpose | Auth | Returns |
 |---|---|---|---|---|
 | GET | `admin/component-library` | Viewer: first component or empty state | `accessPlugin-component-library` | CP page |
-| GET | `admin/component-library/<handle>?story=&site=&props=&device=&orientation=` | Viewer on one component (`site` picks the iframe base URL only, per BR-22; `device` and `orientation` per BR-39, also on share URLs) | `accessPlugin-component-library` | Full-screen CP page (BR-37) |
+| GET | `admin/component-library/<handle>?story=&site=&props=&device=&orientation=&bg=` | Viewer on one component (`site` picks the iframe base URL only, per BR-22; `device` and `orientation` per BR-39, and `bg` per BR-41, also on share URLs) | `accessPlugin-component-library` | Full-screen CP page (BR-37) |
 | GET | `admin/component-library/shares` | Share list and create form | + `manageComponentLibraryShares` | CP page |
 | POST | `actions/component-library/shares/create` | Create a link | + manage, CSRF | Redirect, one-time URL in the flash |
 | POST | `actions/component-library/shares/revoke` | Cancel a link | + manage, CSRF | Redirect |
 | GET | `<primary site>/component-library/share/<token>[/<handle>]` | Share viewer | Anonymous, active token | Page / 404 / 410 |
-| GET | `<site base URL>?token=<craft token>&component=&story=&props=` | Preview render | Anonymous, valid Craft token, scope rechecked | HTML / 403 / 500 |
+| GET | `<site base URL>?token=<craft token>&component=&story=&props=[&bg=light\|dark]` | Preview render (`bg` per BR-42) | Anonymous, valid Craft token, scope rechecked | HTML / 403 / 500 |
 
 v1's front-end `component-library` and `component-library/render` URLs and the
 `get-component-info` action are **removed**.
@@ -338,6 +345,7 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 | AC-13 | A page using many components doesn't rebuild the component list on each use. | TS-13 |
 | AC-14 | The whole viewer works by keyboard alone and on a phone-width screen. | TS-14 |
 | AC-15 | The viewer fills the screen like Craft's entry preview, with v1's row of tabs below the preview. The preview switches to tablet or phone, turns, and always shows at real size. A copied address reopens on the same device, and a share link behaves the same way. | TS-15 |
+| AC-16 | The preview background switches between the site's own, light and dark without changing the component. A component can say which it opens on. A copied address or a share link keeps the choice. | TS-16 |
 
 ### Test data and preconditions
 
@@ -452,6 +460,15 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 7. *Refresh* reloads the iframe. *Open in a new tab* opens the preview URL on its own.
 8. Repeat steps 2, 4 and 7 on the share link.
 
+**TS-16 · Preview background** · AC-16 · BR-5, BR-41, BR-42 · *Pest (steps 1-3) + browser*
+*Success criterion: the background changes and nothing else does.*
+1. Render `good` with no `bg`, then with `bg=site`. Both are byte-identical to the render before task 3.4, with no `preview.css` link and no `data-cl-canvas`.
+2. Render `good` with `bg=light`, then `bg=dark`. Block `component` begins with the `preview.css` link, and the story sits in `data-cl-canvas="light"` (then `"dark"`). The story's own markup is unchanged inside it.
+3. Render the edge fixture `on-dark` (its tag sets `background: 'dark'`) with no `bg`. It's on `dark`. With `bg=light` it's on `light`. A tag with `background: 'purple'` is a compile error naming the file and line, and check CL001 (BR-6).
+4. In the CP viewer on `good`, pick *Light*. Within 1 s the preview's page background is white, the component looks as it did, *Light* has `aria-pressed="true"`, and the address carries `bg=light`. Open the copied address in a new tab. It's still light. Pick *Site*. The layout's own background returns and `bg` leaves the address.
+5. With *Dark* picked, switch story. It stays dark. Pick another component in the tree. It opens on its own `background`.
+6. Repeat steps 4 and 5 on a share link.
+
 ### Negative and edge cases
 
 | # | Condition | Expected behaviour |
@@ -475,6 +492,7 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 | TN-17 | `resolver->resolve('../config/db.php')` or `'/etc/passwd'` | `null` (BR-19) |
 | TN-18 | `device` or `orientation` set to markup, a 5 KB string or an array, on the CP and share viewers | Desktop portrait. The value isn't echoed and doesn't reach the render URL (BR-39) |
 | TN-19 | Browser storage blocked, or holding a garbage `cl.` value | Defaults, and no script error (BR-40) |
+| TN-20 | `bg` set to markup, `light<script>`, a 5 KB string or an array, on the render and on the CP and share viewers | The component's own `background`. The value isn't echoed, and no class, attribute or path is built from it (BR-41, BR-42) |
 
 ### Automated checks
 
@@ -485,7 +503,7 @@ with `CRAFT_BASE_PATH = getcwd()`, and Pest loads `tests/Pest.php` only from `--
 so B5 #3 passes both `-c` and `--test-directory`. Each test runs in a rolled-back transaction.
 Fixtures that must outlive a test come from `tests/fixtures/setup.sh`, and `tests/HarnessTest.php`
 fails if they are missing. TS-3 step 3, TS-8 and TS-9 run against other projects' real pages.
-TS-14 needs a human judgement on focus order. TS-2, TS-3 steps 1–2 and TS-15 steps 2–4 and 6–8 stay browser runs until an
+TS-14 needs a human judgement on focus order. TS-2, TS-3 steps 1–2, TS-15 steps 2–4 and 6–8 and TS-16 steps 4–6 stay browser runs until an
 e2e runner targets the plugin (the sandbox has Playwright, but nothing points at the plugin yet).
 
 **Test hooks the build must add:**
@@ -495,6 +513,7 @@ e2e runner targets the plugin (the sandbox has Playwright, but nothing points at
 - `data-cl-workspace` (the page root), `data-cl-device="desktop|tablet|phone"` (buttons), `data-cl-rotate`,
   `data-cl-divider`, `data-cl-drawer`, `data-cl-drawer-toggle`, `data-cl-tree-toggle`, `data-cl-refresh`,
   `data-cl-open`, `data-cl-site-submit`. These replace 3.2's `data-cl-width`.
+- `data-cl-background="site|light|dark"` (the toolbar buttons) and `data-cl-canvas="light|dark"` (the render's wrapper)
 - A test-only index build counter, reset per test
 
 ### Regression checks
@@ -526,7 +545,8 @@ The access gate and harness come first, so nothing is ever reachable ungated in 
 follow the render because they reuse its token scope. Phase 6 is last because it's the only phase
 touching other repositories. Task 3.3, the preview workspace, was added after phases 3 to 5 were
 built (v0.16). It's built next, before 5.2, because it reshapes both viewers, and 6.1's pilot is
-reviewed in it.
+reviewed in it. Task 3.4, the preview background, was added in v0.21 while 6.1 awaited Sam's
+review. It's built next, before 6.1 is installed in LLL, so the pilot's tags can use `background`.
 
 ### Tasks
 
@@ -787,6 +807,8 @@ reviewed in it.
       At 375 px there's no sideways scroll, and the tree is behind its toggle. `window.Craft` is
       undefined on the share page. The Chrome window was backgrounded, so resize-driven layout was
       read after a forced render, and **TS-14's keyboard pass is still Sam's**.
+- [ ] **3.4 Preview background** (added v0.21): the `background` tag key in `src/twig/ComponentTokenParser.php` and `src/models/Component.php`; `bg` and the canvas wrapper in `src/services/Renderer.php` and `src/templates/site/_render/*`; the new `src/web/assets/preview/dist/preview.css`, published and linked from the render; the *Background* group in `src/templates/viewer/_workspace.twig`, `src/services/Viewer.php` and `src/web/assets/viewer/viewer.js` (address, iframe URL, tree links without `bg`); fixture `tests/fixtures/edge/ui/on-dark.twig`; `docs/format.md` (the key) and `docs/setup.md` §3 (the switch, and that it overrides only `html` and `body`)
+      Rules: BR-5, BR-20, BR-41, BR-42 · Verify: TS-16, TN-20, B5 #1-4
 - [x] **4.1 Share service and management**: `src/services/Shares.php`, `src/controllers/SharesController.php`, `src/templates/shares/*`, GC hook, user-delete cascade
       Rules: BR-3, BR-27, BR-28, BR-30, BR-36 · Verify: TS-4, TN-11 to TN-13
       *As built:* validation lives in a form model, `src/models/ShareForm.php`. The expiry is a native
@@ -1041,14 +1063,16 @@ Task 1.1 deleted the v1 files named in items 2-5. Read them from history:
   The share page has none of them, by design (§6 *Screens*), so a viewer that needs them breaks for
   every client. The `lp-*` panes are also fixed-position overlays that can change in any Craft release.
 - **Do not send `device` or `orientation` to the render.** The render URL only ever carries
-  `component`, `story` and `props` (BR-20). A new request value there is a new hostile input.
+  `component`, `story`, `props` and `bg` (BR-20). A new request value there is a new hostile input.
+  `bg` is allowed because it's a closed pair: the render compares it to `light` and `dark` and
+  otherwise ignores it. Never build a class, attribute, path or template name from its text (BR-42).
 
 ## B4. Definition of done
 
 - [ ] Every AC in §7 passes. The manual evidence for TS-3 step 3, TS-8, TS-9 and TS-14 is recorded
       in the task commit or the build-progress memory.
 - [ ] Every BR in §5 is enforced in code, with a Pest test or a named manual scenario
-- [ ] TN-1 to TN-19 behave as specified, and the §7 regression checks pass
+- [ ] TN-1 to TN-20 behave as specified, and the §7 regression checks pass
 - [ ] Every §7 test hook is present
 - [ ] B5 runs clean
 - [ ] Appendix A rows 2 and 3 are resolved and promoted into the body. Row 1 is reviewed by Sam
@@ -1094,6 +1118,7 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | AC-9 | TS-9 step 4 in the mw-core CP |
 | AC-14 | TS-14, keyboard only and at 375 px |
 | AC-15 | TS-15 steps 2-4 and 6-8 in a browser against the sandbox, in both viewers (steps 1 and 5 are Pest) |
+| AC-16 | TS-16 steps 4-6 in a browser against the sandbox, in both viewers (steps 1-3 are Pest) |
 
 ## B6. Out of bounds
 
@@ -1129,3 +1154,4 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | 2026-09-29 | 0.18 | Task 5.2 built. BR-32: roots are numbered from 1, a site folder isn't one, neither file is written if either exists, the other layout of a handle already in that root is refused, and the index is invalidated. See 5.2's as-built note. | Claude, for Sam Birch |
 | 2026-09-29 | 0.19 | Task 5.3 built: README, five guides and the 2.0.0 CHANGELOG entry (dated *Unreleased*). The v1 leftover `src/README.md` is deleted. The upgrade guide awaits Sam's read against TS-9. See 5.3's as-built note. | Claude, for Sam Birch |
 | 2026-09-29 | 0.20 | Task 6.1 staged, not ticked. It's built on LLL branch `feature/component-library-v2` (23e07e24), but by Sam's decision it isn't installed in LLL until he approves the pilot, which runs for review in the craft5 sandbox. BR-24 now says escaping protects HTML only: a prop used as script, a URL, a file path or a template name is a `select` or set only in stories, and the format guide says so too. TS-8 evidence is in 6.1's as-built note. | Claude, for Sam Birch |
+| 2026-09-29 | 0.21 | Preview background added (Sam's request): BR-41 and BR-42, AC-16, TS-16, TN-20, task 3.4. The tag gains `background` (BR-5), and the render accepts a closed `bg=light|dark` (BR-20, §6, B3). v1 had no such switch (its `app.css` styled only the viewer), so the plugin's own `preview.css` is new. It sets only the page background. Container layout stays with `viewClass`, and the choice is not remembered per browser, so each component's default shows. | Claude, for Sam Birch |
