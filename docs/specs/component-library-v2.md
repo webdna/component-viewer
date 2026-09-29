@@ -1024,7 +1024,7 @@ review. It's built next, before 6.1 is installed in LLL, so the pilot's tags can
       in the sandbox with a real `Index`, and all three files parse with no errors and the expected
       stories and inferred types. `Viewer::FORMAT_GUIDE` resolves once pushed to `main`. Sam's read
       against TS-9 is still to do. B5: PHPStan OK, ECS OK, Pest 468 passed, and B5 #4 as amended.
-- [ ] **6.1 LLL install and pilot** (LLL repo, own branch): `config/component-library.php`, `templates/_component-library/preview.twig` (the craft-vite pair from `_layouts/public.twig:38-40`), convert `_components/ui/button.twig`, `form/text.twig` and `ui/dialog.twig`, and add their `.stories.twig`
+- [x] **6.1 LLL install and pilot** (LLL repo, own branch): `config/component-library.php`, `templates/_component-library/preview.twig` (the craft-vite pair from `_layouts/public.twig:38-40`), convert `_components/ui/button.twig`, `form/text.twig` and `ui/dialog.twig`, and add their `.stories.twig`
       Rules: BR-7, BR-8, BR-25 · Verify: TS-8, B5 #5
       *Approved on craft5, install on hold at Sam's word (29 Sep 2026).* Before the install it
       adopts 3.5: one `icons` folder (the two sets merged), the button's `icon` a name with
@@ -1062,6 +1062,27 @@ review. It's built next, before 6.1 is installed in LLL, so the pilot's tags can
       install and again after the conversion. With tokens masked, 0 differing pages. Two runs
       before the install also gave 0, and so did a run after the install but before the conversion.
       Step 4 (B5 #5): `0 problems`, exit 0. Redo both after the approved install.
+      *Installed (29 Sep 2026, on Sam's go-ahead, from the released 2.0.0-beta.1):* the LLL main
+      checkout is on `feature/component-library-v2`, rebased onto staging `0ce218b1`. The pilot
+      is `dccbb6aa` (project.yaml `dateModified` conflict, staging's kept). `a8ae790c` swaps the
+      `plugins/*` path repository and `@dev` for Packagist's `webdna/component-library ^2.0@beta`,
+      and installs the plugin (project config `schemaVersion: 2.0.2`, no pending migrations).
+      `80f2f21f` adopts 3.5, using the Twig icon set as Sam chose: `icons` is
+      `@templates/_components/icon` (44 names), with `chevron-left.twig` and `map.twig` added
+      from `src/static/icons`, their markup matching what `svg()|attr` gave. The button's `icon`
+      is a name, and `iconTemplate` is gone. `href`, `type`, `class` and `attrs` are
+      `control: false`, and the Params list left the doc comment. Five call sites were updated:
+      market location ×2, `account/passkeys` and the legacy-id card ×2. Not pushed. LLL
+      snapshot `pre-cl-v2-beta1`. B5 #5: `0 problems`. TS-8 step 1: 0 differing pages. The
+      comparison swapped staging's component files in, captured, and restored: `/apply` (member
+      and guest), `/support`, `/account/settings`, `/account/passkeys` and `/profile` for the
+      conversion, then `/legacy-id`, `/account/passkeys` and market listings 22995 and 22992
+      for the icons. Viewer (curl, admin): library, button, dialog, text and shares 200.
+      Button controls are label, variant, icon, iconPos, iconClass and srLabel. *Props* lists
+      all 10, with 4 code-only, and `icon` offers 44 names. The preview is 200 with LLL's Vite
+      dev-server tags (`:3000`), so styling needs `npm run dev`. Not done: the text field's and
+      dialog's story-only props aren't declared `control: false`. That's optional, since
+      undeclared props already can't be set from the library.
       From the sandbox. Step 2: the index holds `@form:text` (8 stories), `@ui:button` (11) and
       `@ui:dialog` (5), with no errors. All 24 stories render 200 inside LLL's CSS. In Chrome,
       Button (all 13 variants), Text field (the marketplace ring and message) and Dialog show LLL's
