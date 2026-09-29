@@ -947,8 +947,19 @@ review. It's built next, before 6.1 is installed in LLL, so the pilot's tags can
       Sam's to do. Pest proves the hook and the script reach that page once. If
       `CRAFT_SECURITY_KEY` changes, a stored token won't decrypt: the row still shows *Copy
       link*, and it answers 404 with Craft's error toast.
-- [ ] **4.4 Revoke deletes the link** (added v0.27, Sam's request): *Cancel link* becomes *Revoke link* on every row and deletes it; `revokedAt`, the *Cancelled* status and the cancelled page go, and a migration deletes cancelled rows and drops the column (`schemaVersion` 2.0.2). Files: `src/services/Shares.php`, `src/controllers/SharesController.php`, `ShareViewerController.php`, `src/templates/shares/index.twig`, `share/_message.twig`, `src/migrations/*`, `src/records/ShareRecord.php`, the permission label in `src/ComponentLibrary.php`; docs and CHANGELOG
+- [x] **4.4 Revoke deletes the link** (added v0.27, Sam's request): *Cancel link* becomes *Revoke link* on every row and deletes it; `revokedAt`, the *Cancelled* status and the cancelled page go, and a migration deletes cancelled rows and drops the column (`schemaVersion` 2.0.2). Files: `src/services/Shares.php`, `src/controllers/SharesController.php`, `ShareViewerController.php`, `src/templates/shares/index.twig`, `share/_message.twig`, `src/migrations/*`, `src/records/ShareRecord.php`, the permission label in `src/ComponentLibrary.php`; docs and CHANGELOG
       Rules: BR-1, BR-3, BR-21, BR-27 · Verify: TS-6, TS-18, B5 #1-3
+      *As built (29 Sep 2026, v0.27):* B5 #1-3 green (PHPStan OK, ECS OK, Pest 535 passed; the
+      cancelled cases are gone, so 4 fewer). `Shares::revoke()` is one `deleteAll(['id' => …])`,
+      and `active()`/`status()` read `expiresAt` only. The previews' `share:<id>` scope fails
+      because the row is gone. Migration `m260929_000001_share_revoke_deletes` deletes rows with
+      `revokedAt` set, then drops the column. It ran in the sandbox after snapshot
+      `pre-cl-v2-4-4` and removed Sam's cancelled "test" link (the snapshot has it). *Revoke link*
+      is on every row, expired ones included, so an expired link can be cleared early. The
+      permission handle `manageComponentLibraryShares` is unchanged, only its label. 6 mutations
+      each caught (`mutate-4-4.sh`). Browser: both rows showed *Copy link* and *Revoke link* with
+      the new confirmation. Revoke itself was run through the service, not clicked, since its
+      confirm is a native dialog.
 - [x] **5.1 Check command**: `src/console/controllers/CheckController.php`
       Rules: BR-31 · Verify: TS-11, B5 #4
       *As built:* the check invalidates the index and builds it fresh for every site, so it reports

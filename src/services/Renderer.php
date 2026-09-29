@@ -124,7 +124,7 @@ class Renderer extends BaseComponent
 
     /**
      * BR-21: whether a scope may still render, rechecked on every request. A user must exist, be
-     * active and hold the view permission. A share must be neither cancelled nor expired.
+     * active and hold the view permission. A share must still exist (revoking deletes it) and not be expired.
      */
     public function scopeIsValid(string $scope): bool
     {

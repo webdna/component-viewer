@@ -34,7 +34,7 @@ beforeEach(function() {
 });
 
 describe('TS-18 copy link', function() {
-    it('offers Copy link beside Cancel link on an active row', function() {
+    it('offers Copy link beside Revoke link on an active row', function() {
         [$share] = ($this->make)();
         $html = $this->actingAs('admin')->get(COPY_PAGE)->assertOk()->content;
 
@@ -56,10 +56,9 @@ describe('TS-18 copy link', function() {
         expect($html)->not->toContain($token);
     });
 
-    it('offers no copy, and refuses it, for a link that is cancelled, expired or has no stored token', function(string $case) {
+    it('offers no copy, and refuses it, for a link that is expired or has no stored token', function(string $case) {
         [$share] = ($this->make)();
         match ($case) {
-            'cancelled' => $share->revokedAt = Db::prepareDateForDb(new DateTime('-1 hour')),
             'expired' => $share->expiresAt = Db::prepareDateForDb(new DateTime('-1 hour')),
             default => $share->tokenEncrypted = null,
         };
@@ -68,7 +67,14 @@ describe('TS-18 copy link', function() {
         // The attribute, not the script's selector for it.
         expect($this->actingAs('admin')->get(COPY_PAGE)->assertOk()->content)->not->toContain('data-cl-copy-share="');
         $this->actingAs('admin')->post(COPY_ACTION, ['id' => $share->id])->assertStatus(404);
-    })->with(['cancelled', 'expired', 'no token']);
+    })->with(['expired', 'no token']);
+
+    it('refuses a revoked link, which no longer exists', function() {
+        [$share] = ($this->make)();
+        $this->shares->revoke((int)$share->id);
+
+        $this->actingAs('admin')->post(COPY_ACTION, ['id' => $share->id])->assertStatus(404);
+    });
 });
 
 describe('TN-22 the url action', function() {

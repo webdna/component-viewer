@@ -8,10 +8,9 @@
 {% set statusLabels = {
     active: 'Active'|t('component-library'),
     expired: 'Expired'|t('component-library'),
-    cancelled: 'Cancelled'|t('component-library'),
 } %}
-{# Craft's status colours: green, red, grey. #}
-{% set statusClasses = {active: 'enabled', expired: 'expired', cancelled: 'disabled'} %}
+{# Craft's status colours: green, red. A revoked link is deleted, so it has no status. #}
+{% set statusClasses = {active: 'enabled', expired: 'expired'} %}
 
 {% block content %}
     {# BR-45: the new address, once, for the copy prompt below. #}
@@ -91,17 +90,16 @@
                                         {{- 'Copy link'|t('component-library') -}}
                                     </button>
                                 {% endif %}
-                                {% if row.status == 'active' %}
-                                    <button type="button" class="btn small formsubmit"
-                                        data-form="false"
-                                        data-action="component-library/shares/revoke"
-                                        data-param="id"
-                                        data-value="{{ row.id }}"
-                                        data-confirm="{{ 'Cancel “{label}”? It stops working straight away, for anyone who has it open too.'|t('component-library', {label: row.label}) }}"
-                                        aria-label="{{ 'Cancel link “{label}”'|t('component-library', {label: row.label}) }}">
-                                        {{- 'Cancel link'|t('component-library') -}}
-                                    </button>
-                                {% endif %}
+                                {# v0.27: revoking deletes the link, on any row. #}
+                                <button type="button" class="btn small formsubmit"
+                                    data-form="false"
+                                    data-action="component-library/shares/revoke"
+                                    data-param="id"
+                                    data-value="{{ row.id }}"
+                                    data-confirm="{{ 'Revoke “{label}”? The link is deleted and stops working straight away, even for anyone who has it open.'|t('component-library', {label: row.label}) }}"
+                                    aria-label="{{ 'Revoke link “{label}”'|t('component-library', {label: row.label}) }}">
+                                    {{- 'Revoke link'|t('component-library') -}}
+                                </button>
                             </td>
                         </tr>
                     {% endfor %}
@@ -116,7 +114,7 @@
      #}
     {% js %}
 (() => {
-    const label = {{ 'Anyone with this address can open the library, with no login, until it expires or you cancel it.'|t('component-library')|json_encode|raw }};
+    const label = {{ 'Anyone with this address can open the library, with no login, until it expires or you revoke it.'|t('component-library')|json_encode|raw }};
     // Craft sizes the input by character count. Here it fills the modal, whose width the label sets.
     const prompt = (url) => {
         const $modal = Craft.ui.createCopyTextPrompt({label, value: url});

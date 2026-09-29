@@ -6,7 +6,7 @@ A Craft CMS 5 plugin for browsing, trying out and sharing a site's Twig componen
   and tries each one out with its settings and examples, previewed in each site's own styling on
   a desktop, tablet or phone.
 - **Through a share link**, a client reviews the same library with no account. A link has a label
-  and an expiry, and it can be cancelled at any moment.
+  and an expiry, and it can be revoked at any moment.
 - **Each component describes itself** with a `{% component %}` block at the top of its own file,
   which renders nothing on the live site. Named examples live in a `.stories.twig` file beside it.
 - **The live site can't tell it's there**, apart from being faster: the component list is built
@@ -58,7 +58,7 @@ php craft component-library/check [--strict]         # lists broken components, 
 |---|---|
 | [Setup](docs/setup.md) | Installing on a new site: config file, preview layout, permissions |
 | [Component format](docs/format.md) | The `component` tag, props, stories, handles, site versions, the check |
-| [Share links](docs/share-links.md) | Creating, sending and cancelling links for clients |
+| [Share links](docs/share-links.md) | Creating, sending and revoking links for clients |
 | [Upgrading from v1](docs/upgrading-from-v1.md) | Moving a site off the v1 module |
 | [Resolver](docs/resolver.md) | Finding a site's version of any file from PHP |
 

@@ -12,17 +12,17 @@ use webdna\componentlibrary\records\ShareRecord;
 use yii\base\Component;
 
 /**
- * Share links (BR-27, BR-28, BR-36): create, find, cancel and clean up.
+ * Share links (BR-27, BR-28, BR-36): create, find, copy, revoke and clean up.
  *
- * Only the token's SHA-256 hash is stored, so the address can be shown once and a database leak
- * leaks no working link. Status is derived from `expiresAt` and `revokedAt` on every read (§4).
+ * Lookups use the token's SHA-256 hash, and the token is otherwise stored only encrypted (BR-45),
+ * so a database leak alone leaks no working link. Status is derived from `expiresAt` on every read
+ * (§4). Revoking deletes the row, so a revoked link is simply unknown.
  * Nothing here sends anything (BR-30).
  */
 class Shares extends Component
 {
     public const STATUS_ACTIVE = 'active';
     public const STATUS_EXPIRED = 'expired';
-    public const STATUS_CANCELLED = 'cancelled';
 
     /** The share viewer's path on the primary site. 4.2 routes it. */
     public const URL_PATH = 'component-library/share/';
@@ -30,7 +30,7 @@ class Shares extends Component
     /** 32 bytes, base64url without padding. */
     public const TOKEN_PATTERN = '/^[A-Za-z0-9_-]{43}$/D';
 
-    /** Rows are removed this many days after they expire or are cancelled (§4). */
+    /** Rows are removed this many days after they expire (§4). */
     public const GC_DAYS = 30;
 
     /** `lastUsedAt` moves at most this often per link (§4). */
@@ -62,7 +62,7 @@ class Shares extends Component
 
     /**
      * BR-45: an active link's address again, from its encrypted token. Null for a link that's
-     * cancelled, expired, unknown or made before tokens were stored, or whose stored token
+     * expired, unknown (revoked links included) or made before tokens were stored, or whose stored token
      * doesn't decrypt to a token of this link.
      */
     public function copyUrl(int $id): ?string
@@ -102,43 +102,28 @@ class Shares extends Component
         return $record !== null && hash_equals($record->tokenHash, $hash) ? $record : null;
     }
 
-    /** Links that work right now: not cancelled, not expired (BR-27). */
+    /** Links that work right now: not expired (BR-27). A revoked link has no row. */
     public function active(): ActiveQuery
     {
         return ShareRecord::find()
-            ->where(['revokedAt' => null])
-            ->andWhere(['>', 'expiresAt', Db::prepareDateForDb(new DateTime())]);
+            ->where(['>', 'expiresAt', Db::prepareDateForDb(new DateTime())]);
     }
 
-    /** A cancelled link stays cancelled even once it would have expired. */
     public function status(ShareRecord $record): string
     {
-        if ($record->revokedAt !== null) {
-            return self::STATUS_CANCELLED;
-        }
-
         return DateTimeHelper::toDateTime($record->expiresAt) > new DateTime()
             ? self::STATUS_ACTIVE
             : self::STATUS_EXPIRED;
     }
 
     /**
-     * Cancels a link from the next request on, previews included (BR-21). `revokedAt` is never
-     * cleared or moved. False when there's no such link.
+     * Revokes a link by deleting it (v0.27), from the next request on, previews included (BR-21):
+     * its address and its previews' `share:<id>` scope then name nothing. False when there's no
+     * such link.
      */
     public function revoke(int $id): bool
     {
-        $record = ShareRecord::findOne($id);
-        if ($record === null) {
-            return false;
-        }
-
-        if ($record->revokedAt === null) {
-            $record->revokedAt = Db::prepareDateForDb(new DateTime());
-            $record->save(false);
-        }
-
-        return true;
+        return ShareRecord::deleteAll(['id' => $id]) > 0;
     }
 
     /** Records a visit, at most once a minute per link. The share viewer (4.2) calls it. */
@@ -182,12 +167,12 @@ class Shares extends Component
         return $rows;
     }
 
-    /** §4: removes links expired or cancelled more than GC_DAYS ago. Runs on Craft's GC. */
+    /** §4: removes links expired more than GC_DAYS ago. Runs on Craft's GC. */
     public function gc(): int
     {
         $cutoff = Db::prepareDateForDb(new DateTime('-' . self::GC_DAYS . ' days'));
 
-        return ShareRecord::deleteAll(['or', ['<', 'expiresAt', $cutoff], ['<', 'revokedAt', $cutoff]]);
+        return ShareRecord::deleteAll(['<', 'expiresAt', $cutoff]);
     }
 
     /**

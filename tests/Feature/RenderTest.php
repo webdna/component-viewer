@@ -43,13 +43,12 @@ function userScope(string $username = 'admin'): string
 }
 
 /** An active share unless told otherwise. */
-function share(string $expires = '+14 days', ?string $revoked = null): ShareRecord
+function share(string $expires = '+14 days'): ShareRecord
 {
     $share = new ShareRecord();
     $share->label = 'Acme';
     $share->tokenHash = hash('sha256', random_bytes(32));
     $share->expiresAt = Db::prepareDateForDb(new DateTime($expires));
-    $share->revokedAt = $revoked === null ? null : Db::prepareDateForDb(new DateTime($revoked));
     $share->createdById = userId('admin');
     $share->save(false);
 
@@ -164,7 +163,7 @@ describe('scope recheck', function() {
         $this->get(previewUri($token, ['component' => '@ui:good']))->assertStatus(403);
     });
 
-    it('renders for an active share, and refuses it once expired or cancelled', function() {
+    it('renders for an active share, and refuses it once expired or revoked', function() {
         $share = share();
         $token = $this->renderer->createToken(shareScope($share));
         $this->get(previewUri($token, ['component' => '@ui:good']))->assertOk()->assertSee('btn--primary');
@@ -174,8 +173,9 @@ describe('scope recheck', function() {
         $this->get(previewUri($token, ['component' => '@ui:good']))->assertStatus(403)->assertSee('Preview expired');
 
         $share->expiresAt = Db::prepareDateForDb(new DateTime('+1 day'));
-        $share->revokedAt = Db::prepareDateForDb(new DateTime());
         $share->save(false);
+        $this->get(previewUri($token, ['component' => '@ui:good']))->assertOk();
+        ComponentLibrary::getInstance()->getShares()->revoke((int)$share->id);
         $this->get(previewUri($token, ['component' => '@ui:good']))->assertStatus(403)->assertSee('Preview expired');
     });
 

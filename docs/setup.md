@@ -108,7 +108,7 @@ In **Settings → Users → User groups**, under *Component Library*:
 | Permission | Grants |
 |---|---|
 | **Access Component Library** | The library in the control panel. Control-panel access alone does not grant it. |
-| **Create and cancel share links** | The *Share links* screen. Nested under the one above. |
+| **Create and revoke share links** | The *Share links* screen. Nested under the one above. |
 
 Admins hold both.
 
