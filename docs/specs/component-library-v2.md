@@ -1096,8 +1096,13 @@ review. It's built next, before 6.1 is installed in LLL, so the pilot's tags can
       Alpine's enter and leave transitions hang, and the dialog seems not to close. Take a
       screenshot between steps to force frames. In LLL itself, previews are unstyled unless its
       Vite dev server (`ddev exec npm run dev`) is running, since its dev environment always uses it.
-- [ ] **6.2 Consumer back-compat proof** (mw-core and webdna on throwaway local branches, never committed): `$CLAUDE_JOB_DIR/tmp/compat.sh` fetch-and-diff script
+- [ ] ~~**6.2 Consumer back-compat proof**~~ (mw-core and webdna on throwaway local branches, never committed): `$CLAUDE_JOB_DIR/tmp/compat.sh` fetch-and-diff script
       Rules: BR-15, BR-17, BR-25 · Verify: TS-9, B5 #6
+      **Dropped by Sam (29 Sep 2026), not run.** TS-9, B5 #6 and TS-3 step 3 have no evidence. BR-15,
+      BR-17 and BR-25 rest on their Pest tests and the LLL pilot (6.1) alone. Found before it was
+      dropped: both consumers run Craft 5 (mw-core 5.10.5 with v1 beta.14, webdna 5.8.17 with v1 beta.8).
+      mw-core's checkout had another branch's uncommitted edits, and webdna had no local database or
+      `vendor/`. A consumer upgrading to v2 is its own back-compat check.
 
 ---
 
@@ -1233,6 +1238,7 @@ cd ~/Projects/lll && ddev craft component-library/check
 # 6. Consumer back-compat (TS-9)
 bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh webdna
 # expect: "0 differing pages" for each (CSRF tokens and asset hashes normalised)
+# NOT RUN: task 6.2 dropped by Sam (29 Sep 2026). Skip this check.
 ```
 
 | AC | Manual check |
@@ -1287,3 +1293,4 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | 2026-09-29 | 0.26 | Sam's decision: share links can be copied again. The token is also stored encrypted with Craft's security key (§4 `tokenEncrypted`, BR-45), and B3 is relaxed from "never stored" to "only encrypted". Active rows get *Copy link*, and a new link opens in Craft's copy prompt, as *Copy impersonation URL* does (BR-27, journey 3, §6, AC-4, TS-4). TS-18, TN-22, task 4.3. Links made before this have no stored token and no *Copy link*. | Claude, for Sam Birch |
 | 2026-09-29 | 0.27 | Sam's request: *Cancel link* becomes *Revoke link*, and revoking deletes the row. So `revokedAt`, the *Cancelled* state and the cancelled page are gone, and a revoked address is 404 like any unknown one (§4, BR-3, BR-27, journeys 3-4, §6, AC-6, TS-6, TS-18, TN-22, Appendix A row 1). The permission reads *Create and revoke share links* (its handle is unchanged). Task 4.4. | Claude, for Sam Birch |
 | 2026-09-29 | 0.28 | Sam's request: the *Props* tab moves after *Examples* (BR-43), so the drawer reads Settings, Examples, Props, Source, Notes. | Claude, for Sam Birch |
+| 2026-09-29 | 0.29 | Sam's decision: task 6.2, the consumer back-compat proof on mw-core and webdna, is dropped, not run. TS-9, B5 #6 and TS-3 step 3 have no evidence. The plugin gets an icon (`src/icon.svg`, and `src/icon-mask.svg` for the CP nav). | Claude, for Sam Birch |
