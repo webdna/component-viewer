@@ -3,7 +3,8 @@
  * supply. The workspace itself is viewer.css, as in the CP.
  */
 
-body.cl-share {
+/* The message pages only: the workspace page's white body is viewer.css's, as in the CP. */
+body.cl-share:not(.cl-workspace-page) {
     background: var(--body-bg);
     min-height: 100vh;
 }
