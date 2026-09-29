@@ -2,7 +2,7 @@
 spec: Component Library v2
 slug: component-library-v2
 status: draft
-version: 0.19
+version: 0.20
 date: 2026-09-28
 author: Claude (for Sam Birch)
 client: webdna (internal)
@@ -240,7 +240,7 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 | BR-21 | Every render request rechecks the scope: the user still exists, is active (not suspended) and holds `accessPlugin-component-library`, or the share is active. On failure it returns 403, "Preview expired, reload the page". |
 | BR-22 | The site rendered, and the index used, is the site the request was served on. No request value selects a site for rendering, indexing or a path. The viewer's `site` address parameter only chooses the iframe's base URL, and it's accepted only once `getSiteByHandle()` returns a site (otherwise the primary site). |
 | BR-23 | Previews render as a guest. The identity is cleared in memory for the request only, with no session write, so `currentUser` is null whoever's browser it is. |
-| BR-24 | `props` is a JSON object of at most 8 KB. Each key is coerced to its declared type: strings ≤ 2,000 chars, text ≤ 10,000, `select` must be one of `options` (else the default), `json` depth ≤ 5. Undeclared keys are dropped. **Every request-supplied string reaches the component as inert, pre-escaped text** (`Twig\Markup` of the HTML-escaped value), so `\|raw` cannot inject markup. It's never passed to `renderString`, placeholder-parsed or used in a path. HTML in props comes only from files. |
+| BR-24 | `props` is a JSON object of at most 8 KB. Each key is coerced to its declared type: strings ≤ 2,000 chars, text ≤ 10,000, `select` must be one of `options` (else the default), `json` depth ≤ 5. Undeclared keys are dropped. **Every request-supplied string reaches the component as inert, pre-escaped text** (`Twig\Markup` of the HTML-escaped value), so `\|raw` cannot inject markup. It's never passed to `renderString`, placeholder-parsed or used in a path. HTML in props comes only from files. Escaping protects HTML only: a prop the component uses as script (an Alpine expression, a raw attribute string), a URL, a file path or a template name is declared as a `select` or left to stories' `with`, never as a free `string` (found in the LLL pilot, task 6.1). |
 | BR-25 | The render extends the configured `layout`: a path, or a map of site handle → path, defaulting to the plugin's bare layout. It fills block `component`, and block `viewClass` when set. These are v1's block names, so mw-core's and webdna's layouts work unchanged. |
 | BR-26 | Render responses send `Cache-Control: no-store`, `X-Robots-Tag: noindex`, `Referrer-Policy: no-referrer` and `Content-Security-Policy: frame-ancestors` (CP origin and primary site origin only). A render exception returns 500 with an error panel. In `user:` scope the panel shows the message, template name (relative to templates) and line. In `share:` scope it shows only "This component couldn't be shown." No absolute server path appears in any scope. |
 
@@ -906,6 +906,51 @@ reviewed in it.
       against TS-9 is still to do. B5: PHPStan OK, ECS OK, Pest 468 passed, and B5 #4 as amended.
 - [ ] **6.1 LLL install and pilot** (LLL repo, own branch): `config/component-library.php`, `templates/_component-library/preview.twig` (the craft-vite pair from `_layouts/public.twig:38-40`), convert `_components/ui/button.twig`, `form/text.twig` and `ui/dialog.twig`, and add their `.stories.twig`
       Rules: BR-7, BR-8, BR-25 · Verify: TS-8, B5 #5
+      *Staged, awaiting Sam's approval on craft5 (29 Sep 2026).* Sam's decision: v2 is not
+      installed or run in LLL until he has reviewed the pilot in the sandbox and approved it. So
+      the LLL work sits, unchecked-out, on LLL branch `feature/component-library-v2` (from
+      `staging`, commit 23e07e24). A first install there was rolled back: plugin uninstalled, the
+      checkout back on `staging`, the plugin copy removed, and `/apply` 200. For review, the same
+      six component and story files run in the sandbox. They sit in `lll-pilot/_components`, a
+      root outside `templates/` because the check scans `templates/` whole. The sandbox also has
+      the ten `_components/icon/` templates and nine `src/static/icons/` SVGs the button's options
+      name, at LLL's own paths, so the files are byte-identical to the branch. It has LLL's
+      staging build in `web/dist`, built into the container's `/tmp`, so LLL's own `web/dist` is
+      untouched. `templates/_lll/preview.twig` stands in for LLL's craft-vite layout, with the
+      two hashed tags written in. The sandbox `config/component-library.php` adds the root and
+      layout by hand, except under Pest (`class_exists(\Pest\TestSuite::class, false)`), whose
+      tests assert on the fixture roots and the bare layout. A `setup.sh` rerun drops them. Fixture
+      previews also render in the LLL layout for now. After approval: check out the branch,
+      `composer install`, `plugin/install`, and redo TS-8 step 1 and B5 #5 in LLL.
+      On the branch, the plugin is unreleased, so LLL installs it as the sandbox does: a `plugins/*` path repository
+      and `"webdna/component-library": "@dev"`. The copy in `plugins/component-library` is kept out
+      of git by `.git/info/exclude`. At release, the branch swaps it for `^2.0`. The preview layout
+      adds an `x-data` root around the blocks, since the dialog's `x-teleport` needs an Alpine
+      scope. Each tag sits after the file's doc comment, which stays. Twig eats the newline after
+      both, so the output is unchanged. The pilot found one hole the spec hadn't named, now in BR-24
+      and the format guide: escaping protects HTML only. So every prop that LLL uses as script, a
+      URL, a file read or an include is either a `select` (button `href`, `icon`, `iconTemplate`) or
+      set only in stories' `with` (the dialog's Alpine expressions and `id`, `attrs`, text's
+      `errorModel` and `icon`). Each component's notes say which. The dialog's stories drive it from
+      their own `x-data` flag, so Cancel, the backdrop and Escape close it and a button reopens it.
+      TS-8 evidence, from the rolled-back install in LLL. Step 1: `/apply` (as guest and signed in),
+      `/support`, `/account/settings`, `/account/passkeys` and `/profile` were saved before the
+      install and again after the conversion. With tokens masked, 0 differing pages. Two runs
+      before the install also gave 0, and so did a run after the install but before the conversion.
+      Step 4 (B5 #5): `0 problems`, exit 0. Redo both after the approved install.
+      From the sandbox. Step 2: the index holds `@form:text` (8 stories), `@ui:button` (11) and
+      `@ui:dialog` (5), with no errors. All 24 stories render 200 inside LLL's CSS. In Chrome,
+      Button (all 13 variants), Text field (the marketplace ring and message) and Dialog show LLL's
+      styling on its black body. Step 3: *Custom panel* is open with the story's own panel and no
+      `popover-modal` preset. Its iframe holds no other story's ids. Cancel closes it and the
+      button reopens it. Hostile props (a `javascript:` href, an undeclared `attrs`, a dialog
+      `close` expression, an `iconTemplate` of another template) leave no trace in the render. The
+      declared `title` arrives escaped. B5 #1-4 stay green with the pilot in place: PHPStan OK,
+      ECS OK, Pest 468 passed, and the check's only problem is still bad-tag's CL001.
+      Trap: in the automation Chrome tab (backgrounded, so `requestAnimationFrame` never fires),
+      Alpine's enter and leave transitions hang, and the dialog seems not to close. Take a
+      screenshot between steps to force frames. In LLL itself, previews are unstyled unless its
+      Vite dev server (`ddev exec npm run dev`) is running, since its dev environment always uses it.
 - [ ] **6.2 Consumer back-compat proof** (mw-core and webdna on throwaway local branches, never committed): `$CLAUDE_JOB_DIR/tmp/compat.sh` fetch-and-diff script
       Rules: BR-15, BR-17, BR-25 · Verify: TS-9, B5 #6
 
@@ -1083,3 +1128,4 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | 2026-09-28 | 0.17 | Task 3.3 built, with three changes from Sam: the controls column is now v1's details drawer below the preview (a tab row that opens upward, the divider on top), tablet and phone always render at 100% and scroll rather than scale, and the site select switches on change. §1, journey 1, BR-34, BR-37, BR-38, BR-40, §6 *Screens* and *Design source*, AC-15, TS-14, TS-15 steps 1-3 and 6, test hooks. See 3.3's as-built note. | Claude, for Sam Birch |
 | 2026-09-29 | 0.18 | Task 5.2 built. BR-32: roots are numbered from 1, a site folder isn't one, neither file is written if either exists, the other layout of a handle already in that root is refused, and the index is invalidated. See 5.2's as-built note. | Claude, for Sam Birch |
 | 2026-09-29 | 0.19 | Task 5.3 built: README, five guides and the 2.0.0 CHANGELOG entry (dated *Unreleased*). The v1 leftover `src/README.md` is deleted. The upgrade guide awaits Sam's read against TS-9. See 5.3's as-built note. | Claude, for Sam Birch |
+| 2026-09-29 | 0.20 | Task 6.1 staged, not ticked. It's built on LLL branch `feature/component-library-v2` (23e07e24), but by Sam's decision it isn't installed in LLL until he approves the pilot, which runs for review in the craft5 sandbox. BR-24 now says escaping protects HTML only: a prop used as script, a URL, a file path or a template name is a `select` or set only in stories, and the format guide says so too. TS-8 evidence is in 6.1's as-built note. | Claude, for Sam Birch |

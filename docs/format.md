@@ -94,6 +94,13 @@ comes only from files: the template or a story body. The library can't pull in s
 either. Only declared props can be changed from the library. Any other value in the request is
 dropped.
 
+**Escaping makes a value safe as HTML, and nowhere else.** Some settings aren't shown as text: an
+Alpine expression (`open: 'showModal'`), a raw attribute string (`attrs: '@click="…"'`), a link
+(`href`), an SVG file path or a template name to include. Anything typed into one of those runs as
+script, follows a `javascript:` link, or reads a file. Don't declare such a setting as a `string`.
+Make it a `select` of fixed values, or leave it undeclared and set it in the stories' `with`, which
+only files can change.
+
 ## Handles
 
 A component's handle is the tag's `handle`, or else it's derived from the file's path below its
