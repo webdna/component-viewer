@@ -171,13 +171,13 @@ describe('TN-20 a hostile bg', function() {
 });
 
 describe('BR-41 the viewers', function() {
-    it('offers Site, Light and Dark in a Mode dropdown after the devices', function() {
+    it('offers Theme, Light and Dark in a Mode dropdown after the devices', function() {
         $html = $this->actingAs('admin')->get(BG_VIEWER)->assertOk()->content;
 
         expect($html)->toContain('<label for="cl-background">Mode</label>')
             ->and($html)->toContain('<select id="cl-background" data-cl-background>')
             ->and(strpos($html, 'data-cl-rotate'))->toBeLessThan((int)strpos($html, 'data-cl-background'))
-            ->and($html)->toContain('<option value="site" selected>Site</option>')
+            ->and($html)->toContain('<option value="site" selected>Theme</option>')
             ->and($html)->toMatch('/<option value="light"\s*>Light<\/option>/')
             ->and($html)->toMatch('/<option value="dark"\s*>Dark<\/option>/')
             ->and($html)->toContain('<input type="hidden" name="bg" value="site" data-cl-site-background disabled>')

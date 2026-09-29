@@ -81,7 +81,7 @@ Previews render on each site's own front end, so they can use the site's real st
 
 The preview toolbar's *Mode* dropdown shows a component on the site's own background, on
 white (`#ffffff`) or on near-black (`#111111`). A component opens on its tag's `background`
-([format](format.md)), and a copied address or share link keeps a different choice. On *Site* the
+([format](format.md)), and a copied address or share link keeps a different choice. On *Theme* the
 page is exactly your layout. On *Light* or *Dark*, block `component` also holds a link to the
 plugin's `preview.css` and a wrapper, `<div class="cl-canvas" data-cl-canvas="light">` (or
 `"dark"`), which is `display: contents` so it never changes your layout. That stylesheet sets the
