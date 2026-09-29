@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- A plugin icon, for the Plugins settings page, the Plugin Store and the control-panel nav.
+
 ## 2.0.0-beta.1 - 2026-09-29
 
 A rewrite as a Craft 5 plugin. See [Upgrading from v1](docs/upgrading-from-v1.md).
