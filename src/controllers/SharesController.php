@@ -64,6 +64,24 @@ class SharesController extends Controller
         );
     }
 
+    /**
+     * BR-45: an active link's address, for *Copy link*'s prompt. POST, so CSRF-checked, behind
+     * both permissions (beforeAction). 404 for any link that can't be copied.
+     *
+     * @throws NotFoundHttpException
+     */
+    public function actionUrl(): Response
+    {
+        $this->requirePostRequest();
+
+        $url = ComponentLibrary::getInstance()->getShares()->copyUrl((int)$this->request->getRequiredBodyParam('id'));
+        if ($url === null) {
+            throw new NotFoundHttpException(Craft::t('component-library', 'There’s no such share link.'));
+        }
+
+        return $this->asJson(['url' => $url]);
+    }
+
     public function actionRevoke(): Response
     {
         $this->requirePostRequest();

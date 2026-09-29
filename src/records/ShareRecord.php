@@ -12,6 +12,7 @@ use yii\db\ActiveQueryInterface;
  * @property int $id
  * @property string $label
  * @property string $tokenHash
+ * @property string|null $tokenEncrypted
  * @property string $expiresAt
  * @property string|null $revokedAt
  * @property int $createdById

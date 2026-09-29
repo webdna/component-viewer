@@ -69,10 +69,10 @@ function queuedJobs(): int
     return $queue->getTotalJobs();
 }
 
-/** The one-time address on a page, or null. */
+/** The one-time address a page opens in the copy prompt, or null. */
 function shownShareUrl(string $html): ?string
 {
-    return preg_match('#data-cl-share-url.*?value="([^"]+)"#s', $html, $match) ? html_entity_decode($match[1]) : null;
+    return preg_match('#data-cl-share-url="([^"]+)"#', $html, $match) ? html_entity_decode($match[1]) : null;
 }
 
 describe('TS-4 create', function() {
@@ -86,7 +86,7 @@ describe('TS-4 create', function() {
             ->and($html)->toContain('max="' . ShareForm::day(90) . '"')
             ->and($html)->toContain('No share links yet')
             ->and($html)->toContain('href="#cl-share-label"')
-            ->and($html)->not->toContain('data-cl-share-url');
+            ->and($html)->not->toContain('data-cl-share-url="');
     });
 
     // TS-4 step 3, BR-27, BR-36
@@ -111,7 +111,9 @@ describe('TS-4 create', function() {
             ->and($row->expiresAt)->toBe(ShareForm::day(14) . ' 23:59:59')
             ->and($row->revokedAt)->toBeNull()
             ->and($row->lastUsedAt)->toBeNull()
-            ->and(implode('|', $row->getAttributes()))->not->toContain($token);
+            ->and(implode('|', $row->getAttributes()))->not->toContain($token)
+            // BR-45: kept only encrypted with Craft's security key.
+            ->and(Craft::$app->getSecurity()->decryptByKey(base64_decode((string)$row->tokenEncrypted)))->toBe($token);
 
         // The service finds it by the token, and by nothing else.
         expect($this->shares->find($token)?->id)->toBe($row->id)
@@ -175,7 +177,7 @@ describe('TS-4 create', function() {
         $columns = Craft::$app->getDb()->getTableSchema(ShareRecord::TABLE, true)->getColumnNames();
         sort($columns);
 
-        expect($columns)->toBe(['createdById', 'dateCreated', 'dateUpdated', 'expiresAt', 'id', 'label', 'lastUsedAt', 'revokedAt', 'tokenHash', 'uid']);
+        expect($columns)->toBe(['createdById', 'dateCreated', 'dateUpdated', 'expiresAt', 'id', 'label', 'lastUsedAt', 'revokedAt', 'tokenEncrypted', 'tokenHash', 'uid']);
     });
 });
 

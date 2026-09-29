@@ -16,8 +16,10 @@ class Install extends Migration
         $this->createTable(ShareRecord::TABLE, [
             'id' => $this->primaryKey(),
             'label' => $this->string(100)->notNull(),
-            // SHA-256 hex of the token. The token itself is never stored.
+            // SHA-256 hex of the token, which every lookup uses.
             'tokenHash' => $this->char(64)->notNull(),
+            // The token encrypted with Craft's security key, for Copy link only (BR-45).
+            'tokenEncrypted' => $this->text(),
             'expiresAt' => $this->dateTime()->notNull(),
             'revokedAt' => $this->dateTime(),
             'createdById' => $this->integer()->notNull(),

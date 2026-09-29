@@ -51,11 +51,33 @@ class Shares extends Component
         $record = new ShareRecord();
         $record->label = $form->label;
         $record->tokenHash = self::hash($token);
+        // BR-45: never in plaintext. Craft's security key decrypts it for Copy link only.
+        $record->tokenEncrypted = base64_encode(Craft::$app->getSecurity()->encryptByKey($token));
         $record->expiresAt = Db::prepareDateForDb($form->expiresAt());
         $record->createdById = $creatorId;
         $record->save(false);
 
         return $token;
+    }
+
+    /**
+     * BR-45: an active link's address again, from its encrypted token. Null for a link that's
+     * cancelled, expired, unknown or made before tokens were stored, or whose stored token
+     * doesn't decrypt to a token of this link.
+     */
+    public function copyUrl(int $id): ?string
+    {
+        $record = ShareRecord::findOne($id);
+        if ($record === null || $record->tokenEncrypted === null || $this->status($record) !== self::STATUS_ACTIVE) {
+            return null;
+        }
+
+        $token = Craft::$app->getSecurity()->decryptByKey((string)base64_decode($record->tokenEncrypted, true));
+        if (!is_string($token) || !preg_match(self::TOKEN_PATTERN, $token) || !hash_equals($record->tokenHash, self::hash($token))) {
+            return null;
+        }
+
+        return $this->url($token);
     }
 
     /** The address a token opens (BR-27). */
@@ -134,7 +156,10 @@ class Shares extends Component
     /**
      * Every link, newest first, as the share list shows it.
      *
-     * @return list<array{id:int,label:string,creator:string,expiresAt:DateTime,lastUsedAt:DateTime|null,status:string}>
+     * `copyable` says whether *Copy link* can return its address (BR-45). The token itself never
+     * reaches the list.
+     *
+     * @return list<array{id:int,label:string,creator:string,expiresAt:DateTime,lastUsedAt:DateTime|null,status:string,copyable:bool}>
      */
     public function rows(): array
     {
@@ -149,7 +174,8 @@ class Shares extends Component
                 'creator' => $user?->getName() ?? '',
                 'expiresAt' => DateTimeHelper::toDateTime($record->expiresAt) ?: new DateTime(),
                 'lastUsedAt' => $record->lastUsedAt !== null ? (DateTimeHelper::toDateTime($record->lastUsedAt) ?: null) : null,
-                'status' => $this->status($record),
+                'status' => $status = $this->status($record),
+                'copyable' => $status === self::STATUS_ACTIVE && $record->tokenEncrypted !== null,
             ];
         }
 
