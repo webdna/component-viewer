@@ -2,7 +2,7 @@
 spec: Component Library v2
 slug: component-library-v2
 status: draft
-version: 0.26
+version: 0.27
 date: 2026-09-28
 author: Claude (for Sam Birch)
 client: webdna (internal)
@@ -15,7 +15,7 @@ related: [_scope/component-library-v2.md]
 
 > **Status:** draft · **Version:** 0.19 · **Profile:** `_PROFILE.component-library.md`
 > The team browses and tries out every component in the control panel, previewed on each site's
-> own styling. Clients review the same library through a link that expires and can be cancelled.
+> own styling. Clients review the same library through a link that expires and can be revoked.
 
 ---
 
@@ -33,8 +33,8 @@ given the new library permission see it. Control-panel access alone is not enoug
 
 Anyone with the share permission can create a **share link**. It opens the whole library outside
 the control panel, in the same design, for someone with no account. A link has a label and an
-expiry: two weeks unless changed, three months at most. It can be cancelled at any moment and then
-stops working for everyone at once. The address opens in a copy prompt at creation, and an active
+expiry: two weeks unless changed, three months at most. It can be revoked at any moment, which deletes
+it, and then stops working for everyone at once. The address opens in a copy prompt at creation, and an active
 link's *Copy link* shows it again. Nothing is emailed.
 People on a link can change settings, but whatever they type reaches the component as plain text.
 It can never pull real site content into the page.
@@ -71,7 +71,7 @@ converting a behaviour change). Keeping the view key (it was the fail-open hole)
 | Setting | One input a component accepts (label, style, size), with a default and sometimes a fixed list of options. |
 | Example | A named, saved combination of settings, and possibly surrounding markup. Called a *story* from §4 on. |
 | Site version | A per-site copy of a component that replaces the shared one on that site only. |
-| Share link | An expiring, cancellable address that opens the whole library without an account. |
+| Share link | An expiring, revocable address that opens the whole library without an account. |
 | Device | The size the preview pretends to be: *Desktop* (the whole preview area), *Tablet* or *Phone*, each upright or turned. |
 
 ---
@@ -138,14 +138,15 @@ examples across sites.
       weeks out and can be moved up to three months.
    2. Create it. The full address opens in Craft's copy prompt, as *Copy impersonation URL* does.
    3. The list shows label, creator, expiry, status and last use. An active link has *Copy link*,
-      which opens the same prompt again. *Cancel link* asks for confirmation,
+      which opens the same prompt again. *Revoke link* asks for confirmation, deletes the link,
       then stops it working straight away, including for anyone who has it open.
 
 **3. Review through a share link**
    1. Open the link. The library appears in the control panel's design, headed with the link's label
       and expiry. There's no login.
    2. Browse, search, change settings, switch examples and sites, as in journey 1.
-   3. An expired or cancelled link shows a plain page that suggests asking the sender for a new one.
+   3. An expired, revoked or unknown link shows a plain page that suggests asking the sender for a
+      new one.
 
 **4. Add or convert a component**
    1. Run the create command with a name. It writes the component, with an empty settings block,
@@ -178,23 +179,23 @@ library. Pages look exactly as before. Once every component is converted, the li
 | `tokenHash` | char(64), unique | SHA-256 hex of the token. Lookups use this alone. |
 | `tokenEncrypted` | text, null | The token, encrypted with Craft's security key (`encryptByKey`, base64). Read only by *Copy link* (BR-45). Null for a link made before v0.26. Never in plaintext. |
 | `expiresAt` | datetime, not null | End of the chosen day, UTC |
-| `revokedAt` | datetime, null | Set on cancel, never cleared |
 | `createdById` | int, FK `users.id`, on delete cascade | |
 | `lastUsedAt` | datetime, null | Updated at most once a minute per link |
 
-**Why this shape.** Storing only a hash means a database leak doesn't leak working links. It's
-also why an address can be shown only once. Status (active, expired, cancelled) is **derived** from
-`expiresAt` and `revokedAt`, so it can't drift from the clock. **The component index is not in the
+**Why this shape.** Looking up by hash and storing the token only encrypted means a database leak
+alone doesn't leak working links. Status (active, expired) is **derived** from `expiresAt`, so it
+can't drift from the clock. A revoked link has no row at all (v0.27). **The component index is not in the
 database.** It's derived from the template files and held in Craft's data cache per site (BR-14),
 so deleting the cache loses nothing. A **story** (the build name for an example) isn't stored
 either. It's read from `<name>.stories.twig` or a legacy config's `variants`, or synthesised as
 *Default*.
 
 **On deletion.** Deleting a user deletes their links, so the links stop working. Garbage collection
-removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
+removes rows 30 days after expiry. *Revoke link* deletes its row at once. Uninstalling drops the
+table.
 
-**States** (derived). *Active* → *Expired* when `expiresAt` passes, or → *Cancelled* when
-`revokedAt` is set. Both refuse from the next request, previews included (BR-21, BR-27).
+**States** (derived). *Active* → *Expired* when `expiresAt` passes. Revoking deletes the row, so the
+address becomes unknown. Both refuse from the next request, previews included (BR-21, BR-27).
 
 ---
 
@@ -206,7 +207,7 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 |---|---|
 | BR-1 | The view permission is Craft's own section permission `accessPlugin-component-library` (the plugin has a CP section). The plugin registers `manageComponentLibraryShares` nested under it. Admins hold both implicitly. `accessCp` alone grants **neither**. *Why Craft's and not our own:* Craft refuses any CP request whose first segment is a plugin handle without `accessPlugin-<handle>` (`web/Application.php`), before a controller runs, so a separate view permission could never be enough on its own. |
 | BR-2 | Every CP viewer route requires `accessPlugin-component-library`. Share-management routes and actions also require `manageComponentLibraryShares`. Both are enforced in the controller, not the template. The CP nav item shows only with `accessPlugin-component-library`. |
-| BR-3 | Create and cancel are POST-only and CSRF-validated. No controller disables CSRF. The only anonymous actions are the render and share-viewer actions in §6. |
+| BR-3 | Create, revoke and copy are POST-only and CSRF-validated. No controller disables CSRF. The only anonymous actions are the render and share-viewer actions in §6. |
 | BR-4 | Loaded as a module (listed in `config/app.php`) instead of installed as a plugin, the class throws `InvalidConfigException` naming the line to remove. It never half-works. |
 
 **Component format**
@@ -250,7 +251,7 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 
 | # | Rule |
 |---|---|
-| BR-27 | A token is 32 random bytes, base64url (43 chars), looked up by SHA-256 hash, and stored otherwise only encrypted (BR-45). The create response shows the URL in a copy prompt. The URL is `<primary site>/component-library/share/<token>`. Unknown: 404. Cancelled: 410, cancelled page. Expired: 410, expired page. Active means `revokedAt` is null and `expiresAt` is in the future. |
+| BR-27 | A token is 32 random bytes, base64url (43 chars), looked up by SHA-256 hash, and stored otherwise only encrypted (BR-45). The create response shows the URL in a copy prompt. The URL is `<primary site>/component-library/share/<token>`. Unknown (revoked links included, since revoking deletes the row): 404, unknown page. Expired: 410, expired page. Active means `expiresAt` is in the future. |
 | BR-28 | The label is required, 1–100 chars, trimmed. The expiry is a date, counted in UTC days: default today + 14 days, minimum tomorrow, maximum today + 90 days, validated server-side. There's no limit on the number of links. |
 | BR-29 | The share viewer offers everything the CP viewer does except share management. It shows source and notes, never file paths or roots, and sends `Referrer-Policy: no-referrer`. |
 | BR-30 | Nothing is sent: no email, notification or webhook, for any event in this spec. |
@@ -300,7 +301,7 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 | GET | `admin/component-library/<handle>?story=&site=&props=&device=&orientation=&bg=` | Viewer on one component (`site` picks the iframe base URL only, per BR-22; `device` and `orientation` per BR-39, and `bg` per BR-41, also on share URLs) | `accessPlugin-component-library` | Full-screen CP page (BR-37) |
 | GET | `admin/component-library/shares` | Share list and create form | + `manageComponentLibraryShares` | CP page |
 | POST | `actions/component-library/shares/create` | Create a link | + manage, CSRF | Redirect, one-time URL in the flash |
-| POST | `actions/component-library/shares/revoke` | Cancel a link | + manage, CSRF | Redirect |
+| POST | `actions/component-library/shares/revoke` | Revoke (delete) a link | + manage, CSRF | Redirect |
 | GET | `<primary site>/component-library/share/<token>[/<handle>]` | Share viewer | Anonymous, active token | Page / 404 / 410 |
 | GET | `<site base URL>?token=<craft token>&component=&story=&props=[&bg=site\|light\|dark]` | Preview render (`bg` per BR-42) | Anonymous, valid Craft token, scope rechecked | HTML / 403 / 500 |
 
@@ -312,9 +313,9 @@ v1's front-end `component-library` and `component-library/render` URLs and the
 | Surface | New or reuse | Notes |
 |---|---|---|
 | Viewer (CP) | New, full-screen workspace (BR-37) | Not on the CP layout: a bare CP page with Craft's CP stylesheets. Header, then a collapsible tree and search beside the preview with its toolbar (BR-38), and under the preview the details drawer (tabs Settings, Examples, Source and Notes, driven by the viewer's own script) with a draggable divider on top when open. Site-version and duplicate badges in the header. |
-| Share links (CP) | New, CP table and form | The new URL in Craft's copy prompt. *Copy link* and *Cancel link* on active rows. Cancel with confirmation. |
+| Share links (CP) | New, CP table and form | The new URL in Craft's copy prompt. *Copy link* on active rows, *Revoke link* on every row, with confirmation. |
 | Share viewer | New, same templates outside the CP | CP stylesheets only (Craft's reset, CP theme and `cp.css`, published from Craft's own folders), none of the CP's JS: `CpAsset` would write the visitor's email and user id into `window.Craft` on a public page. No CP nav. The same workspace as the CP viewer (BR-37), with the header showing label and expiry. |
-| Expired, cancelled and unknown link pages | New | Plain: one sentence and a suggestion |
+| Expired and unknown link pages | New | Plain: one sentence and a suggestion |
 | Error panel | New | Inside the preview. Detail depends on scope (BR-26). |
 
 **Design source.** No bespoke design. The developer builds in Craft's CP look with its form macros,
@@ -325,7 +326,7 @@ scale-to-fit (Sam: previews always at 100%). The details drawer below the previe
 bottom panel. Both viewers share one workspace template and one script, so they can't drift apart.
 
 **Copy ownership.** The developer drafts all copy. Sam reviews the share-link wording before
-release: the viewer header, the expired, cancelled and unknown pages, and the one-time URL notice.
+release: the viewer header, the expired and unknown pages, and the copy prompt's notice.
 
 ---
 
@@ -340,7 +341,7 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 | AC-3 | Switching site shows that site's styling, and the site's own version, marked, where one exists. | TS-3 |
 | AC-4 | A new share link defaults to two weeks, can't exceed three months, and its address opens in a copy prompt. An active link's address can be copied again later. | TS-4, TS-18 |
 | AC-5 | A share link opens the whole library with no login, and settings can be changed there. | TS-5 |
-| AC-6 | A cancelled link stops working at once, including an open preview. An expired link shows the expired page. | TS-6 |
+| AC-6 | A revoked link is gone from the list and stops working at once, including an open preview. An expired link shows the expired page. | TS-6 |
 | AC-7 | On a share link, typed values show as plain text. They can't pull in site content or add markup. | TS-7 |
 | AC-8 | In LLL, the button, text field and dialog appear with LLL's styling and examples, including a dialog with custom inner content. | TS-8 |
 | AC-9 | After upgrading, mw-core's and webdna's pages render as before, with no template changes. | TS-9 |
@@ -363,7 +364,7 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 | Second sandbox site `second`, base URL `$PRIMARY_SITE_URL/second/` | Yes, `tests/fixtures/setup.sh` |
 | Sandbox roots at `tests/fixtures/templates` (and `_sites`), no v1 module lines in `config/app.php` | Yes, `tests/fixtures/setup.sh` |
 | `tests/fixtures/templates/`: `good` (tag + stories), `nested` (a story embedding another component with a block override), `bad-tag`, `legacy/button` (Twig-wrapped config with `variants`, `variables`, `{include:}` and a readme), `throws`, `raw-prop` (`\|raw` on a string prop), `_sites/second/` overriding `good`, and a page with 50 `@handle` includes. Plus `tests/fixtures/edge/`, a root outside the sandbox config (TN-8's duplicates, and in `edge/legacy/` TN-9's failing config, `{ref:}`/`{entry:}`/`{asset:}` placeholders, and a tag beside a config) | Yes (2.1 to 3.1), with the 50-include page at `pages/fifty.twig`. 3.1 also added `ui/guest` (prints `currentUser`, for TN-16) and `tests/fixtures/layouts/v1.twig`, a layout on v1's block contract outside every root. 5.1 added `edge/pages/{references,extended}.twig` (CL003, CL008 and the references that must pass) and `edge/refs/panel` (CL004 in its stories) |
-| Active, expired and cancelled share rows | Created per test |
+| Active and expired share rows | Created per test |
 | mw-core and webdna local DDEV sites on v1 | Yes. Read-only, for TS-9. |
 
 ### Scenarios
@@ -396,9 +397,9 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 
 **TS-18 · Copy a share link again** · AC-4 · BR-27, BR-45 · *Pest + browser*
 *Success criterion: an active link's address can be copied, and nothing else's.*
-1. With "Acme" active, the list shows *Copy link* beside *Cancel link* on its row. POST `component-library/shares/url` with its id. Expect JSON whose `url` is the address step 3 of TS-4 showed.
-2. Cancel it, or let it expire. The row has no *Copy link*, and the action returns 404. So does a row with no stored token, and an unknown id.
-3. Without *Create and cancel share links*, the action is 403. A GET is 405, as for the other share actions, and a POST without a CSRF token is 400.
+1. With "Acme" active, the list shows *Copy link* beside *Revoke link* on its row. POST `component-library/shares/url` with its id. Expect JSON whose `url` is the address step 3 of TS-4 showed.
+2. Let it expire. The row has no *Copy link*, and the action returns 404. So does a row with no stored token, a revoked (deleted) link, and an unknown id.
+3. Without *Create and revoke share links*, the action is 403. A GET is 405, as for the other share actions, and a POST without a CSRF token is 400.
 4. In a browser: *Copy link* opens Craft's copy prompt holding the address, as *Copy impersonation URL* does. Creating a link opens the same prompt once.
 
 **TS-5 · Use a share link** · AC-5 · BR-20, BR-26, BR-29 · *Pest + browser*
@@ -407,10 +408,10 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 2. Open `good` and change `label`. The preview updates, and its iframe carries a `share:`-scoped token.
 3. Response headers: the share page has `Referrer-Policy: no-referrer`, and the preview adds `no-store` and `noindex`.
 
-**TS-6 · Cancel and expiry** · AC-6 · BR-21, BR-27 · *Pest*
+**TS-6 · Revoke and expiry** · AC-6 · BR-21, BR-27 · *Pest*
 *Success criterion: refusal takes effect at the next request, with no grace period.*
-1. With a preview open under a link, cancel that link, then reload the preview. Expect 403, "Preview expired".
-2. GET the share URL. Expect 410 and `data-cl-share-state="cancelled"`.
+1. With a preview open under a link, revoke that link, then reload the preview. Expect 403, "Preview expired". The row is gone.
+2. GET the share URL. Expect 404, the unknown page.
 3. GET an expired link: 410 `expired`. GET an unknown token: 404.
 
 **TS-7 · Hostile values** · AC-7 · BR-16, BR-22, BR-24 · *Pest*
@@ -516,7 +517,7 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 | TN-19 | Browser storage blocked, or holding a garbage `cl.` value | Defaults, and no script error (BR-40) |
 | TN-20 | `bg` set to markup, `light<script>`, a 5 KB string or an array, on the render and on the CP and share viewers | The component's own `background`. The value isn't echoed, and no class, attribute or path is built from it (BR-41, BR-42) |
 | TN-21 | A request `props` key for a `control: false` prop, or an `icon` value that isn't a listed name (a path, `../`, markup, an array), on the render and on both viewers | Dropped. The story's value renders, the control shows the story's value, and the request value is never echoed (BR-24, BR-44) |
-| TN-22 | `component-library/shares/url` with an expired, cancelled, pre-v0.26 or unknown id, a non-numeric id, a GET, no CSRF token, or a user without the manage permission | 404 for the first four (a non-numeric id is 0, so unknown), 405 for a GET, 400 for no CSRF, 403 without the permission. No token in the response or the log (BR-2, BR-3, BR-45) |
+| TN-22 | `component-library/shares/url` with an expired, revoked, pre-v0.26 or unknown id, a non-numeric id, a GET, no CSRF token, or a user without the manage permission | 404 for the first four (a non-numeric id is 0, so unknown), 405 for a GET, 400 for no CSRF, 403 without the permission. No token in the response or the log (BR-2, BR-3, BR-45) |
 
 ### Automated checks
 
@@ -533,7 +534,7 @@ e2e runner targets the plugin (the sandbox has Playwright, but nothing points at
 **Test hooks the build must add:**
 - `data-cl-component="<handle>"` (tree items), `data-cl-story="<name>"`, `data-cl-prop="<name>"`
 - `data-cl-preview` (iframe), `data-cl-error` (error panel), `data-cl-site-version` (badge)
-- `data-cl-share-state="active|expired|cancelled"`, `data-cl-share-url` (one-time URL)
+- `data-cl-share-state="active|expired"`, `data-cl-share-url` (the new URL for the copy prompt)
 - `data-cl-workspace` (the page root), `data-cl-device="desktop|tablet|phone"` (buttons), `data-cl-rotate`,
   `data-cl-divider`, `data-cl-drawer`, `data-cl-drawer-toggle`, `data-cl-tree-toggle`, `data-cl-refresh`,
   `data-cl-open`, `data-cl-site-submit`. These replace 3.2's `data-cl-width`.
@@ -946,6 +947,8 @@ review. It's built next, before 6.1 is installed in LLL, so the pilot's tags can
       Sam's to do. Pest proves the hook and the script reach that page once. If
       `CRAFT_SECURITY_KEY` changes, a stored token won't decrypt: the row still shows *Copy
       link*, and it answers 404 with Craft's error toast.
+- [ ] **4.4 Revoke deletes the link** (added v0.27, Sam's request): *Cancel link* becomes *Revoke link* on every row and deletes it; `revokedAt`, the *Cancelled* status and the cancelled page go, and a migration deletes cancelled rows and drops the column (`schemaVersion` 2.0.2). Files: `src/services/Shares.php`, `src/controllers/SharesController.php`, `ShareViewerController.php`, `src/templates/shares/index.twig`, `share/_message.twig`, `src/migrations/*`, `src/records/ShareRecord.php`, the permission label in `src/ComponentLibrary.php`; docs and CHANGELOG
+      Rules: BR-1, BR-3, BR-21, BR-27 · Verify: TS-6, TS-18, B5 #1-3
 - [x] **5.1 Check command**: `src/console/controllers/CheckController.php`
       Rules: BR-31 · Verify: TS-11, B5 #4
       *As built:* the check invalidates the index and builds it fresh for every site, so it reports
@@ -1070,7 +1073,7 @@ review. It's built next, before 6.1 is installed in LLL, so the pilot's tags can
 
 | # | Question | Owner | State |
 |---|---|---|---|
-| 1 | Share-link wording: the viewer header, the expired, cancelled and unknown pages, and the one-time URL notice | Sam | Open, blocking release |
+| 1 | Share-link wording: the viewer header, the expired and unknown pages, and the copy prompt's notice | Sam | Open, blocking release |
 | 2 | Does Craft's CP stylesheet (`CpAsset`) load and style correctly on a site request, without the CP JS globals? If not, the share viewer ships a copied subset of CP CSS. | Developer | **Resolved in 4.2:** the stylesheets style a site page fully, with no CP JS and no copied CSS. `CpAsset` itself isn't used: it brings the CP's jQuery and Garnish stack and puts the visitor's email and user id in `window.Craft`. `CpStylesAsset` publishes Craft's own three stylesheets (the CP theme by name, since `ThemeAsset` picks the front-end theme on a site request), and the share page supplies its own tabs and sidebar toggle. Promoted into §6 *Screens*. |
 | 3 | Does `markhuot/craft-pest-core` run a plugin's `tests/` from the host project, as B5 #3 assumes? If not, the tests run from the sandbox's own `tests/` and the profile is updated. | Developer | **Resolved in 1.2:** yes, from the sandbox root, but only with `-c plugins/component-library/phpunit.xml --test-directory=plugins/component-library/tests`. Without `--test-directory` the tests run with Craft booted but without `tests/Pest.php`. Promoted into §7 *Automated checks* and B5 #3. |
 
@@ -1250,3 +1253,4 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | 2026-09-29 | 0.24 | Sam's request: the *Mode* option for `site` is labelled *Theme*, so it no longer reads as the site switch beside it (BR-41, BR-42, TS-16 step 4, `docs/setup.md`). The value stays `site` in the tag, `bg` and the address. | Claude, for Sam Birch |
 | 2026-09-29 | 0.25 | Sam's request, after the pilot's two icon props: code-only props (`control: false`, BR-5, BR-24), a Props tab in both viewers (BR-43), and icons picked by name from one `icons` folder (type `icon`, BR-44, CL009 in BR-31). AC-17, TS-17, TN-21, task 3.5. Designed generically: LLL adapts in 6.1 (one icon set, button `icon` by name, `iconTemplate` gone, `href`/`type`/`attrs`/`class` code-only). | Claude, for Sam Birch |
 | 2026-09-29 | 0.26 | Sam's decision: share links can be copied again. The token is also stored encrypted with Craft's security key (§4 `tokenEncrypted`, BR-45), and B3 is relaxed from "never stored" to "only encrypted". Active rows get *Copy link*, and a new link opens in Craft's copy prompt, as *Copy impersonation URL* does (BR-27, journey 3, §6, AC-4, TS-4). TS-18, TN-22, task 4.3. Links made before this have no stored token and no *Copy link*. | Claude, for Sam Birch |
+| 2026-09-29 | 0.27 | Sam's request: *Cancel link* becomes *Revoke link*, and revoking deletes the row. So `revokedAt`, the *Cancelled* state and the cancelled page are gone, and a revoked address is 404 like any unknown one (§4, BR-3, BR-27, journeys 3-4, §6, AC-6, TS-6, TS-18, TN-22, Appendix A row 1). The permission reads *Create and revoke share links* (its handle is unchanged). Task 4.4. | Claude, for Sam Birch |
