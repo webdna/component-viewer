@@ -2,7 +2,7 @@
 spec: Component Library v2
 slug: component-library-v2
 status: draft
-version: 0.22
+version: 0.23
 date: 2026-09-28
 author: Claude (for Sam Birch)
 client: webdna (internal)
@@ -282,7 +282,7 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 
 | # | Rule |
 |---|---|
-| BR-41 | The preview background is `site` (the layout's own, untouched), `light` or `dark`. A component opens on its tag's `background` (BR-5, default `site`). The preview toolbar has a *Background* group (*Site*, *Light*, *Dark*) after the device group, in both viewers. It's one group operated by arrow keys, with `aria-pressed` on the value in effect (BR-34). A pick reloads the iframe and puts `bg` in the address beside `device` and `orientation` when it isn't the component's own `background` (and takes it out when it is), and a copied address restores it. A story switch keeps `bg`. Picking another component in the tree drops it, so each component opens on its own `background`. The choice is not remembered per browser, because that would hide every component's own setting. |
+| BR-41 | The preview background is `site` (the layout's own, untouched), `light` or `dark`. A component opens on its tag's `background` (BR-5, default `site`). The preview toolbar has a *Mode* dropdown (*Site*, *Light*, *Dark*) after the device group, in both viewers, laid out like the site switch, with the value in effect selected. A change reloads the iframe and puts `bg` in the address beside `device` and `orientation` when it isn't the component's own `background` (and takes it out when it is), and a copied address restores it. A story switch keeps `bg`. Picking another component in the tree drops it, so each component opens on its own `background`. The choice is not remembered per browser, because that would hide every component's own setting. |
 | BR-42 | The render reads `bg` as exactly `site`, `light` or `dark`. Anything else (an array, markup, another case, any other string) means the component's `background`. `site` is a choice of its own (v0.22), so *Site* works on a component whose tag says `dark`. When the value in effect is `light` or `dark`, block `component` begins with a `<link rel="stylesheet">` to the plugin's published `preview.css` and wraps the story in `<div class="cl-canvas" data-cl-canvas="light\|dark">`. The class and attribute come from that fixed pair, never from the request. `preview.css` is the plugin's own base stylesheet for the preview. The wrapper is `display: contents`, so it never changes layout, and `html` and `body` of a page holding it get the background with `!important` (light `#ffffff`, dark `#111111`). The component's own colours are untouched. With `site`, the render is byte-identical to one without this feature: no link and no wrapper. A layout element other than `html` or `body` that paints its own background still shows. Container layout (padding, centring) stays with `viewClass`. |
 
 ---
@@ -465,7 +465,7 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 1. Render `good` with no `bg`, then with `bg=site`. Both are byte-identical to the render before task 3.4, with no `preview.css` link and no `data-cl-canvas`.
 2. Render `good` with `bg=light`, then `bg=dark`. Block `component` begins with the `preview.css` link, and the story sits in `data-cl-canvas="light"` (then `"dark"`). The story's own markup is unchanged inside it.
 3. Render the edge fixture `on-dark` (its tag sets `background: 'dark'`) with no `bg`. It's on `dark`. With `bg=light` it's on `light`. A tag with `background: 'purple'` is a compile error naming the file and line, and check CL001 (BR-6).
-4. In the CP viewer on `good`, pick *Light*. Within 1 s the preview's page background is white, the component looks as it did, *Light* has `aria-pressed="true"`, and the address carries `bg=light`. Open the copied address in a new tab. It's still light. Pick *Site*. The layout's own background returns and `bg` leaves the address.
+4. In the CP viewer on `good`, pick *Light* from *Mode*. Within 1 s the preview's page background is white, the component looks as it did, *Mode* shows *Light*, and the address carries `bg=light`. Open the copied address in a new tab. It's still light. Pick *Site*. The layout's own background returns and `bg` leaves the address.
 5. With *Dark* picked, switch story. It stays dark. Pick another component in the tree. It opens on its own `background`.
 6. Repeat steps 4 and 5 on a share link.
 
@@ -513,7 +513,7 @@ e2e runner targets the plugin (the sandbox has Playwright, but nothing points at
 - `data-cl-workspace` (the page root), `data-cl-device="desktop|tablet|phone"` (buttons), `data-cl-rotate`,
   `data-cl-divider`, `data-cl-drawer`, `data-cl-drawer-toggle`, `data-cl-tree-toggle`, `data-cl-refresh`,
   `data-cl-open`, `data-cl-site-submit`. These replace 3.2's `data-cl-width`.
-- `data-cl-background="site|light|dark"` (the toolbar buttons) and `data-cl-canvas="light|dark"` (the render's wrapper)
+- `data-cl-background` (the toolbar's *Mode* select, options `site|light|dark`) and `data-cl-canvas="light|dark"` (the render's wrapper)
 - A test-only index build counter, reset per test
 
 ### Regression checks
@@ -828,6 +828,11 @@ review. It's built next, before 6.1 is installed in LLL, so the pilot's tags can
       and *Open*. The arrow keys moved within the group. A story switch kept dark, the tree links
       carried no `bg`, and `@ui:nested` opened on *Site*. A copied `bg=light` address reopened
       light. *Site* took `bg` out. The share page did the same with `window.Craft` undefined.
+      *Changed (29 Sep 2026, v0.23, Sam's request):* the three buttons are now one *Mode*
+      dropdown (`select#cl-background[data-cl-background]`), laid out like the site switch. A
+      change reloads the preview. The swatch chips and the arrow-key group are gone. Pest 505
+      passed; Chrome, CP viewer on `good`: *Light* and *Dark* set `bg` on the iframe and the
+      address and the canvas, and *Site* took all three out.
 - [x] **4.1 Share service and management**: `src/services/Shares.php`, `src/controllers/SharesController.php`, `src/templates/shares/*`, GC hook, user-delete cascade
       Rules: BR-3, BR-27, BR-28, BR-30, BR-36 · Verify: TS-4, TN-11 to TN-13
       *As built:* validation lives in a form model, `src/models/ShareForm.php`. The expiry is a native
@@ -1175,3 +1180,4 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | 2026-09-29 | 0.20 | Task 6.1 staged, not ticked. It's built on LLL branch `feature/component-library-v2` (23e07e24), but by Sam's decision it isn't installed in LLL until he approves the pilot, which runs for review in the craft5 sandbox. BR-24 now says escaping protects HTML only: a prop used as script, a URL, a file path or a template name is a `select` or set only in stories, and the format guide says so too. TS-8 evidence is in 6.1's as-built note. | Claude, for Sam Birch |
 | 2026-09-29 | 0.21 | Preview background added (Sam's request): BR-41 and BR-42, AC-16, TS-16, TN-20, task 3.4. The tag gains `background` (BR-5), and the render accepts a closed `bg=light|dark` (BR-20, §6, B3). v1 had no such switch (its `app.css` styled only the viewer), so the plugin's own `preview.css` is new. It sets only the page background. Container layout stays with `viewClass`, and the choice is not remembered per browser, so each component's default shows. | Claude, for Sam Birch |
 | 2026-09-29 | 0.22 | Task 3.4 built. BR-42 amended: `bg` is read as exactly `site`, `light` or `dark`, so *Site* can show the site background on a component whose tag says `dark`. BR-20, BR-41, §6 and B3 now say `bg` is sent only when it differs from the component's own `background`. For a component on the default `site`, TS-16 is unchanged. See 3.4's as-built note. | Claude, for Sam Birch |
+| 2026-09-29 | 0.23 | Sam's request: the background buttons become one *Mode* dropdown (BR-41, TS-16 step 4, the `data-cl-background` hook, `docs/setup.md`, CHANGELOG). Behaviour and `bg` are unchanged. The 6.1 install in LLL is on hold at Sam's word, even though the pilot is approved on craft5. | Claude, for Sam Birch |

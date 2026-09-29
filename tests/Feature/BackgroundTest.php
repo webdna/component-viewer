@@ -152,7 +152,7 @@ describe('TN-20 a hostile bg', function() {
     it('opens the CP viewer on the component’s own background and keeps it out of the preview', function(mixed $bg, string $needle) {
         $html = $this->actingAs('admin')->get(BG_VIEWER . '?' . http_build_query(['bg' => $bg]))->assertOk()->content;
 
-        expect($html)->toMatch('/data-cl-background="site"\s+aria-pressed="true" tabindex="0"/')
+        expect($html)->toContain('<option value="site" selected>')
             ->and(bgConfig($html))->toMatchArray(['background' => 'site', 'defaultBackground' => 'site'])
             ->and(bgPreviewQuery($html))->not->toHaveKey('bg')
             ->and($html)->not->toContain($needle);
@@ -171,14 +171,15 @@ describe('TN-20 a hostile bg', function() {
 });
 
 describe('BR-41 the viewers', function() {
-    it('offers Site, Light and Dark as one pressed group after the devices', function() {
+    it('offers Site, Light and Dark in a Mode dropdown after the devices', function() {
         $html = $this->actingAs('admin')->get(BG_VIEWER)->assertOk()->content;
 
-        expect($html)->toContain('<div class="cl-backgrounds" role="group" aria-label="Background">')
-            ->and(strpos($html, 'data-cl-rotate'))->toBeLessThan((int)strpos($html, 'data-cl-background="site"'))
-            ->and($html)->toMatch('/data-cl-background="site"\s+aria-pressed="true" tabindex="0"/')
-            ->and($html)->toMatch('/data-cl-background="light"\s+aria-pressed="false" tabindex="-1"/')
-            ->and($html)->toMatch('/data-cl-background="dark"\s+aria-pressed="false" tabindex="-1"/')
+        expect($html)->toContain('<label for="cl-background">Mode</label>')
+            ->and($html)->toContain('<select id="cl-background" data-cl-background>')
+            ->and(strpos($html, 'data-cl-rotate'))->toBeLessThan((int)strpos($html, 'data-cl-background'))
+            ->and($html)->toContain('<option value="site" selected>Site</option>')
+            ->and($html)->toMatch('/<option value="light"\s*>Light<\/option>/')
+            ->and($html)->toMatch('/<option value="dark"\s*>Dark<\/option>/')
             ->and($html)->toContain('<input type="hidden" name="bg" value="site" data-cl-site-background disabled>')
             ->and(bgPreviewQuery($html))->not->toHaveKey('bg');
     });
@@ -187,7 +188,7 @@ describe('BR-41 the viewers', function() {
     it('opens on the background in the address and sends it to the preview', function() {
         $html = $this->actingAs('admin')->get(BG_VIEWER . '?bg=light&story=Secondary')->assertOk()->content;
 
-        expect($html)->toMatch('/data-cl-background="light"\s+aria-pressed="true" tabindex="0"/')
+        expect($html)->toContain('<option value="light" selected>')
             ->and(bgConfig($html))->toMatchArray(['background' => 'light', 'defaultBackground' => 'site'])
             ->and(bgPreviewQuery($html))->toMatchArray(['bg' => 'light', 'story' => 'Secondary'])
             // The site switch keeps it. The tree's links drop it, so each component opens on its own.
@@ -202,7 +203,7 @@ describe('BR-41 the viewers', function() {
         $token = ComponentLibrary::getInstance()->getShares()->create($form, (int)Craft::$app->getUsers()->getUserByUsernameOrEmail('admin')?->id);
         $html = $this->get(webdna\componentlibrary\services\Shares::URL_PATH . "$token/@ui:good?bg=dark")->assertOk()->content;
 
-        expect($html)->toMatch('/data-cl-background="dark"\s+aria-pressed="true"/')
+        expect($html)->toContain('<option value="dark" selected>')
             ->and(bgPreviewQuery($html))->toMatchArray(['bg' => 'dark']);
     });
 

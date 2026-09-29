@@ -79,7 +79,7 @@ Previews render on each site's own front end, so they can use the site's real st
 - `viewClass` receives the component's `viewClass` setting, for padding or a background colour
   around it.
 
-The preview toolbar's *Background* switch shows a component on the site's own background, on
+The preview toolbar's *Mode* dropdown shows a component on the site's own background, on
 white (`#ffffff`) or on near-black (`#111111`). A component opens on its tag's `background`
 ([format](format.md)), and a copied address or share link keeps a different choice. On *Site* the
 page is exactly your layout. On *Light* or *Dark*, block `component` also holds a link to the

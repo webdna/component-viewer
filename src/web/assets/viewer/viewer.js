@@ -334,7 +334,7 @@ function initViewer(root) {
     const fields = [...root.querySelectorAll('[data-cl-prop]')];
     const storyButtons = [...root.querySelectorAll('[data-cl-story]')];
     const deviceButtons = [...root.querySelectorAll('[data-cl-device]')];
-    const backgroundButtons = [...root.querySelectorAll('[data-cl-background]')];
+    const backgroundSelect = root.querySelector('[data-cl-background]');
     const rotate = root.querySelector('[data-cl-rotate]');
     const open = root.querySelector('[data-cl-open]');
     const stage = root.querySelector('[data-cl-stage]');
@@ -576,9 +576,8 @@ function initViewer(root) {
     pressedGroup(deviceButtons, (button) => setDevice(button.dataset.clDevice));
 
     // BR-41: a pick reloads the preview on that background. A story switch keeps it.
-    pressedGroup(backgroundButtons, (button) => {
-        background = button.dataset.clBackground;
-        press(backgroundButtons, button);
+    backgroundSelect.addEventListener('change', () => {
+        background = backgroundSelect.value;
         update();
     });
 
