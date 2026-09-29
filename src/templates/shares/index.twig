@@ -117,7 +117,12 @@
     {% js %}
 (() => {
     const label = {{ 'Anyone with this address can open the library, with no login, until it expires or you cancel it.'|t('component-library')|json_encode|raw }};
-    const prompt = (url) => Craft.ui.createCopyTextPrompt({label, value: url});
+    // Craft sizes the input by character count. Here it fills the modal, whose width the label sets.
+    const prompt = (url) => {
+        const $modal = Craft.ui.createCopyTextPrompt({label, value: url});
+        $modal.find('.copytext').css('display', 'flex');
+        $modal.find('.copytext input').css({flex: '1 1 auto', minWidth: 0});
+    };
     const created = document.querySelector('[data-cl-share-url]');
     if (created) {
         prompt(created.dataset.clShareUrl);
