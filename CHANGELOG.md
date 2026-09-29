@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.0-beta.2 - 2026-09-29
 
 ### Added
 - A plugin icon, for the Plugins settings page, the Plugin Store and the control-panel nav.
