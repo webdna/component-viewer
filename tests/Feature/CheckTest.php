@@ -145,6 +145,16 @@ describe('BR-31', function() {
         ($this->check)(true)->assertExitCode(ExitCode::UNSPECIFIED_ERROR)->assertSee('1 problems');
     });
 
+    // TS-16 step 3: BR-41's background is a closed set, checked like any other tag key
+    it('reports a background that isn’t site, light or dark as CL001', function() {
+        ($this->useIndex)([($this->root)([
+            'ui/card.twig' => "{# a card #}\n{% component { name: 'Card', background: 'purple' } %}\n",
+        ])]);
+
+        ($this->check)()->assertExitCode(ExitCode::UNSPECIFIED_ERROR)
+            ->assertSee('CL001 ui/card.twig:2 Invalid "component" tag. "background" must be one of site, light, dark.');
+    });
+
     it('offers --strict on the command line', function() {
         expect((new CheckController('check', $this->plugin))->options('index'))->toContain('strict');
     });

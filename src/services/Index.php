@@ -38,6 +38,12 @@ class Index extends BaseComponent
     /** Invalidated by the *Component library index* Clear Caches option. */
     public const CACHE_TAG = 'component-library-index';
 
+    /**
+     * In the cache key: bump it when Component gains or loses a property, or a cached index from
+     * before the change unserializes with that property uninitialised.
+     */
+    private const FORMAT = 2;
+
     /** BR-12's pre-filter: only a file that might hold a component tag is parsed. */
     private const TAG_PATTERN = '/\{%-?\s*component\b/';
 
@@ -74,7 +80,7 @@ class Index extends BaseComponent
     public function all(): array
     {
         $roots = $this->roots();
-        $key = [self::class, Craft::$app->getSites()->getCurrentSite()->handle, ComponentLibrary::getInstance()->schemaVersion, $roots, $this->legacy];
+        $key = [self::class, Craft::$app->getSites()->getCurrentSite()->handle, ComponentLibrary::getInstance()->schemaVersion, self::FORMAT, $roots, $this->legacy];
         $memo = md5(serialize($key));
 
         return $this->loaded[$memo] ??= $this->load($key, $roots);

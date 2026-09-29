@@ -27,7 +27,8 @@ use yii\base\InvalidArgumentException;
  * Previews are anonymous site requests routed here by a Craft token, whose only parameter is the
  * scope: `user:<id>` or `share:<id>`. Everything else about a render (component, story, props)
  * comes from the query string, so it's treated as hostile: a handle is only ever an index key, a
- * story only a key of that component's stories, and a prop only a declared prop's coerced value.
+ * story only a key of that component's stories, a prop only a declared prop's coerced value, and
+ * the background only one of Component::BACKGROUNDS.
  *
  * @phpstan-type ErrorDetail array{message:string,template:string|null,line:int|null}
  */
@@ -48,6 +49,9 @@ class Renderer extends BaseComponent
     public const TEMPLATES = self::TEMPLATE_ROOT . '/_render';
 
     public const DEFAULT_LAYOUT = self::TEMPLATES . '/layout';
+
+    /** The plugin's own preview stylesheet (BR-42), `src/web/assets/preview/dist`. */
+    public const PREVIEW_CSS = 'preview.css';
 
     /** BR-24's limits. */
     public const MAX_PROPS_BYTES = 8192;
@@ -103,14 +107,16 @@ class Renderer extends BaseComponent
      * render itself uses whichever site serves the request (BR-22).
      *
      * @param array<string,mixed>|null $props Request props, sent as JSON
+     * @param string|null $bg A background other than the component's own (BR-41), from background()
      */
-    public function previewUrl(Site $site, string $token, string $handle, ?string $story = null, ?array $props = null): string
+    public function previewUrl(Site $site, string $token, string $handle, ?string $story = null, ?array $props = null, ?string $bg = null): string
     {
         $params = array_filter([
             Craft::$app->getConfig()->getGeneral()->tokenParam => $token,
             'component' => $handle,
             'story' => $story,
             'props' => $props ? json_encode($props, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : null,
+            'bg' => $bg,
         ], fn($value) => $value !== null);
 
         return rtrim((string)$site->getBaseUrl(), '/') . '/?' . http_build_query($params);
@@ -137,6 +143,22 @@ class Renderer extends BaseComponent
         }
 
         return ComponentLibrary::getInstance()->getShares()->active()->andWhere(['id' => $id])->exists();
+    }
+
+    /**
+     * BR-41, BR-42: the background in effect. A request value counts only when it's exactly one
+     * of Component::BACKGROUNDS. Anything else, or nothing, is the component's own `background`.
+     * The value returned is always the constant's own string, never the request's.
+     */
+    public static function background(Component $component, mixed $requested = null): string
+    {
+        foreach (Component::BACKGROUNDS as $background) {
+            if ($requested === $background) {
+                return $background;
+            }
+        }
+
+        return $component->background ?? Component::BACKGROUNDS[0];
     }
 
     /** Whether errors in this scope may show their detail (BR-26). */
@@ -195,9 +217,13 @@ class Renderer extends BaseComponent
      * The whole preview page: the story, inside the configured layout's `component` block, with
      * the component's `viewClass` in block `viewClass` (BR-25). Always site template mode.
      *
+     * On a `light` or `dark` background the story sits in the canvas wrapper, after a link to
+     * preview.css. On `site` the page is exactly as it was before backgrounds existed (BR-42).
+     *
      * @param array<string,mixed> $props From props()
+     * @param string $background From background()
      */
-    public function render(Component $component, Story $story, array $props): string
+    public function render(Component $component, Story $story, array $props, string $background = 'site'): string
     {
         $view = Craft::$app->getView();
         $mode = $view->getTemplateMode();
@@ -213,6 +239,8 @@ class Renderer extends BaseComponent
                 'clLayout' => $this->layout(),
                 'clHtml' => new Markup($html, 'UTF-8'),
                 'clViewClass' => $component->viewClass,
+                'clCanvas' => $background === Component::BACKGROUNDS[0] ? null : $background,
+                'clPreviewCss' => $background === Component::BACKGROUNDS[0] ? null : $this->previewCssUrl(),
             ], View::TEMPLATE_MODE_SITE);
         } catch (Throwable $e) {
             // Craft's page render opens an output buffer it doesn't close when a layout throws.
@@ -292,6 +320,14 @@ class Renderer extends BaseComponent
             'Referrer-Policy' => 'no-referrer',
             'Content-Security-Policy' => 'frame-ancestors ' . ($origins ? implode(' ', $origins) : "'none'"),
         ];
+    }
+
+    /** The published preview.css (BR-42). Not an asset bundle: the layout's head isn't ours to add to. */
+    public function previewCssUrl(): string
+    {
+        $dir = ComponentLibrary::getInstance()->getBasePath() . '/web/assets/preview/dist';
+
+        return (string)Craft::$app->getAssetManager()->getPublishedUrl($dir, true, self::PREVIEW_CSS);
     }
 
     private function index(): Index

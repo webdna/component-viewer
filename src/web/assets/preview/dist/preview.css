@@ -1,0 +1,20 @@
+/*
+ * The plugin's base stylesheet for the preview (BR-42), linked only on a light or dark background.
+ *
+ * The canvas wrapper never takes part in layout. The page behind it gets the background, over
+ * whatever the layout set on html and body, and nothing else changes: the component's own
+ * colours, and any other layout element that paints a background, stay as they are.
+ */
+.cl-canvas {
+    display: contents;
+}
+
+html:has([data-cl-canvas='light']),
+html:has([data-cl-canvas='light']) body {
+    background: #ffffff !important;
+}
+
+html:has([data-cl-canvas='dark']),
+html:has([data-cl-canvas='dark']) body {
+    background: #111111 !important;
+}

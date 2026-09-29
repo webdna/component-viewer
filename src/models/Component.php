@@ -22,13 +22,16 @@ final class Component
 {
     public const STATUSES = ['prototype', 'wip', 'ready', 'deprecated'];
 
+    /** BR-41: the preview backgrounds, the default first. */
+    public const BACKGROUNDS = ['site', 'light', 'dark'];
+
     /**
      * BR-17's owned-name pattern. The tag may leave off the leading `@`. `D`, because a bare `$`
      * also matches before a trailing newline.
      */
     public const HANDLE_PATTERN = '/^@[A-Za-z0-9_-]+(:[A-Za-z0-9_-]+)+$/D';
 
-    private const KEYS = ['name', 'handle', 'status', 'notes', 'viewClass', 'props'];
+    private const KEYS = ['name', 'handle', 'status', 'notes', 'viewClass', 'background', 'props'];
 
     /**
      * @param array<string,Prop> $props Keyed by prop name, in declared order
@@ -41,6 +44,7 @@ final class Component
      * @param list<Problem> $errors Why the file, its stories or its legacy config couldn't be read
      * @param string|null $configPath Absolute path of the legacy `.config.json` it was read from (BR-12)
      * @param list<Problem> $warnings What still indexes, but the check reports
+     * @param string|null $background The preview background it opens on (BR-41), `site` when null
      */
     public function __construct(
         public readonly ?string $name = null,
@@ -58,6 +62,7 @@ final class Component
         public readonly array $errors = [],
         public readonly ?string $configPath = null,
         public readonly array $warnings = [],
+        public readonly ?string $background = null,
     ) {
     }
 
@@ -88,7 +93,7 @@ final class Component
             throw new InvalidArgumentException(sprintf('Unknown key "%s". Keys are %s', reset($unknown), implode(', ', self::KEYS)));
         }
 
-        foreach (['name', 'handle', 'status', 'notes', 'viewClass'] as $key) {
+        foreach (['name', 'handle', 'status', 'notes', 'viewClass', 'background'] as $key) {
             if (isset($definition[$key]) && !is_string($definition[$key])) {
                 throw new InvalidArgumentException("\"$key\" must be a string");
             }
@@ -105,6 +110,11 @@ final class Component
         $status = $definition['status'] ?? null;
         if ($status !== null && !in_array($status, self::STATUSES, true)) {
             throw new InvalidArgumentException(sprintf('"status" must be one of %s', implode(', ', self::STATUSES)));
+        }
+
+        $background = $definition['background'] ?? null;
+        if ($background !== null && !in_array($background, self::BACKGROUNDS, true)) {
+            throw new InvalidArgumentException(sprintf('"background" must be one of %s', implode(', ', self::BACKGROUNDS)));
         }
 
         $declared = $definition['props'] ?? [];
@@ -124,6 +134,7 @@ final class Component
             $definition['notes'] ?? null,
             $definition['viewClass'] ?? null,
             $props,
+            background: $background,
         );
     }
 }

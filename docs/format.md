@@ -49,11 +49,12 @@ The tag can sit anywhere in the file, and a file has at most one. Every key is o
 | `status` | `prototype`, `wip`, `ready` or `deprecated`. Shown as a badge. |
 | `notes` | Markdown, shown on the *Notes* tab. |
 | `viewClass` | Classes for the element around the preview: the layout's `viewClass` block. |
+| `background` | The preview background it opens on: `site` (the layout's own, the default), `light` or `dark`. Set `dark` for a component made for dark sections, such as a footer. The viewer's *Background* switch changes it for a look. |
 | `props` | The settings the component takes (below). |
 
 **Only literal values.** The tag's value must be written out in full: strings, numbers, `true`,
 `false`, `null`, lists and hashes. A variable, filter, function call or `~` concatenation is a Twig
-syntax error naming the file and line, as is an unknown key, a bad status or a default that
+syntax error naming the file and line, as is an unknown key, a bad status or background, or a default that
 doesn't match its type. The library reads the tag without running the template, and this is what
 makes that safe.
 
