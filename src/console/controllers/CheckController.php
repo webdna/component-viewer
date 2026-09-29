@@ -111,7 +111,7 @@ class CheckController extends Controller
                             'code' => 'CL002',
                             'path' => $path,
                             'line' => null,
-                            'message' => sprintf('Also claims %s, which %s already has, so this file is ignored. Give one of them another handle.', $handle, $this->display((string)$component->path)),
+                            'message' => sprintf('Also claims %s, which %s already has, so this file is ignored. Give one of them another handle.', $handle, self::display((string)$component->path)),
                         ];
                     }
                 }
@@ -126,7 +126,7 @@ class CheckController extends Controller
         // A component every site shares reports once, not once per site.
         $problems = array_values(array_unique(array_map('serialize', $this->found)));
         $problems = array_map(fn(string $problem) => unserialize($problem), $problems);
-        usort($problems, fn(array $a, array $b) => [$this->display($a['path']), $a['line'] ?? 0, $a['code']] <=> [$this->display($b['path']), $b['line'] ?? 0, $b['code']]);
+        usort($problems, fn(array $a, array $b) => [self::display($a['path']), $a['line'] ?? 0, $a['code']] <=> [self::display($b['path']), $b['line'] ?? 0, $b['code']]);
 
         return $problems;
     }
@@ -275,11 +275,11 @@ class CheckController extends Controller
      */
     private function location(array $problem): string
     {
-        return $this->display($problem['path']) . ($problem['line'] !== null ? ":{$problem['line']}" : '');
+        return self::display($problem['path']) . ($problem['line'] !== null ? ":{$problem['line']}" : '');
     }
 
     /** A path relative to the templates folder, else to the project, so no server path is printed. */
-    private function display(string $path): string
+    public static function display(string $path): string
     {
         foreach (['@templates', '@root'] as $alias) {
             $base = FileHelper::normalizePath(Craft::getAlias($alias)) . '/';

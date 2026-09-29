@@ -2,7 +2,7 @@
 spec: Component Library v2
 slug: component-library-v2
 status: draft
-version: 0.17
+version: 0.18
 date: 2026-09-28
 author: Claude (for Sam Birch)
 client: webdna (internal)
@@ -258,7 +258,7 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 | # | Rule |
 |---|---|
 | BR-31 | `craft component-library/check [--strict]` prints `<code> <path relative to templates>:<line> <message>` per problem, then `<n> problems`. Errors: CL001 tag unparseable or not literal, CL002 duplicate handle in a root, CL003 unknown handle in a literal `include`/`embed`/`extends` anywhere under `@templates`, CL004 unknown handle in a story, CL005 legacy config failed to render or decode. Warnings: CL006 unresolved legacy placeholder, CL007 tag and config on one file, CL008 dynamic include name skipped. It exits 1 on any error (or any warning with `--strict`), else 0. |
-| BR-32 | `craft component-library/make <category>/<name> [--root=<n>] [--folder]` writes `<name>.twig` (a tag with `name` and `status: 'wip'`) and `<name>.stories.twig` (one *Default* story) into the first root, or root *n*. `--folder` nests them in `<name>/`. It refuses to overwrite and validates segments against `[a-z0-9-]+`. |
+| BR-32 | `craft component-library/make <category>/<name> [--root=<n>] [--folder]` writes `<name>.twig` (a tag with `name` and `status: 'wip'`) and `<name>.stories.twig` (one *Default* story) into the first root, or root *n* (numbered from 1 in `templateDirectories` order; a site folder isn't one). `--folder` nests them in `<name>/`. It refuses to overwrite, writing neither file if either exists, and refuses the other layout of a handle the same root already has (a CL002). It validates segments against `[a-z0-9-]+`, and invalidates the index. |
 
 **Non-functional**
 
@@ -866,8 +866,29 @@ reviewed in it.
       least one test each. Three were missed at first and closed by test fixes: warm every site's
       index before the stale-cache test, start the site test on the primary site, and add a root
       outside `@templates`. B5: PHPStan OK, ECS OK, Pest 409 passed, and B5 #4 as amended.
-- [ ] **5.2 Make command**: `src/console/controllers/MakeController.php`
+- [x] **5.2 Make command**: `src/console/controllers/MakeController.php`
       Rules: BR-32 · Verify: TS-12
+      *As built:* `<category>/<name>` must be exactly two segments matching
+      `MakeController::SEGMENT_PATTERN` (`/^[a-z0-9-]+$/D`). The template's tag holds only `name`
+      (the name with hyphens as spaces, first letter capitalised: `icon-button` → *Icon button*) and
+      `status: 'wip'`, over `<div class="<name>"></div>`. The stories file holds one empty *Default*
+      story. `--root=n` counts from 1 over `templateDirectories` alone. A site folder is left out,
+      because a site version overrides something that already exists, so it's copied rather than
+      made. If either file exists, nothing is written (exit 73). Making `ui/badge` flat beside
+      `ui/badge/badge.twig`, or the reverse, in the same root is also refused, since both claim
+      `@ui:badge` (CL002). Making it in a later root is allowed: that's an override (BR-13). A bad
+      path or root exits 64. The command invalidates the index, so the next page load sees the
+      component even when devMode is off and the cache isn't checked against the disk. Printed paths
+      use the check's `CheckController::display()`, now public static. `MakeTest` has 31 tests,
+      covering TS-12 steps 1-3 and BR-32. A mutation run (20 mutations: no invalidate, overwrites,
+      only one file checked, any segment count, pattern unanchored or without `D`, segments
+      unchecked, root 0-based, off by one or unvalidated, site folder counted, `--folder` ignored,
+      no clash check or clash across roots, writes before checking, status, name, story, absolute
+      paths, exit 0 on refusal) failed at least one test each. Real CLI in the sandbox: make,
+      refuse, bad path, bad root, `--folder`, `--root=1 --folder=0`. Then over HTTP, the CP viewer
+      showed the new component (tree 7 → 8, one Default story) on the next load after a CLI make.
+      The probe files were removed afterwards. B5: PHPStan OK, ECS OK, Pest 468 passed, and B5 #4
+      as amended.
 - [ ] **5.3 Docs**: `README.md`, `docs/{setup,format,share-links,upgrading-from-v1,resolver}.md`, a `CHANGELOG.md` 2.0.0 entry. The upgrade guide leads with `'legacy' => true` (BR-12), and the setup guide says new sites leave it off.
       Rules: BR-4, BR-12, BR-19 · Verify: Sam reads the upgrade guide against TS-9's steps
 - [ ] **6.1 LLL install and pilot** (LLL repo, own branch): `config/component-library.php`, `templates/_component-library/preview.twig` (the craft-vite pair from `_layouts/public.twig:38-40`), convert `_components/ui/button.twig`, `form/text.twig` and `ui/dialog.twig`, and add their `.stories.twig`
@@ -1047,3 +1068,4 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | 2026-09-28 | 0.15 | Task 5.1 built. BR-31 as specified: handles are known if any site has them, and CL008 covers only runtime names that start like a handle. B5 #4 now expects the one deliberate `bad-tag` CL001 and exit 1 (the 0-problems case is TS-11 step 2). §7 fixtures table updated. See 5.1's as-built note. | Claude, for Sam Birch |
 | 2026-09-28 | 0.16 | Preview workspace added (Sam's request): both viewers become one full-screen workspace like Craft's entry preview, with a collapsible tree, a draggable split, and Desktop, Tablet and Phone with rotate and scale-to-fit. §1, vocabulary, §2, journey 1, BR-34 amended, new BR-37 to BR-40, §6 route and *Screens*, AC-15, TS-14, new TS-15, TN-18, TN-19, test hooks, regression row, new task 3.3, B2 item 10, two B3 guardrails, one assumption. | Claude, for Sam Birch |
 | 2026-09-28 | 0.17 | Task 3.3 built, with three changes from Sam: the controls column is now v1's details drawer below the preview (a tab row that opens upward, the divider on top), tablet and phone always render at 100% and scroll rather than scale, and the site select switches on change. §1, journey 1, BR-34, BR-37, BR-38, BR-40, §6 *Screens* and *Design source*, AC-15, TS-14, TS-15 steps 1-3 and 6, test hooks. See 3.3's as-built note. | Claude, for Sam Birch |
+| 2026-09-29 | 0.18 | Task 5.2 built. BR-32: roots are numbered from 1, a site folder isn't one, neither file is written if either exists, the other layout of a handle already in that root is refused, and the index is invalidated. See 5.2's as-built note. | Claude, for Sam Birch |
