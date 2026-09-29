@@ -6,7 +6,7 @@ A rewrite as a Craft 5 plugin. See [Upgrading from v1](docs/upgrading-from-v1.md
 
 ### Added
 - A control-panel library: a full-screen workspace with a searchable tree, a preview on each site's
-  own styling, desktop, tablet and phone devices with rotate, and a drawer of settings, props, examples,
+  own styling, desktop, tablet and phone devices with rotate, and a drawer of settings, examples, props,
   source and notes. Every view has its own address.
 - A preview *Mode* dropdown for the background (the site's own, light or dark), and a `background` key in the
   `component` tag for the one a component opens on.
