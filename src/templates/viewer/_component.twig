@@ -1,6 +1,6 @@
 {#
  # One component in the workspace (BR-37, BR-38): the preview with its toolbar, and below it the
- # details drawer, a row of tabs (settings, props, examples, source and notes) that opens upward, as in
+ # details drawer, a row of tabs (settings, examples, props, source and notes) that opens upward, as in
  # v1. The divider on top of an open drawer sets its height.
  #
  # Test hooks (§7): data-cl-story, data-cl-prop, data-cl-preview, data-cl-device, data-cl-rotate,
@@ -36,8 +36,8 @@
 } %}
 {% set tabs = {
     'cl-settings': {label: 'Settings'|t('component-library'), url: '#cl-settings'},
-    'cl-props': {label: 'Props'|t('component-library'), url: '#cl-props'},
     'cl-examples': {label: 'Examples'|t('component-library'), url: '#cl-examples'},
+    'cl-props': {label: 'Props'|t('component-library'), url: '#cl-props'},
     'cl-source': {label: 'Source'|t('component-library'), url: '#cl-source'},
     'cl-notes': {label: 'Notes'|t('component-library'), url: '#cl-notes'},
 } %}

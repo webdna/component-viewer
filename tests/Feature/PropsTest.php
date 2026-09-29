@@ -145,7 +145,9 @@ describe('BR-43 the viewers', function() {
         $html = $this->actingAs('admin')->get(ICON_VIEWER)->assertOk()->content;
 
         expect($html)->toContain('id="tab-cl-props"')
-            ->and(strpos($html, 'id="tab-cl-settings"'))->toBeLessThan((int)strpos($html, 'id="tab-cl-props"'))
+            // After Examples, before Source.
+            ->and(strpos($html, 'id="tab-cl-examples"'))->toBeLessThan((int)strpos($html, 'id="tab-cl-props"'))
+            ->and(strpos($html, 'id="tab-cl-props"'))->toBeLessThan((int)strpos($html, 'id="tab-cl-source"'))
             ->and($html)->toContain('data-cl-props')
             ->and(preg_match_all('/data-cl-prop-row="(\w+)" data-cl-control="(true|false)"/', $html, $rows))->toBe(4)
             ->and(array_combine($rows[1], $rows[2]))->toBe(['label' => 'true', 'icon' => 'true', 'href' => 'false', 'type' => 'false'])
