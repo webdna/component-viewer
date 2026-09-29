@@ -61,7 +61,7 @@ class ComponentLibrary extends Plugin
     public bool $hasCpSection = true;
 
     /**
-     * The index takes its roots (BR-11), and the renderer its layout (BR-25), from
+     * The index takes its roots (BR-11) and icons folder (BR-44), and the renderer its layout (BR-25), from
      * config/component-library.php.
      */
     public static function config(): array
@@ -75,6 +75,7 @@ class ComponentLibrary extends Plugin
                     'templateDirectories' => $config['templateDirectories'] ?? null,
                     'sites' => $config['sites'] ?? null,
                     'legacy' => $config['legacy'] ?? null,
+                    'icons' => $config['icons'] ?? null,
                 ], fn($value) => $value !== null),
                 'resolver' => Resolver::class,
                 'renderer' => array_filter([

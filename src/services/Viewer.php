@@ -31,6 +31,7 @@ use yii\base\InvalidArgumentException;
  *     component:Component|null,
  *     story:Story|null,
  *     controls:list<Control>,
+ *     iconNames:list<string>,
  *     overrides:array<string,mixed>,
  *     previewUrl:string|null,
  *     siteVersion:bool,
@@ -115,6 +116,7 @@ class Viewer extends BaseComponent
             'component' => $component,
             'story' => null,
             'controls' => [],
+            'iconNames' => [],
             'overrides' => [],
             'previewUrl' => null,
             'siteVersion' => false,
@@ -142,6 +144,7 @@ class Viewer extends BaseComponent
             'story' => $current,
             'siteForm' => self::formFor($url((string)$component->handle, [])),
             'controls' => $this->controls($component, $current, $overrides),
+            'iconNames' => $this->index()->iconNames(),
             'overrides' => $overrides,
             'previewUrl' => $previewUrl,
             'siteVersion' => $this->isSiteVersion($component, $site),
@@ -151,7 +154,7 @@ class Viewer extends BaseComponent
                 'name' => $component->name ?? $component->handle,
                 'story' => $current->name,
                 'stories' => array_map(fn(Story $s) => $this->fileValues($component, $s), $component->stories),
-                'types' => array_map(fn(Prop $prop) => $prop->type, $component->props),
+                'types' => array_map(fn(Prop $prop) => $prop->type, self::controlled($component)),
                 'overrides' => (object)$overrides,
                 'previewUrl' => $previewUrl,
             ] + $view + $backgrounds,
@@ -272,11 +275,21 @@ class Viewer extends BaseComponent
             return [];
         }
 
-        return array_intersect_key($decoded, $component->props);
+        return array_intersect_key($decoded, self::controlled($component));
     }
 
     /**
-     * One control per declared prop, holding the value the preview starts with.
+     * The props with a control, by name: all but the code-only ones (BR-5, BR-43).
+     *
+     * @return array<string,Prop>
+     */
+    public static function controlled(Component $component): array
+    {
+        return array_filter($component->props, fn(Prop $prop) => $prop->control);
+    }
+
+    /**
+     * One control per prop with a control (BR-43), holding the value the preview starts with.
      *
      * @param array<string,mixed> $overrides
      * @return list<Control>
@@ -287,7 +300,7 @@ class Viewer extends BaseComponent
 
         return array_values(array_map(
             fn(Prop $prop) => ['prop' => $prop, 'value' => self::controlValue($prop, $values[$prop->name] ?? null)],
-            $component->props,
+            self::controlled($component),
         ));
     }
 

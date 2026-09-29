@@ -114,6 +114,7 @@ class CheckController extends Controller
                             'message' => sprintf('Also claims %s, which %s already has, so this file is ignored. Give one of them another handle.', $handle, self::display((string)$component->path)),
                         ];
                     }
+                    array_push($this->found, ...self::iconProblems($component, $index->iconNames()));
                 }
                 array_push($folders, ...$index->roots());
             }
@@ -127,6 +128,32 @@ class CheckController extends Controller
         $problems = array_values(array_unique(array_map('serialize', $this->found)));
         $problems = array_map(fn(string $problem) => unserialize($problem), $problems);
         usort($problems, fn(array $a, array $b) => [self::display($a['path']), $a['line'] ?? 0, $a['code']] <=> [self::display($b['path']), $b['line'] ?? 0, $b['code']]);
+
+        return $problems;
+    }
+
+    /**
+     * CL009 (BR-44): an `icon` prop with no icons to pick from, or whose default isn't one.
+     *
+     * @param list<string> $names
+     * @return list<Problem>
+     */
+    private static function iconProblems(Component $component, array $names): array
+    {
+        $problems = [];
+        foreach ($component->props as $prop) {
+            if ($prop->type !== 'icon') {
+                continue;
+            }
+            $message = match (true) {
+                $names === [] => sprintf('Prop %s is an icon, but there are no icons to pick from. Set "icons" in config/component-library.php to a folder of .svg or .twig icons.', $prop->name),
+                $prop->default !== null && !in_array($prop->default, $names, true) => sprintf('Prop %s defaults to "%s", which isn\'t an icon in the icons folder.', $prop->name, $prop->default),
+                default => null,
+            };
+            if ($message !== null) {
+                $problems[] = ['code' => 'CL009', 'path' => (string)$component->path, 'line' => null, 'message' => $message];
+            }
+        }
 
         return $problems;
     }

@@ -74,8 +74,22 @@ form**, a hash with a `type`:
 | `count: 3`, `offset: -1.5` | `number` |
 | `attrs: { 'data-x': 1 }`, `items: ['a', 'b']` | `json` |
 
-The full form takes `type`, `default`, `options`, `required` and `description`. A hash with any
-other key, or without `type`, counts as a shorthand `json` default.
+The full form takes `type`, `default`, `options`, `required`, `description` and `control`. A hash
+with any other key, or without `type`, counts as a shorthand `json` default.
+
+Describe each prop once, in the tag. The library's *Props* tab lists every prop with its type,
+default, options, description and whether it has a control, so the component needs no Params list
+in its doc comment. Give each idea one prop: one `icon`, not a file path prop and a template prop
+beside it.
+
+**`control: false` makes a code-only prop.** It's part of the component's API and shows in *Props*,
+but gets no control in *Settings*, and the library can't change it: only stories set it. Use it
+for anything that doesn't change how the component looks or behaves in a preview, such as a
+button's `href` or `type`, and for anything used as script, a link or a path (see below).
+
+```twig
+href: { type: 'string', control: false, description: 'If set, renders an <a>.' },
+```
 
 | Type | Control in the library | Notes |
 |---|---|---|
@@ -85,22 +99,24 @@ other key, or without `type`, counts as a shorthand `json` default.
 | `number` | Number field | |
 | `select` | Dropdown | Needs `options`: a list (`['sm', 'lg']`) or a hash of value to label (`{ sm: 'Small' }`). The default must be one of them. Without `required`, the dropdown also offers no value. |
 | `json` | Code text area | Any list or hash, nested at most 5 deep. |
+| `icon` | Dropdown of icon names | A name from the `icons` folder ([setup](setup.md)), such as `'close'`, never a path. The component turns it into markup itself, e.g. `{% include '_icons/' ~ icon %}` or `svg('@webroot/icons/' ~ icon ~ '.svg')`. The check warns (CL009) if there are no icons, or the default isn't one. |
 
-A value from the library that breaks these limits, or isn't one of a select's options, is ignored,
+A value from the library that breaks these limits, or isn't one of a select's options or of the
+icon names, is ignored,
 and the story's own value (or the default) is used.
 
 **Whatever someone types in the library reaches the component as escaped text.** A `string` or
 `text` value of `<b>Hi</b>` shows as those characters, even through `|raw`. HTML in a preview
 comes only from files: the template or a story body. The library can't pull in site content by id
-either. Only declared props can be changed from the library. Any other value in the request is
-dropped.
+either. Only declared props with a control can be changed from the library. Any other value in the
+request is dropped.
 
 **Escaping makes a value safe as HTML, and nowhere else.** Some settings aren't shown as text: an
 Alpine expression (`open: 'showModal'`), a raw attribute string (`attrs: '@click="…"'`), a link
 (`href`), an SVG file path or a template name to include. Anything typed into one of those runs as
-script, follows a `javascript:` link, or reads a file. Don't declare such a setting as a `string`.
-Make it a `select` of fixed values, or leave it undeclared and set it in the stories' `with`, which
-only files can change.
+script, follows a `javascript:` link, or reads a file. Don't give such a setting a control as a
+`string`. Declare it `control: false`, so only the stories' `with` sets it (and only files can
+change those), or make it a `select` of fixed values or an `icon`.
 
 ## Handles
 
@@ -207,5 +223,6 @@ otherwise 0.
 | CL006 | warning | A legacy placeholder (`{ref:}`, `{entry:}`, `{asset:}`) that is no longer resolved. |
 | CL007 | warning | A file with both a `component` tag and a legacy config. |
 | CL008 | warning | An include whose name is built at runtime, so the check can't follow it. |
+| CL009 | warning | An `icon` prop with no icons to pick from (`icons` unset or empty), or whose default isn't one of them. |
 
 Handles count as known when any site has them.

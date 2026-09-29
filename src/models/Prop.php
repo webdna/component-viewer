@@ -8,13 +8,15 @@ use InvalidArgumentException;
  * One setting a component accepts (BR-5).
  *
  * Declared either as a shorthand default (`label: 'Save'`, type inferred from the value) or in
- * full as `{type, default, options, required, description}`.
+ * full as `{type, default, options, required, description, control}`. A prop with `control: false`
+ * is code-only: documented, set by stories, never by the request. An `icon` holds a name from the
+ * `icons` setting (BR-44), which only the index knows, so its default is checked there (CL009).
  */
 final class Prop
 {
-    public const TYPES = ['string', 'text', 'bool', 'number', 'select', 'json'];
+    public const TYPES = ['string', 'text', 'bool', 'number', 'select', 'json', 'icon'];
 
-    private const KEYS = ['type', 'default', 'options', 'required', 'description'];
+    private const KEYS = ['type', 'default', 'options', 'required', 'description', 'control'];
 
     /**
      * @param array<int|string,string> $options Option value => label, for `select` only
@@ -26,6 +28,7 @@ final class Prop
         public readonly array $options = [],
         public readonly bool $required = false,
         public readonly ?string $description = null,
+        public readonly bool $control = true,
     ) {
     }
 
@@ -74,7 +77,12 @@ final class Prop
             throw new InvalidArgumentException("\"$path.description\" must be a string");
         }
 
-        return new self($name, $type, $default, $options, $required, $description);
+        $control = $declaration['control'] ?? true;
+        if (!is_bool($control)) {
+            throw new InvalidArgumentException("\"$path.control\" must be true or false");
+        }
+
+        return new self($name, $type, $default, $options, $required, $description, $control);
     }
 
     /**
@@ -127,7 +135,7 @@ final class Prop
     private static function checkDefault(string $type, mixed $default, array $options, string $path): void
     {
         $ok = match ($type) {
-            'string', 'text' => is_string($default),
+            'string', 'text', 'icon' => is_string($default),
             'bool' => is_bool($default),
             'number' => is_int($default) || is_float($default),
             'select' => (is_string($default) || is_int($default)) && in_array((string)$default, array_map('strval', array_keys($options)), true),

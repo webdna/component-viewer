@@ -1,11 +1,11 @@
 {#
  # One component in the workspace (BR-37, BR-38): the preview with its toolbar, and below it the
- # details drawer, a row of tabs (settings, examples, source and notes) that opens upward, as in
+ # details drawer, a row of tabs (settings, props, examples, source and notes) that opens upward, as in
  # v1. The divider on top of an open drawer sets its height.
  #
  # Test hooks (§7): data-cl-story, data-cl-prop, data-cl-preview, data-cl-device, data-cl-rotate,
  # data-cl-divider, data-cl-drawer, data-cl-drawer-toggle, data-cl-refresh, data-cl-open,
- # data-cl-background. Paths show only with showPaths, which the share viewer leaves off (BR-29).
+ # data-cl-background, data-cl-props, data-cl-prop-row, data-cl-control. Paths show only with showPaths, which the share viewer leaves off (BR-29).
  # `device` and `deviceOrientation` are the page's only (BR-39): the preview URL never carries
  # them. (Craft's CP layouts own a variable called `orientation`.) `background` is the preview's
  # (BR-41): the address and the preview carry it only when it isn't `defaultBackground`, the
@@ -36,6 +36,7 @@
 } %}
 {% set tabs = {
     'cl-settings': {label: 'Settings'|t('component-library'), url: '#cl-settings'},
+    'cl-props': {label: 'Props'|t('component-library'), url: '#cl-props'},
     'cl-examples': {label: 'Examples'|t('component-library'), url: '#cl-examples'},
     'cl-source': {label: 'Source'|t('component-library'), url: '#cl-source'},
     'cl-notes': {label: 'Notes'|t('component-library'), url: '#cl-notes'},
@@ -191,6 +192,13 @@
                                         {% set options = options|merge([{label: label, value: value}]) %}
                                     {% endfor %}
                                     {{ forms.selectField(field|merge({options: options, value: control.value})) }}
+                                {% case 'icon' %}
+                                    {# BR-44: the names in the icons folder, never a path. #}
+                                    {% set options = prop.required and control.value != '' ? [] : [{label: '—', value: ''}] %}
+                                    {% for iconName in iconNames %}
+                                        {% set options = options|merge([{label: iconName, value: iconName}]) %}
+                                    {% endfor %}
+                                    {{ forms.selectField(field|merge({options: options, value: control.value})) }}
                                 {% case 'text' %}
                                     {{ forms.textareaField(field|merge({value: control.value, rows: 4})) }}
                                 {% case 'json' %}
@@ -203,6 +211,50 @@
                         {% endfor %}
                     </div>
                     <button type="button" class="btn" data-cl-reset>{{ 'Reset settings'|t('component-library') }}</button>
+                {% endif %}
+            </div>
+
+            {# BR-43: the whole API from the tag, code-only props included. Escaped output only. #}
+            <div id="cl-props" role="tabpanel" aria-labelledby="tab-cl-props" class="cl-panel hidden">
+                {% if component.props is empty %}
+                    <p class="zilch">{{ 'This component has no props.'|t('component-library') }}</p>
+                {% else %}
+                    <div class="cl-props-scroll" tabindex="0">
+                        <table class="data fullwidth cl-props" data-cl-props>
+                            <thead>
+                                <tr>
+                                    <th scope="col">{{ 'Name'|t('component-library') }}</th>
+                                    <th scope="col">{{ 'Type'|t('component-library') }}</th>
+                                    <th scope="col">{{ 'Default'|t('component-library') }}</th>
+                                    <th scope="col">{{ 'Options'|t('component-library') }}</th>
+                                    <th scope="col">{{ 'Required'|t('component-library') }}</th>
+                                    <th scope="col">{{ 'Description'|t('component-library') }}</th>
+                                    <th scope="col">{{ 'In the viewer'|t('component-library') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for prop in component.props %}
+                                    <tr data-cl-prop-row="{{ prop.name }}" data-cl-control="{{ prop.control ? 'true' : 'false' }}">
+                                        <th scope="row"><code>{{ prop.name }}</code></th>
+                                        <td><code>{{ prop.type }}</code></td>
+                                        <td>{% if prop.default is null %}—{% else %}<code>{{ prop.default|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE')) }}</code>{% endif %}</td>
+                                        <td>
+                                            {%- if prop.type == 'icon' -%}
+                                                {{ '{count} icons'|t('component-library', {count: iconNames|length}) }}
+                                            {%- elseif prop.options -%}
+                                                {{ prop.options|keys|join(', ') }}
+                                            {%- else -%}
+                                                —
+                                            {%- endif -%}
+                                        </td>
+                                        <td>{{ prop.required ? 'Yes'|t('component-library') : 'No'|t('component-library') }}</td>
+                                        <td>{{ prop.description ?? '' }}</td>
+                                        <td>{{ prop.control ? 'Control'|t('component-library') : 'Code only'|t('component-library') }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 {% endif %}
             </div>
 

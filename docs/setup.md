@@ -37,6 +37,9 @@ return [
 
     // Read v1's .config.json files. Leave this off on a new site.
     'legacy' => false,
+
+    // The folder `icon` props pick from, by name.
+    'icons' => '@templates/_icons',
 ];
 ```
 
@@ -46,6 +49,7 @@ return [
 | `sites` | none | `<sites>/<current site handle>` is searched **last**, so a file there replaces the shared one on that site only. The folder is never scanned as part of another root. |
 | `layout` | the plugin's bare layout | A site template path, or `['siteHandle' => 'path', …]`. |
 | `legacy` | `false` | Only for sites upgrading from v1. **A new site leaves it off** and describes its components with the `component` tag alone. With it off, `.config.json` files are never read. |
+| `icons` | none | One folder, alias allowed. Its icon names are the basenames of the `.svg` files and `.twig` templates directly in it (`close.svg` is `close`), each once. Files starting `_` and stories files are skipped. `icon` props ([format](format.md)) offer these names. Keep one icon set per site: two folders mean two props for one idea. |
 
 ### Site versions
 

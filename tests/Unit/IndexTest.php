@@ -89,7 +89,7 @@ describe('roots (BR-11)', function() {
 
 describe('scan (BR-12)', function() {
     it('indexes tagged files by handle, in handle order', function() {
-        expect(array_keys($this->index->all()))->toBe(['@ui:bad-tag', '@ui:good', '@ui:guest', '@ui:legacy-button', '@ui:nested', '@ui:raw-prop', '@ui:throws']);
+        expect(array_keys($this->index->all()))->toBe(['@ui:bad-tag', '@ui:good', '@ui:guest', '@ui:icon-button', '@ui:legacy-button', '@ui:nested', '@ui:raw-prop', '@ui:throws']);
     });
 
     it('never indexes a stories file, a site folder under another name, or an untagged file', function() {

@@ -298,6 +298,16 @@ body.cl-workspace-page {
     margin-inline-start: auto;
 }
 
+/* BR-43: a wide Props table scrolls sideways within its tab, never the page. */
+.cl-props-scroll {
+    overflow-x: auto;
+}
+
+.cl-props th,
+.cl-props td {
+    vertical-align: top;
+}
+
 /* BR-41: the Mode dropdown is laid out like the site switch. */
 .cl-mode,
 .cl-site {

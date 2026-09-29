@@ -368,6 +368,7 @@ function initViewer(root) {
             case 'number':
                 return control.value === '' || Number.isNaN(Number(control.value)) ? undefined : Number(control.value);
             case 'select':
+            case 'icon':
                 return control.value === '' ? undefined : control.value;
             case 'json':
                 if (control.value.trim() === '') {
