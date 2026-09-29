@@ -15,7 +15,7 @@
 
 {% block content %}
     {% if newUrl %}
-        <div class="readable" data-cl-share-url>
+        <div data-cl-share-url>
             <h2>{{ 'Your new share link'|t('component-library') }}</h2>
             {{ forms.copytextField({
                 id: 'cl-share-url',
@@ -27,7 +27,7 @@
         <hr>
     {% endif %}
 
-    <form method="post" accept-charset="UTF-8" class="readable" id="cl-new-share">
+    <form method="post" accept-charset="UTF-8" id="cl-new-share">
         {{ csrfInput() }}
         {{ actionInput('component-library/shares/create') }}
 
@@ -65,7 +65,8 @@
     {% if rows is empty %}
         <div class="zilch">
             <p>{{ 'No share links yet'|t('component-library') }}</p>
-            <a class="btn" href="#cl-share-label">{{ 'New share link'|t('component-library') }}</a>
+            {# Craft's .zilch enlarges its text; its button stays at the CP's own size. #}
+            <a class="btn" href="#cl-share-label" style="font-size: 14px">{{ 'New share link'|t('component-library') }}</a>
         </div>
     {% else %}
         <div class="tableview">
