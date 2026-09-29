@@ -2,7 +2,7 @@
 spec: Component Library v2
 slug: component-library-v2
 status: draft
-version: 0.18
+version: 0.19
 date: 2026-09-28
 author: Claude (for Sam Birch)
 client: webdna (internal)
@@ -13,7 +13,7 @@ related: [_scope/component-library-v2.md]
 
 # Component Library v2
 
-> **Status:** draft · **Version:** 0.17 · **Profile:** `_PROFILE.component-library.md`
+> **Status:** draft · **Version:** 0.19 · **Profile:** `_PROFILE.component-library.md`
 > The team browses and tries out every component in the control panel, previewed on each site's
 > own styling. Clients review the same library through a link that expires and can be cancelled.
 
@@ -889,8 +889,21 @@ reviewed in it.
       showed the new component (tree 7 → 8, one Default story) on the next load after a CLI make.
       The probe files were removed afterwards. B5: PHPStan OK, ECS OK, Pest 468 passed, and B5 #4
       as amended.
-- [ ] **5.3 Docs**: `README.md`, `docs/{setup,format,share-links,upgrading-from-v1,resolver}.md`, a `CHANGELOG.md` 2.0.0 entry. The upgrade guide leads with `'legacy' => true` (BR-12), and the setup guide says new sites leave it off.
+- [x] **5.3 Docs**: `README.md`, `docs/{setup,format,share-links,upgrading-from-v1,resolver}.md`, a `CHANGELOG.md` 2.0.0 entry. The upgrade guide leads with `'legacy' => true` (BR-12), and the setup guide says new sites leave it off.
       Rules: BR-4, BR-12, BR-19 · Verify: Sam reads the upgrade guide against TS-9's steps
+      *As built:* the upgrade guide's steps are TS-9 step 2's three changes (the `config/app.php`
+      removal, the plugin install, `'legacy' => true`) plus the Composer bump from `^1.0@beta` to
+      `^2.0` and the permission grant, and its check step is TS-9 step 4. It also lists what v1 had
+      that v2 drops: the front-end pages, `COMPONENT_LIBRARY_VIEW_KEY`, the `navigation` key (mw-core
+      sets it, and v2 ignores it), Formatters, the `{ref:}` family, and Twig-rendered readmes. The
+      CHANGELOG entry is dated *Unreleased*, since tagging is out of bounds (B6). The v1 leftover
+      `src/README.md` (the `config/app.php` module snippet BR-4 now refuses) is deleted. Each doc's
+      claims were checked against the code, which corrected three drafts: `bool` is a checkbox, a
+      refused value keeps the story's value rather than being truncated, and the tree groups by the
+      handle minus its last part. The README's and the format guide's Twig examples were indexed
+      in the sandbox with a real `Index`, and all three files parse with no errors and the expected
+      stories and inferred types. `Viewer::FORMAT_GUIDE` resolves once pushed to `main`. Sam's read
+      against TS-9 is still to do. B5: PHPStan OK, ECS OK, Pest 468 passed, and B5 #4 as amended.
 - [ ] **6.1 LLL install and pilot** (LLL repo, own branch): `config/component-library.php`, `templates/_component-library/preview.twig` (the craft-vite pair from `_layouts/public.twig:38-40`), convert `_components/ui/button.twig`, `form/text.twig` and `ui/dialog.twig`, and add their `.stories.twig`
       Rules: BR-7, BR-8, BR-25 · Verify: TS-8, B5 #5
 - [ ] **6.2 Consumer back-compat proof** (mw-core and webdna on throwaway local branches, never committed): `$CLAUDE_JOB_DIR/tmp/compat.sh` fetch-and-diff script
@@ -1069,3 +1082,4 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | 2026-09-28 | 0.16 | Preview workspace added (Sam's request): both viewers become one full-screen workspace like Craft's entry preview, with a collapsible tree, a draggable split, and Desktop, Tablet and Phone with rotate and scale-to-fit. §1, vocabulary, §2, journey 1, BR-34 amended, new BR-37 to BR-40, §6 route and *Screens*, AC-15, TS-14, new TS-15, TN-18, TN-19, test hooks, regression row, new task 3.3, B2 item 10, two B3 guardrails, one assumption. | Claude, for Sam Birch |
 | 2026-09-28 | 0.17 | Task 3.3 built, with three changes from Sam: the controls column is now v1's details drawer below the preview (a tab row that opens upward, the divider on top), tablet and phone always render at 100% and scroll rather than scale, and the site select switches on change. §1, journey 1, BR-34, BR-37, BR-38, BR-40, §6 *Screens* and *Design source*, AC-15, TS-14, TS-15 steps 1-3 and 6, test hooks. See 3.3's as-built note. | Claude, for Sam Birch |
 | 2026-09-29 | 0.18 | Task 5.2 built. BR-32: roots are numbered from 1, a site folder isn't one, neither file is written if either exists, the other layout of a handle already in that root is refused, and the index is invalidated. See 5.2's as-built note. | Claude, for Sam Birch |
+| 2026-09-29 | 0.19 | Task 5.3 built: README, five guides and the 2.0.0 CHANGELOG entry (dated *Unreleased*). The v1 leftover `src/README.md` is deleted. The upgrade guide awaits Sam's read against TS-9. See 5.3's as-built note. | Claude, for Sam Birch |
