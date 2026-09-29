@@ -62,17 +62,16 @@
                 <span class="visually-hidden">{{ 'Rotate'|t('component-library') }}</span>
             </button>
 
-            {# BR-41: one group, like the devices, operated by the arrow keys. #}
-            <div class="cl-backgrounds" role="group" aria-label="{{ 'Background'|t('component-library') }}">
-                {% for option, label in backgroundLabels %}
-                    {% set on = option == background %}
-                    <button type="button" class="btn cl-background-btn" data-cl-background="{{ option }}"
-                            aria-pressed="{{ on ? 'true' : 'false' }}" tabindex="{{ on ? '0' : '-1' }}">
-                        {# Not "swatch": TN-18 proves the page never echoes "watch". #}
-                        <span class="cl-chip cl-chip-{{ option }}" aria-hidden="true"></span>
-                        {{- label -}}
-                    </button>
-                {% endfor %}
+            {# BR-41: a Mode dropdown, laid out like the site switch. viewer.js applies a change at once. #}
+            <div class="cl-mode">
+                <label for="cl-background">{{ 'Mode'|t('component-library') }}</label>
+                <div class="select">
+                    <select id="cl-background" data-cl-background>
+                        {% for option, label in backgroundLabels %}
+                            <option value="{{ option }}" {{ option == background ? 'selected' }}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
 
             {#
