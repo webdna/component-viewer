@@ -2,7 +2,7 @@
 spec: Component Library v2
 slug: component-library-v2
 status: draft
-version: 0.24
+version: 0.25
 date: 2026-09-28
 author: Claude (for Sam Birch)
 client: webdna (internal)
@@ -211,7 +211,7 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 
 | # | Rule |
 |---|---|
-| BR-5 | A component declares itself with `{% component { … } %}` anywhere in its file. Keys: `name`, `handle`, `status` (`prototype`\|`wip`\|`ready`\|`deprecated`), `notes` (Markdown), `viewClass`, `background` (`site`\|`light`\|`dark`, default `site`, BR-41), `props`. Each prop is a shorthand default (`label: 'Save'`, type inferred) or `{type, default, options, required, description}`. Types: `string`, `text`, `bool`, `number`, `select` (needs `options`), `json`. |
+| BR-5 | A component declares itself with `{% component { … } %}` anywhere in its file. Keys: `name`, `handle`, `status` (`prototype`\|`wip`\|`ready`\|`deprecated`), `notes` (Markdown), `viewClass`, `background` (`site`\|`light`\|`dark`, default `site`, BR-41), `props`. Each prop is a shorthand default (`label: 'Save'`, type inferred) or `{type, default, options, required, description, control}`. Types: `string`, `text`, `bool`, `number`, `select` (needs `options`), `json`, `icon` (a name from the `icons` setting, BR-44). `control` is `true` by default. `false` makes a code-only prop: it's documented in the Props tab (BR-43) and set only by stories, and gets no control. One prop per concept: the tag is the one place a prop is described, so a component needs no Params list in its doc comment, and one `icon` prop replaces a path prop and a template prop side by side (v0.25). |
 | BR-6 | The tag's argument must be a hash of literals, recursively (strings, numbers, booleans, null, arrays, hashes). A variable, filter, function call or concatenation is a Twig **syntax error at compile time**, naming the file and line. The library reads the tag by parsing, never by rendering. |
 | BR-7 | The tag compiles to nothing. A converted component renders byte-identical output to the same file without the tag. Defaults feed the viewer only. |
 | BR-8 | Stories live in `<name>.stories.twig` beside the component. `{% story 'Name' with { … } %}{% endstory %}` renders the component with those props. A body, if given, renders instead: any Twig, including `include`/`embed` of any component with block overrides. The current props are available to the body as `props`. Names are unique per file, and `with` follows BR-6. |
@@ -240,7 +240,7 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 | BR-21 | Every render request rechecks the scope: the user still exists, is active (not suspended) and holds `accessPlugin-component-library`, or the share is active. On failure it returns 403, "Preview expired, reload the page". |
 | BR-22 | The site rendered, and the index used, is the site the request was served on. No request value selects a site for rendering, indexing or a path. The viewer's `site` address parameter only chooses the iframe's base URL, and it's accepted only once `getSiteByHandle()` returns a site (otherwise the primary site). |
 | BR-23 | Previews render as a guest. The identity is cleared in memory for the request only, with no session write, so `currentUser` is null whoever's browser it is. |
-| BR-24 | `props` is a JSON object of at most 8 KB. Each key is coerced to its declared type: strings ≤ 2,000 chars, text ≤ 10,000, `select` must be one of `options` (else the default), `json` depth ≤ 5. Undeclared keys are dropped. **Every request-supplied string reaches the component as inert, pre-escaped text** (`Twig\Markup` of the HTML-escaped value), so `\|raw` cannot inject markup. It's never passed to `renderString`, placeholder-parsed or used in a path. HTML in props comes only from files. Escaping protects HTML only: a prop the component uses as script (an Alpine expression, a raw attribute string), a URL, a file path or a template name is declared as a `select` or left to stories' `with`, never as a free `string` (found in the LLL pilot, task 6.1). |
+| BR-24 | `props` is a JSON object of at most 8 KB. Each key is coerced to its declared type: strings ≤ 2,000 chars, text ≤ 10,000, `select` must be one of `options` (else the default), `json` depth ≤ 5. Undeclared keys are dropped, and so are keys of `control: false` props. An `icon` must be one of BR-44's names (else the story's value). **Every request-supplied string reaches the component as inert, pre-escaped text** (`Twig\Markup` of the HTML-escaped value), so `\|raw` cannot inject markup. It's never passed to `renderString`, placeholder-parsed or used in a path. HTML in props comes only from files. Escaping protects HTML only: a prop the component uses as script (an Alpine expression, a raw attribute string), a URL, a file path or a template name is declared `control: false` (so only stories' `with` sets it), or as a `select` or `icon`, never as a free `string` with a control (found in the LLL pilot, task 6.1). |
 | BR-25 | The render extends the configured `layout`: a path, or a map of site handle → path, defaulting to the plugin's bare layout. It fills block `component`, and block `viewClass` when set. These are v1's block names, so mw-core's and webdna's layouts work unchanged. |
 | BR-26 | Render responses send `Cache-Control: no-store`, `X-Robots-Tag: noindex`, `Referrer-Policy: no-referrer` and `Content-Security-Policy: frame-ancestors` (CP origin and primary site origin only). A render exception returns 500 with an error panel. In `user:` scope the panel shows the message, template name (relative to templates) and line. In `share:` scope it shows only "This component couldn't be shown." No absolute server path appears in any scope. |
 
@@ -257,7 +257,7 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 
 | # | Rule |
 |---|---|
-| BR-31 | `craft component-library/check [--strict]` prints `<code> <path relative to templates>:<line> <message>` per problem, then `<n> problems`. Errors: CL001 tag unparseable or not literal, CL002 duplicate handle in a root, CL003 unknown handle in a literal `include`/`embed`/`extends` anywhere under `@templates`, CL004 unknown handle in a story, CL005 legacy config failed to render or decode. Warnings: CL006 unresolved legacy placeholder, CL007 tag and config on one file, CL008 dynamic include name skipped. It exits 1 on any error (or any warning with `--strict`), else 0. |
+| BR-31 | `craft component-library/check [--strict]` prints `<code> <path relative to templates>:<line> <message>` per problem, then `<n> problems`. Errors: CL001 tag unparseable or not literal, CL002 duplicate handle in a root, CL003 unknown handle in a literal `include`/`embed`/`extends` anywhere under `@templates`, CL004 unknown handle in a story, CL005 legacy config failed to render or decode. Warnings: CL006 unresolved legacy placeholder, CL007 tag and config on one file, CL008 dynamic include name skipped, CL009 an `icon` prop with no icons to pick (BR-44 unset or empty) or a default that isn't one of them. It exits 1 on any error (or any warning with `--strict`), else 0. |
 | BR-32 | `craft component-library/make <category>/<name> [--root=<n>] [--folder]` writes `<name>.twig` (a tag with `name` and `status: 'wip'`) and `<name>.stories.twig` (one *Default* story) into the first root, or root *n* (numbered from 1 in `templateDirectories` order; a site folder isn't one). `--folder` nests them in `<name>/`. It refuses to overwrite, writing neither file if either exists, and refuses the other layout of a handle the same root already has (a CL002). It validates segments against `[a-z0-9-]+`, and invalidates the index. |
 
 **Non-functional**
@@ -284,6 +284,8 @@ removes rows 30 days after expiry or cancellation. Uninstalling drops the table.
 |---|---|
 | BR-41 | The preview background is `site` (the layout's own, untouched), `light` or `dark`. A component opens on its tag's `background` (BR-5, default `site`). The preview toolbar has a *Mode* dropdown (*Theme* for `site`, *Light*, *Dark*) after the device group, in both viewers, laid out like the site switch, with the value in effect selected. A change reloads the iframe and puts `bg` in the address beside `device` and `orientation` when it isn't the component's own `background` (and takes it out when it is), and a copied address restores it. A story switch keeps `bg`. Picking another component in the tree drops it, so each component opens on its own `background`. The choice is not remembered per browser, because that would hide every component's own setting. |
 | BR-42 | The render reads `bg` as exactly `site`, `light` or `dark`. Anything else (an array, markup, another case, any other string) means the component's `background`. `site` is a choice of its own (v0.22), so *Theme* works on a component whose tag says `dark`. When the value in effect is `light` or `dark`, block `component` begins with a `<link rel="stylesheet">` to the plugin's published `preview.css` and wraps the story in `<div class="cl-canvas" data-cl-canvas="light\|dark">`. The class and attribute come from that fixed pair, never from the request. `preview.css` is the plugin's own base stylesheet for the preview. The wrapper is `display: contents`, so it never changes layout, and `html` and `body` of a page holding it get the background with `!important` (light `#ffffff`, dark `#111111`). The component's own colours are untouched. With `site`, the render is byte-identical to one without this feature: no link and no wrapper. A layout element other than `html` or `body` that paints its own background still shows. Container layout (padding, centring) stays with `viewClass`. |
+| BR-43 | The details drawer has a *Props* tab after *Settings*, in both viewers. It lists every declared prop in declaration order, one row each: name, type, default, options (for `icon`, the count of BR-44's names), required, description, and *Control* or *Code only*. All of it comes from the tag and is escaped output. A component with no props says so. *Settings* holds controls only for props whose `control` isn't `false`, and an `icon` control is a select of BR-44's names. |
+| BR-44 | The `icons` setting in `config/component-library.php` names one folder (an alias is allowed, as for the roots). Its icon names are the basenames of the `.svg` files and `.twig` templates directly in it, sorted, each once. Files starting `_` and `.stories.twig` files are skipped. Unset, missing or empty, there are no names. The plugin only offers names. The component turns a name into markup in its own code (an `include` or `svg()`), so a site needs nothing from the plugin to render one. A name is never read from the request except as one of these. |
 
 ---
 
@@ -346,6 +348,7 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 | AC-14 | The whole viewer works by keyboard alone and on a phone-width screen. | TS-14 |
 | AC-15 | The viewer fills the screen like Craft's entry preview, with v1's row of tabs below the preview. The preview switches to tablet or phone, turns, and always shows at real size. A copied address reopens on the same device, and a share link behaves the same way. | TS-15 |
 | AC-16 | The preview background switches between the site's own, light and dark without changing the component. A component can say which it opens on. A copied address or a share link keeps the choice. | TS-16 |
+| AC-17 | A component's whole API reads in one place, but only props that change its look or behaviour get a control. An icon is picked by name from the project's icon folder. | TS-17 |
 
 ### Test data and preconditions
 
@@ -469,6 +472,15 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 5. With *Dark* picked, switch story. It stays dark. Pick another component in the tree. It opens on its own `background`.
 6. Repeat steps 4 and 5 on a share link.
 
+**TS-17 · Code-only props, Props tab and icons** · AC-17 · BR-5, BR-24, BR-31, BR-43, BR-44 · *Pest (steps 1-5) + browser*
+*Success criterion: every prop is documented once, and only the ones worth trying have a control.*
+1. Index the fixture icons folder. Its names are `arrow`, `close` and `star`: `star.svg` and `star.twig` count once, and `_hidden.svg`, `close.stories.twig` and `notes.md` are skipped. With `icons` unset, or naming a missing folder, there are none.
+2. Open `@ui:icon-button` in the CP viewer. *Settings* has controls for `label` and `icon` only, and `icon` is a select of `arrow`, `close`, `star`. *Props* lists `label`, `icon`, `href` and `type` in that order, with `href` and `type` marked *Code only*. The share viewer shows the same *Props* tab.
+3. Render it with `props={"href":"javascript:alert(1)","type":"reset","icon":"star"}`. `href` and `type` keep the story's values, and `icon` is `star`. With `icon` set to `../../x`, `<b>` or an array, the story's icon stands.
+4. A tag with `control: 'no'`, or an `icon` whose default isn't a string, is a compile error naming the file and line (CL001).
+5. The check over a root holding `@ui:icon-button` with `icons` unset reports CL009 for its `icon` prop. With a default that isn't a listed name it reports CL009. Neither fails without `--strict`.
+6. In a browser, in both viewers: pick `close` in the `icon` control. Within 1 s the preview shows it and the address's `props` carries `"icon":"close"`. Open *Props*: it's readable at 375 px, scrolling sideways within the tab if needed.
+
 ### Negative and edge cases
 
 | # | Condition | Expected behaviour |
@@ -493,6 +505,7 @@ release: the viewer header, the expired, cancelled and unknown pages, and the on
 | TN-18 | `device` or `orientation` set to markup, a 5 KB string or an array, on the CP and share viewers | Desktop portrait. The value isn't echoed and doesn't reach the render URL (BR-39) |
 | TN-19 | Browser storage blocked, or holding a garbage `cl.` value | Defaults, and no script error (BR-40) |
 | TN-20 | `bg` set to markup, `light<script>`, a 5 KB string or an array, on the render and on the CP and share viewers | The component's own `background`. The value isn't echoed, and no class, attribute or path is built from it (BR-41, BR-42) |
+| TN-21 | A request `props` key for a `control: false` prop, or an `icon` value that isn't a listed name (a path, `../`, markup, an array), on the render and on both viewers | Dropped. The story's value renders, the control shows the story's value, and the request value is never echoed (BR-24, BR-44) |
 
 ### Automated checks
 
@@ -514,6 +527,7 @@ e2e runner targets the plugin (the sandbox has Playwright, but nothing points at
   `data-cl-divider`, `data-cl-drawer`, `data-cl-drawer-toggle`, `data-cl-tree-toggle`, `data-cl-refresh`,
   `data-cl-open`, `data-cl-site-submit`. These replace 3.2's `data-cl-width`.
 - `data-cl-background` (the toolbar's *Mode* select, options `site|light|dark`) and `data-cl-canvas="light|dark"` (the render's wrapper)
+- `data-cl-props` (the Props table) and `data-cl-prop-row="<name>"` with `data-cl-control="true|false"` (its rows)
 - A test-only index build counter, reset per test
 
 ### Regression checks
@@ -833,6 +847,8 @@ review. It's built next, before 6.1 is installed in LLL, so the pilot's tags can
       change reloads the preview. The swatch chips and the arrow-key group are gone. Pest 505
       passed; Chrome, CP viewer on `good`: *Light* and *Dark* set `bg` on the iframe and the
       address and the canvas, and *Site* took all three out.
+- [ ] **3.5 Code-only props, Props tab and icons** (added v0.25, Sam's request): `control` and type `icon` in `src/models/Prop.php`; the `icons` setting and its names in `src/ComponentLibrary.php` and `src/services/Index.php` (`FORMAT` bumped); request props in `src/services/Renderer.php` and `Viewer.php`; CL009 in `src/console/controllers/CheckController.php`; the Props tab and icon control in `src/templates/viewer/_component.twig` and `viewer.css`; fixtures `tests/fixtures/icons/`, `tests/fixtures/templates/ui/icon-button.twig` (+ stories) and the `icons` line in `setup.sh`; `docs/format.md`, `docs/setup.md`, CHANGELOG
+      Rules: BR-5, BR-24, BR-31, BR-43, BR-44 · Verify: TS-17, TN-21, B5 #1-4
 - [x] **4.1 Share service and management**: `src/services/Shares.php`, `src/controllers/SharesController.php`, `src/templates/shares/*`, GC hook, user-delete cascade
       Rules: BR-3, BR-27, BR-28, BR-30, BR-36 · Verify: TS-4, TN-11 to TN-13
       *As built:* validation lives in a form model, `src/models/ShareForm.php`. The expiry is a native
@@ -952,6 +968,10 @@ review. It's built next, before 6.1 is installed in LLL, so the pilot's tags can
       against TS-9 is still to do. B5: PHPStan OK, ECS OK, Pest 468 passed, and B5 #4 as amended.
 - [ ] **6.1 LLL install and pilot** (LLL repo, own branch): `config/component-library.php`, `templates/_component-library/preview.twig` (the craft-vite pair from `_layouts/public.twig:38-40`), convert `_components/ui/button.twig`, `form/text.twig` and `ui/dialog.twig`, and add their `.stories.twig`
       Rules: BR-7, BR-8, BR-25 · Verify: TS-8, B5 #5
+      *Approved on craft5, install on hold at Sam's word (29 Sep 2026).* Before the install it
+      adopts 3.5: one `icons` folder (the two sets merged), the button's `icon` a name with
+      `iconTemplate` gone and its call sites updated, and `href`, `type`, `attrs` and `class`
+      `control: false`. TS-8 step 1 then covers the updated call sites.
       *Staged, awaiting Sam's approval on craft5 (29 Sep 2026).* Sam's decision: v2 is not
       installed or run in LLL until he has reviewed the pilot in the sandbox and approved it. So
       the LLL work sits, unchecked-out, on LLL branch `feature/component-library-v2` (from
@@ -1096,7 +1116,7 @@ Task 1.1 deleted the v1 files named in items 2-5. Read them from history:
 - [ ] Every AC in §7 passes. The manual evidence for TS-3 step 3, TS-8, TS-9 and TS-14 is recorded
       in the task commit or the build-progress memory.
 - [ ] Every BR in §5 is enforced in code, with a Pest test or a named manual scenario
-- [ ] TN-1 to TN-20 behave as specified, and the §7 regression checks pass
+- [ ] TN-1 to TN-21 behave as specified, and the §7 regression checks pass
 - [ ] Every §7 test hook is present
 - [ ] B5 runs clean
 - [ ] Appendix A rows 2 and 3 are resolved and promoted into the body. Row 1 is reviewed by Sam
@@ -1143,6 +1163,7 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | AC-14 | TS-14, keyboard only and at 375 px |
 | AC-15 | TS-15 steps 2-4 and 6-8 in a browser against the sandbox, in both viewers (steps 1 and 5 are Pest) |
 | AC-16 | TS-16 steps 4-6 in a browser against the sandbox, in both viewers (steps 1-3 are Pest) |
+| AC-17 | TS-17 step 6 in a browser against the sandbox, in both viewers (steps 1-5 are Pest) |
 
 ## B6. Out of bounds
 
@@ -1182,3 +1203,4 @@ bash $CLAUDE_JOB_DIR/tmp/compat.sh mw-core && bash $CLAUDE_JOB_DIR/tmp/compat.sh
 | 2026-09-29 | 0.22 | Task 3.4 built. BR-42 amended: `bg` is read as exactly `site`, `light` or `dark`, so *Site* can show the site background on a component whose tag says `dark`. BR-20, BR-41, §6 and B3 now say `bg` is sent only when it differs from the component's own `background`. For a component on the default `site`, TS-16 is unchanged. See 3.4's as-built note. | Claude, for Sam Birch |
 | 2026-09-29 | 0.23 | Sam's request: the background buttons become one *Mode* dropdown (BR-41, TS-16 step 4, the `data-cl-background` hook, `docs/setup.md`, CHANGELOG). Behaviour and `bg` are unchanged. The 6.1 install in LLL is on hold at Sam's word, even though the pilot is approved on craft5. | Claude, for Sam Birch |
 | 2026-09-29 | 0.24 | Sam's request: the *Mode* option for `site` is labelled *Theme*, so it no longer reads as the site switch beside it (BR-41, BR-42, TS-16 step 4, `docs/setup.md`). The value stays `site` in the tag, `bg` and the address. | Claude, for Sam Birch |
+| 2026-09-29 | 0.25 | Sam's request, after the pilot's two icon props: code-only props (`control: false`, BR-5, BR-24), a Props tab in both viewers (BR-43), and icons picked by name from one `icons` folder (type `icon`, BR-44, CL009 in BR-31). AC-17, TS-17, TN-21, task 3.5. Designed generically: LLL adapts in 6.1 (one icon set, button `icon` by name, `iconTemplate` gone, `href`/`type`/`attrs`/`class` code-only). | Claude, for Sam Birch |
