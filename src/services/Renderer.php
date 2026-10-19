@@ -1,6 +1,6 @@
 <?php
 
-namespace webdna\componentlibrary\services;
+namespace webdna\componentviewer\services;
 
 use Craft;
 use craft\elements\User;
@@ -12,11 +12,11 @@ use DateTime;
 use Throwable;
 use Twig\Error\Error as TwigError;
 use Twig\Markup;
-use webdna\componentlibrary\ComponentLibrary;
-use webdna\componentlibrary\legacy\ConfigJsonAdapter;
-use webdna\componentlibrary\models\Component;
-use webdna\componentlibrary\models\Prop;
-use webdna\componentlibrary\models\Story;
+use webdna\componentviewer\ComponentViewer;
+use webdna\componentviewer\legacy\ConfigJsonAdapter;
+use webdna\componentviewer\models\Component;
+use webdna\componentviewer\models\Prop;
+use webdna\componentviewer\models\Story;
 use yii\base\Component as BaseComponent;
 use yii\base\Exception;
 use yii\base\InvalidArgumentException;
@@ -35,7 +35,7 @@ use yii\base\InvalidArgumentException;
 class Renderer extends BaseComponent
 {
     /** The controller action every preview token routes to. */
-    public const ROUTE = 'component-library/render/index';
+    public const ROUTE = 'component-viewer/render/index';
 
     public const SCOPE_PATTERN = '/^(user|share):([1-9][0-9]*)$/D';
 
@@ -43,7 +43,7 @@ class Renderer extends BaseComponent
      * The plugin's site template root, `src/templates/site`. It holds only `_render`, and Craft's
      * router never serves a template whose path below its root has a segment starting with `_`.
      */
-    public const TEMPLATE_ROOT = 'component-library';
+    public const TEMPLATE_ROOT = 'component-viewer';
 
     /** The preview templates, `src/templates/site/_render`. */
     public const TEMPLATES = self::TEMPLATE_ROOT . '/_render';
@@ -139,10 +139,10 @@ class Renderer extends BaseComponent
 
             return $user !== null
                 && $user->getStatus() === User::STATUS_ACTIVE
-                && $user->can(ComponentLibrary::PERMISSION_VIEW);
+                && $user->can(ComponentViewer::PERMISSION_VIEW);
         }
 
-        return ComponentLibrary::getInstance()->getShares()->active()->andWhere(['id' => $id])->exists();
+        return ComponentViewer::getInstance()->getShares()->active()->andWhere(['id' => $id])->exists();
     }
 
     /**
@@ -325,14 +325,14 @@ class Renderer extends BaseComponent
     /** The published preview.css (BR-42). Not an asset bundle: the layout's head isn't ours to add to. */
     public function previewCssUrl(): string
     {
-        $dir = ComponentLibrary::getInstance()->getBasePath() . '/web/assets/preview/dist';
+        $dir = ComponentViewer::getInstance()->getBasePath() . '/web/assets/preview/dist';
 
         return (string)Craft::$app->getAssetManager()->getPublishedUrl($dir, true, self::PREVIEW_CSS);
     }
 
     private function index(): Index
     {
-        return $this->index ?? ComponentLibrary::getInstance()->getIndex();
+        return $this->index ?? ComponentViewer::getInstance()->getIndex();
     }
 
     /**
@@ -537,7 +537,7 @@ class Renderer extends BaseComponent
         $prefixes = array_filter([
             Craft::$app->getPath()->getSiteTemplatesPath(),
             Craft::$app->getPath()->getStoragePath(),
-            ComponentLibrary::getInstance()->getBasePath(),
+            ComponentViewer::getInstance()->getBasePath(),
             (string)Craft::getAlias('@vendor'),
             (string)Craft::getAlias('@root'),
             ...$this->index()->roots(),

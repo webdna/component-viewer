@@ -1,12 +1,12 @@
 <?php
 
-namespace webdna\componentlibrary\twig;
+namespace webdna\componentviewer\twig;
 
 use Twig\Attribute\YieldReady;
 use Twig\Compiler;
 use Twig\Node\ModuleNode;
 use Twig\Node\Node;
-use webdna\componentlibrary\models\Story;
+use webdna\componentviewer\models\Story;
 
 /**
  * A parsed `{% story %}` tag. Like the component tag it compiles to nothing: the story's body,

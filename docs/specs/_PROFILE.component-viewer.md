@@ -1,4 +1,4 @@
-# Project profile — webdna/component-library
+# Project profile — webdna/component-viewer
 
 **Referenced from the front matter of every spec in `docs/specs/`.** It carries the project-wide
 half of a spec's build contract, so individual specs can stay about their feature.
@@ -16,10 +16,10 @@ repos and are never edited from here.
 
 | Layer | v1 (today, `main`) | v2 (target) |
 |---|---|---|
-| Package | `webdna/component-library`, `type: craft-module` | same name, `type: craft-plugin`, handle `component-library` |
+| Package | `webdna/component-viewer`, `type: craft-module` | same name, `type: craft-plugin`, handle `component-viewer` |
 | Craft | `^3.7\|^4.0.0\|^5.0.0` | `^5.0` only |
 | PHP | unconstrained | `^8.2` |
-| Namespace | `webdna\componentlibrary\` → `src/` (PSR-4) | unchanged |
+| Namespace | `webdna\componentviewer\` → `src/` (PSR-4) | unchanged |
 | Viewer UI | Tailwind + Alpine from public CDNs, hand-written `app.js` | Craft CP templates and CP styles, vanilla JS, no build step |
 | Tests | none | Pest 2.36 + `markhuot/craft-pest-core` 3.2, PHPStan level 5, ECS (Craft ruleset) |
 | Sandbox | `~/projects/craft5`: DDEV, Craft 5.11.1, PHP 8.3, MySQL 8.0, `https://craft5.ddev.site`, single site `default` | same |
@@ -32,10 +32,10 @@ Nothing runs on the host except git and rsync. PHP, Composer and Craft run insid
 ```bash
 # Push the working copy into the sandbox. The sandbox holds a COPY (composer path repo
 # "plugins/*"), not a symlink, so edits here are invisible there until this runs.
-rsync -a --delete --exclude .git --exclude vendor ./ ~/projects/craft5/plugins/component-library/
+rsync -a --delete --exclude .git --exclude vendor ./ ~/projects/craft5/plugins/component-viewer/
 
 cd ~/projects/craft5 && ddev composer <command>
-cd ~/projects/craft5 && ddev craft <command>          # e.g. plugin/install component-library
+cd ~/projects/craft5 && ddev craft <command>          # e.g. plugin/install component-viewer
 cd ~/projects/craft5 && ddev craft clear-caches/all
 cd ~/projects/craft5 && ddev craft users/impersonate admin   # prints a login URL (see Traps)
 cd ~/projects/craft5 && ddev snapshot                  # before install/uninstall/migration work
@@ -45,7 +45,7 @@ cd ~/projects/craft5 && ddev snapshot                  # before install/uninstal
 
 | What | Where |
 |---|---|
-| Plugin class | `src/ComponentLibrary.php` |
+| Plugin class | `src/ComponentViewer.php` |
 | Services | `src/services/` |
 | Models and records | `src/models/`, `src/records/` |
 | Install migration | `src/migrations/Install.php` |
@@ -64,19 +64,19 @@ overwritten by the next rsync.
 
 ```bash
 # 1. Static analysis
-cd ~/projects/craft5 && ddev exec vendor/bin/phpstan analyse -c plugins/component-library/phpstan.neon --no-progress --memory-limit=1G
+cd ~/projects/craft5 && ddev exec vendor/bin/phpstan analyse -c plugins/component-viewer/phpstan.neon --no-progress --memory-limit=1G
 # expect: [OK] No errors
 
 # 2. Coding standard
-cd ~/projects/craft5 && ddev exec vendor/bin/ecs check --config plugins/component-library/ecs.php
+cd ~/projects/craft5 && ddev exec vendor/bin/ecs check --config plugins/component-viewer/ecs.php
 # expect: [OK] No errors found
 
 # 3. Tests
-cd ~/projects/craft5 && ddev exec vendor/bin/pest -c plugins/component-library/phpunit.xml --test-directory=plugins/component-library/tests
+cd ~/projects/craft5 && ddev exec vendor/bin/pest -c plugins/component-viewer/phpunit.xml --test-directory=plugins/component-viewer/tests
 # expect: Tests: N passed — no failed, no risky (read the line: Pest 2 exits 0 on risky)
 
 # 4. Component check
-cd ~/projects/craft5 && ddev craft component-library/check
+cd ~/projects/craft5 && ddev craft component-viewer/check
 # expect: only CL001 for the deliberate fixture tests/fixtures/templates/ui/bad-tag.twig:3,
 # final line "1 problems", exit 1 (spec B5 #4). Anything more is a regression.
 ```
@@ -105,7 +105,7 @@ Always rsync (section 2) before 1-4. A green run against a stale copy proves not
 - **The sandbox's second site `second` is a fixture.** `bash tests/fixtures/setup.sh` (after the
   rsync) creates it along with group `clViewers`, user `clviewer` and the fixture roots. It is
   idempotent. Rerun it after any snapshot restore older than task 1.2.
-- **Pest loads `tests/Pest.php` only from `--test-directory`.** Run as `pest plugins/component-library/tests`,
+- **Pest loads `tests/Pest.php` only from `--test-directory`.** Run as `pest plugins/component-viewer/tests`,
   the tests still pass because Craft boots anyway, but they aren't bound to craft-pest's `TestCase`
   and get no transaction rollback. `tests/HarnessTest.php` fails loudly on this.
 - **craft-pest-core applies pending project config before every run** and boots Craft from the cwd.
@@ -136,8 +136,8 @@ Always rsync (section 2) before 1-4. A green run against a stale copy proves not
 
 ### Twig and Craft (from v1)
 
-- **v1 replaces Craft's Twig loader for the whole app** (`ComponentLibrary.php:43`,
-  `setLoader(new ComponentLibraryLoader)`), inside `onInit`. That affects only the Twig instance for
+- **v1 replaces Craft's Twig loader for the whole app** (`ComponentViewer.php:43`,
+  `setLoader(new ComponentViewerLoader)`), inside `onInit`. That affects only the Twig instance for
   the template mode current at that moment. Anything that swaps or wraps the loader must handle
   both site and CP template modes, and must delegate every name it does not own, or ordinary
   templates stop resolving.

@@ -13,17 +13,17 @@ declare(strict_types=1);
 
 use craft\helpers\FileHelper;
 use craft\helpers\Json;
-use webdna\componentlibrary\ComponentLibrary;
-use webdna\componentlibrary\models\Component;
-use webdna\componentlibrary\services\Index;
-use webdna\componentlibrary\services\Renderer;
-use webdna\componentlibrary\services\Viewer;
+use webdna\componentviewer\ComponentViewer;
+use webdna\componentviewer\models\Component;
+use webdna\componentviewer\services\Index;
+use webdna\componentviewer\services\Renderer;
+use webdna\componentviewer\services\Viewer;
 
-const BG_VIEWER = 'admin/component-library/@ui:good';
+const BG_VIEWER = 'admin/component-viewer/@ui:good';
 
 beforeEach(function() {
     $this->withExceptionHandling();
-    $this->renderer = ComponentLibrary::getInstance()->getRenderer();
+    $this->renderer = ComponentViewer::getInstance()->getRenderer();
     $token = $this->renderer->createToken('user:' . Craft::$app->getUsers()->getUserByUsernameOrEmail('admin')?->id);
 
     // A preview render of `@ui:good`'s Secondary story, with `bg` when given.
@@ -86,7 +86,7 @@ describe('TS-16 the render', function() {
     })->with(['light', 'dark']);
 
     it('publishes preview.css, which paints only html and body', function() {
-        $dir = ComponentLibrary::getInstance()->getBasePath() . '/web/assets/preview/dist';
+        $dir = ComponentViewer::getInstance()->getBasePath() . '/web/assets/preview/dist';
         $css = (string)file_get_contents(Craft::$app->getAssetManager()->publish($dir)[0] . '/preview.css');
 
         expect($this->renderer->previewCssUrl())->toContain('/preview.css')
@@ -99,7 +99,7 @@ describe('TS-16 the render', function() {
     // Step 3: the tag's own background, which a request can change
     it('opens a component on its tag’s background, and bg overrides it', function() {
         // The story renders its handle through the loader, which reads the plugin's index.
-        $plugin = ComponentLibrary::getInstance();
+        $plugin = ComponentViewer::getInstance();
         $original = $plugin->getIndex();
         $plugin->set('index', onDarkIndex());
 
@@ -159,10 +159,10 @@ describe('TN-20 a hostile bg', function() {
     })->with('hostile backgrounds');
 
     it('does the same on a share link', function(mixed $bg, string $needle) {
-        $form = webdna\componentlibrary\models\ShareForm::blank();
+        $form = webdna\componentviewer\models\ShareForm::blank();
         $form->label = 'Acme';
-        $token = ComponentLibrary::getInstance()->getShares()->create($form, (int)Craft::$app->getUsers()->getUserByUsernameOrEmail('admin')?->id);
-        $html = $this->get(webdna\componentlibrary\services\Shares::URL_PATH . "$token/@ui:good?" . http_build_query(['bg' => $bg]))->assertOk()->content;
+        $token = ComponentViewer::getInstance()->getShares()->create($form, (int)Craft::$app->getUsers()->getUserByUsernameOrEmail('admin')?->id);
+        $html = $this->get(webdna\componentviewer\services\Shares::URL_PATH . "$token/@ui:good?" . http_build_query(['bg' => $bg]))->assertOk()->content;
 
         expect(bgConfig($html))->toMatchArray(['background' => 'site'])
             ->and(bgPreviewQuery($html))->not->toHaveKey('bg')
@@ -198,10 +198,10 @@ describe('BR-41 the viewers', function() {
     });
 
     it('carries the background on a share link', function() {
-        $form = webdna\componentlibrary\models\ShareForm::blank();
+        $form = webdna\componentviewer\models\ShareForm::blank();
         $form->label = 'Acme';
-        $token = ComponentLibrary::getInstance()->getShares()->create($form, (int)Craft::$app->getUsers()->getUserByUsernameOrEmail('admin')?->id);
-        $html = $this->get(webdna\componentlibrary\services\Shares::URL_PATH . "$token/@ui:good?bg=dark")->assertOk()->content;
+        $token = ComponentViewer::getInstance()->getShares()->create($form, (int)Craft::$app->getUsers()->getUserByUsernameOrEmail('admin')?->id);
+        $html = $this->get(webdna\componentviewer\services\Shares::URL_PATH . "$token/@ui:good?bg=dark")->assertOk()->content;
 
         expect($html)->toContain('<option value="dark" selected>')
             ->and(bgPreviewQuery($html))->toMatchArray(['bg' => 'dark']);

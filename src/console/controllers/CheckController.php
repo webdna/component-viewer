@@ -1,6 +1,6 @@
 <?php
 
-namespace webdna\componentlibrary\console\controllers;
+namespace webdna\componentviewer\console\controllers;
 
 use Craft;
 use craft\console\Controller;
@@ -19,10 +19,10 @@ use Twig\Node\IncludeNode;
 use Twig\Node\ModuleNode;
 use Twig\Node\Node;
 use Twig\Source;
-use webdna\componentlibrary\ComponentLibrary;
-use webdna\componentlibrary\models\Component;
-use webdna\componentlibrary\twig\Loader;
-use webdna\componentlibrary\twig\StoryTokenParser;
+use webdna\componentviewer\ComponentViewer;
+use webdna\componentviewer\models\Component;
+use webdna\componentviewer\twig\Loader;
+use webdna\componentviewer\twig\StoryTokenParser;
 use yii\console\ExitCode;
 
 /**
@@ -30,7 +30,7 @@ use yii\console\ExitCode;
  * handle no site has, one line each, then the count.
  *
  * ```
- * craft component-library/check [--strict]
+ * craft component-viewer/check [--strict]
  * ```
  *
  * Handles are checked against every site's index together, since a template may include a
@@ -90,7 +90,7 @@ class CheckController extends Controller
      */
     public function problems(): array
     {
-        $index = ComponentLibrary::getInstance()->getIndex();
+        $index = ComponentViewer::getInstance()->getIndex();
         $sites = Craft::$app->getSites();
         $current = $sites->getCurrentSite();
         $this->handles = [];
@@ -146,7 +146,7 @@ class CheckController extends Controller
                 continue;
             }
             $message = match (true) {
-                $names === [] => sprintf('Prop %s is an icon, but there are no icons to pick from. Set "icons" in config/component-library.php to a folder of .svg or .twig icons.', $prop->name),
+                $names === [] => sprintf('Prop %s is an icon, but there are no icons to pick from. Set "icons" in config/component-viewer.php to a folder of .svg or .twig icons.', $prop->name),
                 $prop->default !== null && !in_array($prop->default, $names, true) => sprintf('Prop %s defaults to "%s", which isn\'t an icon in the icons folder.', $prop->name, $prop->default),
                 default => null,
             };

@@ -1,6 +1,6 @@
 <?php
 
-namespace webdna\componentlibrary\web\assets\share;
+namespace webdna\componentviewer\web\assets\share;
 
 use craft\web\AssetBundle;
 

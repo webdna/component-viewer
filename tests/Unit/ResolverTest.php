@@ -9,9 +9,9 @@ declare(strict_types=1);
  */
 
 use craft\helpers\FileHelper;
-use webdna\componentlibrary\ComponentLibrary;
-use webdna\componentlibrary\services\Index;
-use webdna\componentlibrary\services\Resolver;
+use webdna\componentviewer\ComponentViewer;
+use webdna\componentviewer\services\Index;
+use webdna\componentviewer\services\Resolver;
 
 function fixture(string $path): string
 {
@@ -19,7 +19,7 @@ function fixture(string $path): string
 }
 
 beforeEach(function() {
-    $this->resolver = ComponentLibrary::getInstance()->getResolver();
+    $this->resolver = ComponentViewer::getInstance()->getResolver();
 });
 
 afterEach(function() {
@@ -29,7 +29,7 @@ afterEach(function() {
 describe('precedence', function() {
     it('is the plugin resolver, over the plugin index', function() {
         expect($this->resolver)->toBeInstanceOf(Resolver::class)
-            ->and(ComponentLibrary::getInstance()->resolver)->toBe($this->resolver);
+            ->and(ComponentViewer::getInstance()->resolver)->toBe($this->resolver);
     });
 
     it('returns the site version for the site that has one', function() {

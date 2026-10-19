@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * The library check (TS-11, BR-31): `craft component-library/check [--strict]`.
+ * The library check (TS-11, BR-31): `craft component-viewer/check [--strict]`.
  *
  * Step 1 runs over the fixture roots plus tests/fixtures/edge, where every broken case lives, with
  * `@templates` pointed at tests/fixtures so each path prints relative to it. Other cases run over a
@@ -12,15 +12,15 @@ declare(strict_types=1);
 
 use craft\helpers\FileHelper;
 use markhuot\craftpest\console\TestableResponse;
-use webdna\componentlibrary\ComponentLibrary;
-use webdna\componentlibrary\console\controllers\CheckController;
-use webdna\componentlibrary\services\Index;
+use webdna\componentviewer\ComponentViewer;
+use webdna\componentviewer\console\controllers\CheckController;
+use webdna\componentviewer\services\Index;
 use yii\console\ExitCode;
 
 const CHECK_FIXTURES = __DIR__ . '/../fixtures';
 
 beforeEach(function() {
-    $this->plugin = ComponentLibrary::getInstance();
+    $this->plugin = ComponentViewer::getInstance();
     $this->original = $this->plugin->getIndex();
     $this->templates = Craft::getAlias('@templates');
     $this->tmp = null;
@@ -212,7 +212,7 @@ describe('B5 #4: the sandbox fixture config', function() {
         $response = $this->console(CheckController::class, 'index');
 
         $response->assertExitCode(ExitCode::UNSPECIFIED_ERROR)
-            ->assertSee('CL001 plugins/component-library/tests/fixtures/templates/ui/bad-tag.twig:3 ')
+            ->assertSee('CL001 plugins/component-viewer/tests/fixtures/templates/ui/bad-tag.twig:3 ')
             ->assertSee("\n1 problems\n");
     });
 });

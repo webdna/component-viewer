@@ -8,9 +8,9 @@ that site only.
 It's a stable public API: its signature and behaviour won't change within v2.
 
 ```php
-use webdna\componentlibrary\ComponentLibrary;
+use webdna\componentviewer\ComponentViewer;
 
-$resolver = ComponentLibrary::getInstance()->getResolver();
+$resolver = ComponentViewer::getInstance()->getResolver();
 
 $path = $resolver->resolve('cards/price.hbs');          // the current site
 $path = $resolver->resolve('cards/price.hbs', 'uk');    // the uk site's version, if it has one
@@ -26,7 +26,7 @@ Returns the absolute path of `$path` in the highest-precedence folder that has i
 
 Folders are searched in reverse precedence order, so the first match wins:
 
-1. `<sites>/<site handle>`, if `sites` is set in `config/component-library.php`
+1. `<sites>/<site handle>`, if `sites` is set in `config/component-viewer.php`
 2. The last folder in `templateDirectories`
 3. …back to the first
 
@@ -75,5 +75,5 @@ foreach (["$root/_sites/$site/$name.hbs", "$root/_base/$name.hbs"] as $path) {
 return null;
 
 // after
-return ComponentLibrary::getInstance()->getResolver()->resolve("$name.hbs", $site);
+return ComponentViewer::getInstance()->getResolver()->resolve("$name.hbs", $site);
 ```

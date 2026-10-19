@@ -1,6 +1,6 @@
 <?php
 
-namespace webdna\componentlibrary\services;
+namespace webdna\componentviewer\services;
 
 use Craft;
 use craft\helpers\FileHelper;
@@ -12,13 +12,13 @@ use SplFileInfo;
 use Twig\Environment;
 use Twig\Error\Error as TwigError;
 use Twig\Source;
-use webdna\componentlibrary\ComponentLibrary;
-use webdna\componentlibrary\legacy\ConfigJsonAdapter;
-use webdna\componentlibrary\models\Component;
-use webdna\componentlibrary\models\Story;
-use webdna\componentlibrary\twig\ComponentNode;
-use webdna\componentlibrary\twig\StoryNode;
-use webdna\componentlibrary\twig\StoryTokenParser;
+use webdna\componentviewer\ComponentViewer;
+use webdna\componentviewer\legacy\ConfigJsonAdapter;
+use webdna\componentviewer\models\Component;
+use webdna\componentviewer\models\Story;
+use webdna\componentviewer\twig\ComponentNode;
+use webdna\componentviewer\twig\StoryNode;
+use webdna\componentviewer\twig\StoryTokenParser;
 use yii\base\Component as BaseComponent;
 use yii\caching\TagDependency;
 
@@ -35,8 +35,8 @@ use yii\caching\TagDependency;
  */
 class Index extends BaseComponent
 {
-    /** Invalidated by the *Component library index* Clear Caches option. */
-    public const CACHE_TAG = 'component-library-index';
+    /** Invalidated by the *Component viewer index* Clear Caches option. */
+    public const CACHE_TAG = 'component-viewer-index';
 
     /**
      * In the cache key: bump it when Component or Prop gains or loses a property, or a cached
@@ -86,7 +86,7 @@ class Index extends BaseComponent
     public function all(): array
     {
         $roots = $this->roots();
-        $key = [self::class, Craft::$app->getSites()->getCurrentSite()->handle, ComponentLibrary::getInstance()->schemaVersion, self::FORMAT, $roots, $this->legacy];
+        $key = [self::class, Craft::$app->getSites()->getCurrentSite()->handle, ComponentViewer::getInstance()->schemaVersion, self::FORMAT, $roots, $this->legacy];
         $memo = md5(serialize($key));
 
         return $this->loaded[$memo] ??= $this->load($key, $roots);
@@ -237,7 +237,7 @@ class Index extends BaseComponent
                 // A site without versions has no folder, which is normal. A configured root is not.
                 $isSiteFolder
                     ? Craft::info("No site versions at $root.", __METHOD__)
-                    : Craft::warning("Component library root $root doesn't exist, so it was skipped.", __METHOD__);
+                    : Craft::warning("Component viewer root $root doesn't exist, so it was skipped.", __METHOD__);
                 continue;
             }
 

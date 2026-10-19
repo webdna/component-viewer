@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- Renamed from Component Library to **Component Viewer**, because the Plugin Store already has a
+  plugin with the `component-library` handle. The package is now `webdna/component-viewer`, the
+  handle `component-viewer`, the namespace `webdna\componentviewer`, the config file
+  `config/component-viewer.php`, the console commands `component-viewer/check` and
+  `component-viewer/make`, and the control-panel section `admin/component-viewer`. Share links now
+  start `component-viewer/share/`. See [Upgrading](docs/upgrading-from-v1.md), which also covers a
+  site on an earlier 2.0 beta.
+
+### Added
+- A site on an earlier 2.0 beta keeps its share links and its granted permissions when it installs
+  the renamed plugin: the install takes over the old share table and permissions, links sent under
+  `component-library/share/` still open, and `config/component-library.php` is still read, with a
+  deprecation warning, until it is renamed.
+- v1's `config/app.php` registration now stops with instructions, rather than a missing class.
+
 ## 2.0.0-beta.2 - 2026-09-29
 
 ### Added

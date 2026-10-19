@@ -1,20 +1,20 @@
 <?php
 
-namespace webdna\componentlibrary\controllers;
+namespace webdna\componentviewer\controllers;
 
 use Craft;
 use craft\helpers\DateTimeHelper;
 use craft\helpers\UrlHelper;
 use craft\web\Controller;
 use craft\web\View;
-use webdna\componentlibrary\ComponentLibrary;
-use webdna\componentlibrary\services\Shares;
-use webdna\componentlibrary\services\Viewer;
-use webdna\componentlibrary\web\assets\share\ShareAsset;
+use webdna\componentviewer\ComponentViewer;
+use webdna\componentviewer\services\Shares;
+use webdna\componentviewer\services\Viewer;
+use webdna\componentviewer\web\assets\share\ShareAsset;
 use yii\web\Response;
 
 /**
- * The share viewer (§6): `<primary site>/component-library/share/<token>[/<handle>]?story=&site=&props=&device=&orientation=&bg=`.
+ * The share viewer (§6): `<primary site>/component-viewer/share/<token>[/<handle>]?story=&site=&props=&device=&orientation=&bg=`.
  *
  * Anonymous: the link is the credential (BR-27). It shows what the CP viewer does, with the same
  * templates, but no paths or roots (BR-29), and previews under a `share:` token, so revoking the
@@ -46,20 +46,20 @@ class ShareViewerController extends Controller
             $this->response->headers->set($name, $value);
         }
 
-        $plugin = ComponentLibrary::getInstance();
+        $plugin = ComponentViewer::getInstance();
         $shares = $plugin->getShares();
         $share = $shares->find($shareToken);
 
         if ($share === null) {
-            return $this->message(404, null, Craft::t('component-library', 'This link doesn’t work'),
-                Craft::t('component-library', 'Check that the address is complete, or ask whoever sent it for a new link.'));
+            return $this->message(404, null, Craft::t('component-viewer', 'This link doesn’t work'),
+                Craft::t('component-viewer', 'Check that the address is complete, or ask whoever sent it for a new link.'));
         }
 
         // A revoked link has no row, so it was the unknown page above.
         $status = $shares->status($share);
         if ($status === Shares::STATUS_EXPIRED) {
-            return $this->message(410, $status, Craft::t('component-library', 'This link has expired'),
-                Craft::t('component-library', 'Ask whoever sent it for a new link.'));
+            return $this->message(410, $status, Craft::t('component-viewer', 'This link has expired'),
+                Craft::t('component-viewer', 'Ask whoever sent it for a new link.'));
         }
 
         $shares->markUsed($share);
@@ -76,13 +76,13 @@ class ShareViewerController extends Controller
             $request->getQueryParam('device'), $request->getQueryParam('orientation'), $request->getQueryParam('bg'));
 
         if ($state === null) {
-            return $this->message(404, $status, Craft::t('component-library', 'There’s no such component'),
-                Craft::t('component-library', 'It may have been renamed or removed.'), $home);
+            return $this->message(404, $status, Craft::t('component-viewer', 'There’s no such component'),
+                Craft::t('component-viewer', 'It may have been renamed or removed.'), $home);
         }
 
         $this->view->registerAssetBundle(ShareAsset::class);
 
-        return $this->renderTemplate('component-library/share/index', $state + [
+        return $this->renderTemplate('component-viewer/share/index', $state + [
             'share' => $share,
             'expires' => $expires,
             'home' => $home,
@@ -97,7 +97,7 @@ class ShareViewerController extends Controller
         $this->response->setStatusCode($status);
         $this->view->registerAssetBundle(ShareAsset::class);
 
-        return $this->renderTemplate('component-library/share/_message', [
+        return $this->renderTemplate('component-viewer/share/_message', [
             'state' => $state,
             'heading' => $heading,
             'text' => $text,

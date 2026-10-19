@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * The make command (TS-12, BR-32): `craft component-library/make <category>/<name> [--root=<n>] [--folder]`.
+ * The make command (TS-12, BR-32): `craft component-viewer/make <category>/<name> [--root=<n>] [--folder]`.
  *
  * Each test runs over two throwaway roots, `one` and `two`, inside a folder that is also
  * `@templates`, so the paths the command prints are relative to it.
@@ -11,10 +11,10 @@ declare(strict_types=1);
 
 use craft\helpers\FileHelper;
 use markhuot\craftpest\console\TestableResponse;
-use webdna\componentlibrary\ComponentLibrary;
-use webdna\componentlibrary\console\controllers\CheckController;
-use webdna\componentlibrary\console\controllers\MakeController;
-use webdna\componentlibrary\services\Index;
+use webdna\componentviewer\ComponentViewer;
+use webdna\componentviewer\console\controllers\CheckController;
+use webdna\componentviewer\console\controllers\MakeController;
+use webdna\componentviewer\services\Index;
 use yii\console\ExitCode;
 
 const MAKE_COMPONENT = <<<'TWIG'
@@ -30,7 +30,7 @@ const MAKE_STORIES = "{% story 'Default' %}{% endstory %}\n";
 
 beforeEach(function() {
     $this->withExceptionHandling();
-    $this->plugin = ComponentLibrary::getInstance();
+    $this->plugin = ComponentViewer::getInstance();
     $this->original = $this->plugin->getIndex();
     $this->templates = Craft::getAlias('@templates');
     $this->devMode = Craft::$app->getConfig()->getGeneral()->devMode;
@@ -115,7 +115,7 @@ describe('TS-12', function() {
             ->and($component->errors)->toBe([])
             ->and(array_keys($component->stories))->toBe(['Default']);
 
-        $html = $this->actingAs('admin')->get('admin/component-library/@ui:badge')->assertOk()->content;
+        $html = $this->actingAs('admin')->get('admin/component-viewer/@ui:badge')->assertOk()->content;
         expect($html)->toMatch('/data-cl-component="@ui:badge"[^>]*>\s*<span class="label">Badge<\/span>/')
             ->and($html)->toMatch('/data-cl-story="Default"\s+aria-pressed="true"/')
             ->and($html)->toContain('data-cl-preview');

@@ -4,7 +4,7 @@
  * Sandbox fixtures that outlive a test (spec §7, "Test data and preconditions"). Idempotent.
  *
  * Run by setup.sh, inside DDEV, from the sandbox root:
- *     ddev exec php plugins/component-library/tests/fixtures/setup.php
+ *     ddev exec php plugins/component-viewer/tests/fixtures/setup.php
  */
 
 declare(strict_types=1);
@@ -12,7 +12,7 @@ declare(strict_types=1);
 use craft\elements\User;
 use craft\models\Site;
 use craft\models\UserGroup;
-use webdna\componentlibrary\ComponentLibrary;
+use webdna\componentviewer\ComponentViewer;
 
 require getcwd() . '/bootstrap.php';
 require getcwd() . '/vendor/craftcms/cms/bootstrap/console.php';
@@ -24,22 +24,22 @@ $fail = static function(string $message): never {
 
 // The plugin itself.
 $plugins = Craft::$app->getPlugins();
-if (!$plugins->isPluginInstalled('component-library')) {
-    $plugins->installPlugin('component-library');
+if (!$plugins->isPluginInstalled('component-viewer')) {
+    $plugins->installPlugin('component-viewer');
 }
-echo "plugin     component-library installed\n";
+echo "plugin     component-viewer installed\n";
 
 // Group clViewers: CP access and the view permission, nothing else. accessCp is required because
 // Craft drops a nested permission whose parent is missing, and admin/* needs it anyway.
 $userGroups = Craft::$app->getUserGroups();
 $group = $userGroups->getGroupByHandle('clViewers');
 if ($group === null) {
-    $group = new UserGroup(['name' => 'Component library viewers', 'handle' => 'clViewers']);
+    $group = new UserGroup(['name' => 'Component viewer viewers', 'handle' => 'clViewers']);
     if (!$userGroups->saveGroup($group)) {
         $fail('could not save group clViewers: ' . implode(', ', $group->getFirstErrors()));
     }
 }
-Craft::$app->getUserPermissions()->saveGroupPermissions($group->id, ['accessCp', ComponentLibrary::PERMISSION_VIEW]);
+Craft::$app->getUserPermissions()->saveGroupPermissions($group->id, ['accessCp', ComponentViewer::PERMISSION_VIEW]);
 $permissions = Craft::$app->getUserPermissions()->getPermissionsByGroupId($group->id);
 sort($permissions);
 echo 'group      clViewers: ' . implode(', ', $permissions) . "\n";
@@ -50,7 +50,7 @@ if ($user === null) {
     $user = new User([
         'username' => 'clviewer',
         'email' => 'clviewer@example.test',
-        'fullName' => 'Component Library Viewer',
+        'fullName' => 'Component Viewer Viewer',
     ]);
 }
 $user->admin = false;

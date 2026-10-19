@@ -1,9 +1,9 @@
 <?php
 
-namespace webdna\componentlibrary\migrations;
+namespace webdna\componentviewer\migrations;
 
 use craft\db\Migration;
-use webdna\componentlibrary\records\ShareRecord;
+use webdna\componentviewer\records\ShareRecord;
 
 /**
  * Revoking now deletes a link (v0.27), so cancelled links go and so does `revokedAt`. Their

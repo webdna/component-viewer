@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 use craft\helpers\FileHelper;
 use craft\utilities\ClearCaches;
-use webdna\componentlibrary\ComponentLibrary;
-use webdna\componentlibrary\services\Index;
+use webdna\componentviewer\ComponentViewer;
+use webdna\componentviewer\services\Index;
 use yii\log\Logger;
 
 const EDGE = __DIR__ . '/../fixtures/edge';
@@ -27,7 +27,7 @@ function edgeIndex(): Index
 }
 
 beforeEach(function() {
-    $this->index = ComponentLibrary::getInstance()->getIndex();
+    $this->index = ComponentViewer::getInstance()->getIndex();
     $this->index->invalidate();
     $this->index->reset();
     $this->devMode = Craft::$app->getConfig()->getGeneral()->devMode;
@@ -52,7 +52,7 @@ describe('handle derivation (BR-13)', function() {
 });
 
 describe('roots (BR-11)', function() {
-    it('takes its roots from config/component-library.php, with the current site folder last', function() {
+    it('takes its roots from config/component-viewer.php, with the current site folder last', function() {
         expect($this->index->roots())->toBe([
             FileHelper::normalizePath(FIXTURES),
             FileHelper::normalizePath(FIXTURES) . '/_sites/default',
@@ -209,11 +209,11 @@ describe('cache (BR-14, BR-33)', function() {
         expect($this->index->builds)->toBe(2);
     });
 
-    it('is rebuilt after the Component library index Clear Caches option', function() {
+    it('is rebuilt after the Component viewer index Clear Caches option', function() {
         $this->index->all();
 
         $option = collect(ClearCaches::cacheOptions())->firstWhere('key', Index::CACHE_TAG);
-        expect($option['label'])->toBe('Component library index');
+        expect($option['label'])->toBe('Component viewer index');
 
         call_user_func($option['action']);
         $this->index->reset();

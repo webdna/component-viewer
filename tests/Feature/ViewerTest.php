@@ -16,14 +16,14 @@ use craft\helpers\Cp;
 use craft\helpers\Json;
 use craft\helpers\UrlHelper;
 use craft\web\View;
-use webdna\componentlibrary\ComponentLibrary;
-use webdna\componentlibrary\services\Index;
-use webdna\componentlibrary\services\Renderer;
-use webdna\componentlibrary\services\Viewer;
-use webdna\componentlibrary\web\assets\viewer\ViewerAsset;
+use webdna\componentviewer\ComponentViewer;
+use webdna\componentviewer\services\Index;
+use webdna\componentviewer\services\Renderer;
+use webdna\componentviewer\services\Viewer;
+use webdna\componentviewer\web\assets\viewer\ViewerAsset;
 use yii\base\Event;
 
-const VIEWER = 'admin/component-library';
+const VIEWER = 'admin/component-viewer';
 const GOOD = VIEWER . '/@ui:good';
 
 beforeEach(function() {
@@ -68,7 +68,7 @@ function viewerUserId(string $username): int
 /** Runs $test with the plugin's viewer component replaced. */
 function withViewer(Viewer $viewer, Closure $test): void
 {
-    $plugin = ComponentLibrary::getInstance();
+    $plugin = ComponentViewer::getInstance();
     $original = $plugin->getViewer();
     $plugin->set('viewer', $viewer);
 
@@ -83,7 +83,7 @@ function withViewer(Viewer $viewer, Closure $test): void
 it('opens on the first component of the tree', function() {
     $html = $this->actingAs('clviewer')->get(VIEWER)->assertOk()->content;
 
-    $first = array_key_first(ComponentLibrary::getInstance()->getIndex()->all());
+    $first = array_key_first(ComponentViewer::getInstance()->getIndex()->all());
     expect($html)->toContain('data-cl-component="@ui:good"')
         ->and($html)->toContain('data-cl-component="@ui:legacy-button"')
         ->and(previewQuery($html)['component'])->toBe($first)
@@ -93,7 +93,7 @@ it('opens on the first component of the tree', function() {
 it('lists every component, grouped by category', function() {
     $html = $this->actingAs('admin')->get(GOOD)->assertOk()->content;
 
-    foreach (array_keys(ComponentLibrary::getInstance()->getIndex()->all()) as $handle) {
+    foreach (array_keys(ComponentViewer::getInstance()->getIndex()->all()) as $handle) {
         expect($html)->toContain('data-cl-component="' . $handle . '"');
     }
     expect($html)->toContain('<li class="heading" data-cl-category><span>ui</span></li>')
@@ -202,7 +202,7 @@ it('previews on the chosen site and marks its own version', function() {
         ->and($html)->toContain('data-cl-site-version')
         ->and($html)->toContain('<h1 class="cl-heading">Good button (second site)</h1>')
         ->and($html)->toContain('<option value="second" selected>')
-        ->and($html)->toContain('href="' . UrlHelper::cpUrl('component-library/@ui:good', ['site' => 'second']) . '"');
+        ->and($html)->toContain('href="' . UrlHelper::cpUrl('component-viewer/@ui:good', ['site' => 'second']) . '"');
 
     $shared = $this->actingAs('admin')->get(GOOD)->assertOk()->content;
     expect($shared)->not->toContain('data-cl-site-version')
@@ -222,16 +222,16 @@ it('keeps the handle in every link when the CP has a requested site', function()
         $requested->setValue(null, $before);
     }
 
-    expect($html)->toContain('href="' . UrlHelper::cpUrl('component-library/@ui:guest', ['site' => 'second']) . '"')
-        ->and($html)->toMatch('#<form class="cl-site" method="get" action="[^"?]+/component-library/@ui:good"#');
+    expect($html)->toContain('href="' . UrlHelper::cpUrl('component-viewer/@ui:guest', ['site' => 'second']) . '"')
+        ->and($html)->toMatch('#<form class="cl-site" method="get" action="[^"?]+/component-viewer/@ui:good"#');
 });
 
 it('splits a GET form address into its action and hidden fields', function() {
-    expect(Viewer::formFor('https://x.test/index.php?p=admin/component-library/@ui:good&site=a&story=b&props=c&x=1'))->toBe([
+    expect(Viewer::formFor('https://x.test/index.php?p=admin/component-viewer/@ui:good&site=a&story=b&props=c&x=1'))->toBe([
         'action' => 'https://x.test/index.php',
-        'hidden' => ['p' => 'admin/component-library/@ui:good', 'x' => '1'],
-    ])->and(Viewer::formFor('https://x.test/admin/component-library/@ui:good'))->toBe([
-        'action' => 'https://x.test/admin/component-library/@ui:good',
+        'hidden' => ['p' => 'admin/component-viewer/@ui:good', 'x' => '1'],
+    ])->and(Viewer::formFor('https://x.test/admin/component-viewer/@ui:good'))->toBe([
+        'action' => 'https://x.test/admin/component-viewer/@ui:good',
         'hidden' => [],
     ]);
 });
@@ -274,14 +274,14 @@ it('offers a site switch only when there is another site', function() {
 it('shows the source files, notes and problems', function() {
     $html = $this->actingAs('admin')->get(GOOD)->assertOk()->content;
 
-    expect($html)->toContain('<code class="light">plugins/component-library/tests/fixtures/templates/ui/good.twig</code>')
-        ->and($html)->toContain('<code class="light">plugins/component-library/tests/fixtures/templates/ui/good.stories.twig</code>')
+    expect($html)->toContain('<code class="light">plugins/component-viewer/tests/fixtures/templates/ui/good.twig</code>')
+        ->and($html)->toContain('<code class="light">plugins/component-viewer/tests/fixtures/templates/ui/good.stories.twig</code>')
         ->and($html)->toContain('{% story &#039;Secondary&#039; with')
         ->and($html)->toContain('A <strong>fixture</strong> component')
         ->and($html)->not->toContain('class="cl-problems"');
 
     $legacy = $this->actingAs('admin')->get(VIEWER . '/@ui:legacy-button')->assertOk()->content;
-    expect($legacy)->toContain('Legacy settings <code class="light">plugins/component-library/tests/fixtures/templates/legacy/button/button.config.json</code>');
+    expect($legacy)->toContain('Legacy settings <code class="light">plugins/component-viewer/tests/fixtures/templates/legacy/button/button.config.json</code>');
 
     $bad = $this->actingAs('admin')->get(VIEWER . '/@ui:bad-tag')->assertOk()->content;
     expect($bad)->toContain('class="cl-problems"')->and($bad)->toContain('<code>CL001</code>');
@@ -308,7 +308,7 @@ it('shows the empty state with the folders searched and the create command', fun
             expect($html)->toContain('data-cl-empty')
                 ->and($html)->toContain('No components yet')
                 ->and($html)->toContain("<code>$empty</code>")
-                ->and($html)->toContain('php craft component-library/make ui/button')
+                ->and($html)->toContain('php craft component-viewer/make ui/button')
                 ->and($html)->toContain('href="' . Viewer::FORMAT_GUIDE . '"')
                 ->and($html)->not->toContain('data-cl-preview')
                 ->and($html)->not->toContain('id="cl-tabs"');
@@ -394,7 +394,7 @@ describe('TS-15 preview workspace', function() {
             ->and($html)->toMatch('/data-cl-rotate\s+aria-pressed="true" >/')
             ->and($html)->toContain('data-device="tablet" data-orientation="landscape"')
             ->and($html)->toContain('title="Preview of Good button, example “Secondary”, Tablet, landscape"')
-            ->and($html)->toContain('href="' . htmlspecialchars(UrlHelper::cpUrl('component-library/@ui:nested', ['site' => 'default', 'device' => 'tablet', 'orientation' => 'landscape'])) . '"')
+            ->and($html)->toContain('href="' . htmlspecialchars(UrlHelper::cpUrl('component-viewer/@ui:nested', ['site' => 'default', 'device' => 'tablet', 'orientation' => 'landscape'])) . '"')
             ->and($config)->toMatchArray(['device' => 'tablet', 'orientation' => 'landscape'])
             ->and(previewQuery($html))->not->toHaveKey('device')
             ->and(previewQuery($html))->not->toHaveKey('orientation');

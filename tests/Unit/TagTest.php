@@ -16,9 +16,9 @@ use Twig\Environment;
 use Twig\Error\SyntaxError;
 use Twig\Loader\ArrayLoader;
 use Twig\Source;
-use webdna\componentlibrary\models\Component;
-use webdna\componentlibrary\twig\ComponentNode;
-use webdna\componentlibrary\twig\Extension;
+use webdna\componentviewer\models\Component;
+use webdna\componentviewer\twig\ComponentNode;
+use webdna\componentviewer\twig\Extension;
 
 /** The same source with its component tag, and the newline Twig trims after it, cut out. */
 function withoutTag(string $source): string

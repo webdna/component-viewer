@@ -10,12 +10,12 @@ declare(strict_types=1);
  * Every "does not see" assertion is paired with a user who does, so a wrong needle can't pass.
  */
 
-use webdna\componentlibrary\records\ShareRecord;
+use webdna\componentviewer\records\ShareRecord;
 
-const NAV_LINK = '/admin/component-library"';
-const SHARES_LINK = '/admin/component-library/shares"';
-const CREATE_ACTION = 'admin/actions/component-library/shares/create';
-const REVOKE_ACTION = 'admin/actions/component-library/shares/revoke';
+const NAV_LINK = '/admin/component-viewer"';
+const SHARES_LINK = '/admin/component-viewer/shares"';
+const CREATE_ACTION = 'admin/actions/component-viewer/shares/create';
+const REVOKE_ACTION = 'admin/actions/component-viewer/shares/revoke';
 
 beforeEach(function() {
     $this->withExceptionHandling();
@@ -28,13 +28,13 @@ function shareRows(): int
 
 // TS-1 step 1
 it('refuses the viewer to a CP user without the plugin permission', function() {
-    $this->actingAs('restricted')->get('admin/component-library')->assertStatus(403);
+    $this->actingAs('restricted')->get('admin/component-viewer')->assertStatus(403);
 });
 
 // BR-2: Craft's plugin-handle gate doesn't cover the action path, so the controller's does
 it('refuses the viewer action path to a CP user without the plugin permission', function() {
-    $this->actingAs('restricted')->get('admin/actions/component-library/viewer/index')->assertStatus(403);
-    $this->actingAs('clviewer')->get('admin/actions/component-library/viewer/index')->assertOk();
+    $this->actingAs('restricted')->get('admin/actions/component-viewer/viewer/index')->assertStatus(403);
+    $this->actingAs('clviewer')->get('admin/actions/component-viewer/viewer/index')->assertOk();
 });
 
 it('hides the nav item from a CP user without the plugin permission', function() {
@@ -47,26 +47,26 @@ it('refuses the share list and share creation to a CP user without the plugin pe
     $this->actingAs('restricted');
     $rows = shareRows();
 
-    $this->get('admin/component-library/shares')->assertStatus(403);
+    $this->get('admin/component-viewer/shares')->assertStatus(403);
     $this->post(CREATE_ACTION, ['label' => 'Nope'])->assertStatus(403);
     expect(shareRows())->toBe($rows);
 });
 
 // TS-1 step 3
 it('lets a viewer browse the library without the share links tab', function() {
-    $this->actingAs('clviewer')->get('admin/component-library')->assertOk()
+    $this->actingAs('clviewer')->get('admin/component-viewer')->assertOk()
         ->assertSee('data-cl-component="@ui:good"')
         ->assertDontSee(SHARES_LINK);
-    $this->actingAs('admin')->get('admin/component-library')->assertOk()->assertSee(SHARES_LINK);
+    $this->actingAs('admin')->get('admin/component-viewer')->assertOk()->assertSee(SHARES_LINK);
 });
 
 it('refuses the share list to a viewer', function() {
-    $this->actingAs('clviewer')->get('admin/component-library/shares')->assertStatus(403);
+    $this->actingAs('clviewer')->get('admin/component-viewer/shares')->assertStatus(403);
 });
 
 // TS-1 step 4
 it('shows the share list to an admin', function() {
-    $this->actingAs('admin')->get('admin/component-library/shares')->assertOk();
+    $this->actingAs('admin')->get('admin/component-viewer/shares')->assertOk();
 });
 
 // TN-11

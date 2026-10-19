@@ -1,6 +1,6 @@
 <?php
 
-namespace webdna\componentlibrary\models;
+namespace webdna\componentviewer\models;
 
 use Twig\Environment;
 

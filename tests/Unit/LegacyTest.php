@@ -14,9 +14,9 @@ declare(strict_types=1);
 use craft\events\TemplateEvent;
 use craft\helpers\FileHelper;
 use craft\web\View;
-use webdna\componentlibrary\ComponentLibrary;
-use webdna\componentlibrary\legacy\ConfigJsonAdapter;
-use webdna\componentlibrary\services\Index;
+use webdna\componentviewer\ComponentViewer;
+use webdna\componentviewer\legacy\ConfigJsonAdapter;
+use webdna\componentviewer\services\Index;
 use yii\base\Event;
 
 const LEGACY_EDGE = __DIR__ . '/../fixtures/edge';
@@ -30,7 +30,7 @@ function legacyEdgeIndex(): Index
 }
 
 beforeEach(function() {
-    $this->index = ComponentLibrary::getInstance()->getIndex();
+    $this->index = ComponentViewer::getInstance()->getIndex();
     $this->index->invalidate();
     $this->index->reset();
     $this->templates = Craft::getAlias('@templates');
@@ -238,7 +238,7 @@ describe('a tag beside a config (BR-12)', function() {
 describe('opt-in (legacy)', function() {
     it('is off unless the config turns it on', function() {
         expect((new Index())->legacy)->toBeFalse()
-            ->and(ComponentLibrary::getInstance()->getIndex()->legacy)->toBeTrue();
+            ->and(ComponentViewer::getInstance()->getIndex()->legacy)->toBeTrue();
     });
 
     it('ignores every config when off, and renders none of them', function() {

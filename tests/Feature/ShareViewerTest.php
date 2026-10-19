@@ -17,21 +17,21 @@ use craft\helpers\Db;
 use craft\helpers\Json;
 use craft\web\assets\cp\CpAsset;
 use craft\web\View;
-use webdna\componentlibrary\ComponentLibrary;
-use webdna\componentlibrary\controllers\ShareViewerController;
-use webdna\componentlibrary\models\ShareForm;
-use webdna\componentlibrary\records\ShareRecord;
-use webdna\componentlibrary\services\Index;
-use webdna\componentlibrary\services\Shares;
-use webdna\componentlibrary\services\Viewer;
-use webdna\componentlibrary\web\assets\share\CpStylesAsset;
-use webdna\componentlibrary\web\assets\share\ShareAsset;
-use webdna\componentlibrary\web\assets\viewer\ViewerAsset;
+use webdna\componentviewer\ComponentViewer;
+use webdna\componentviewer\controllers\ShareViewerController;
+use webdna\componentviewer\models\ShareForm;
+use webdna\componentviewer\records\ShareRecord;
+use webdna\componentviewer\services\Index;
+use webdna\componentviewer\services\Shares;
+use webdna\componentviewer\services\Viewer;
+use webdna\componentviewer\web\assets\share\CpStylesAsset;
+use webdna\componentviewer\web\assets\share\ShareAsset;
+use webdna\componentviewer\web\assets\viewer\ViewerAsset;
 use yii\base\Event;
 
 beforeEach(function() {
     $this->withExceptionHandling();
-    $this->shares = ComponentLibrary::getInstance()->getShares();
+    $this->shares = ComponentViewer::getInstance()->getShares();
 });
 
 /** A new active link: [token, record]. */
@@ -39,10 +39,10 @@ function newShare(string $label = 'Acme'): array
 {
     $form = ShareForm::blank();
     $form->label = $label;
-    $token = ComponentLibrary::getInstance()->getShares()->create($form, (int)Craft::$app->getUsers()->getUserByUsernameOrEmail('admin')?->id);
+    $token = ComponentViewer::getInstance()->getShares()->create($form, (int)Craft::$app->getUsers()->getUserByUsernameOrEmail('admin')?->id);
     expect($token)->toBeString();
 
-    return [$token, ComponentLibrary::getInstance()->getShares()->find($token)];
+    return [$token, ComponentViewer::getInstance()->getShares()->find($token)];
 }
 
 /** A share page's path below the site: the library, or one component. */
@@ -89,6 +89,15 @@ describe('TS-5 use a share link', function() {
             ->and($html)->toContain('data-cl-preview');
     });
 
+    // The rename from Component Library: a link sent with the old path still opens, and new links use the new one.
+    it('opens a link sent before the rename, at the old component-library path', function() {
+        [$token] = newShare();
+
+        expect(ComponentViewer::getInstance()->getShares()->url($token))->toContain('/component-viewer/share/' . $token);
+        $this->get(Shares::LEGACY_URL_PATH . $token)->assertOk()->assertSee('data-cl-share-state="active"', false);
+        $this->get(Shares::LEGACY_URL_PATH . $token . '/@ui:good')->assertOk()->assertSee('data-cl-component="@ui:good"', false);
+    });
+
     // TS-5 step 1, BR-29
     it('shows source and notes, and no file path or root anywhere, for every component', function(string $handle) {
         [$token] = newShare();
@@ -98,7 +107,7 @@ describe('TS-5 use a share link', function() {
         expect($html)->toContain('id="cl-source"')->and($html)->toContain('id="cl-notes"')
             ->and($html)->not->toContain($root)
             ->and($html)->not->toContain('tests/fixtures')
-            ->and($html)->not->toContain('plugins/component-library')
+            ->and($html)->not->toContain('plugins/component-viewer')
             ->and($html)->not->toContain('.twig</code>')
             ->and($html)->not->toContain('.stories.twig')
             ->and($html)->not->toContain('.config.json');
@@ -109,7 +118,7 @@ describe('TS-5 use a share link', function() {
         [$token] = newShare();
         $html = $this->get(sharePath($token, '@ui:good'))->assertOk()->content;
 
-        expect($html)->not->toContain('component-library/shares')
+        expect($html)->not->toContain('component-viewer/shares')
             ->and($html)->not->toContain('Share links')
             ->and($html)->not->toContain('global-sidebar')
             ->and($html)->not->toContain('/admin');
@@ -183,7 +192,7 @@ describe('TS-5 use a share link', function() {
     // §3 first run
     it('says "Nothing to show yet." on an empty library, with no folders or command', function() {
         [$token] = newShare();
-        $plugin = ComponentLibrary::getInstance();
+        $plugin = ComponentViewer::getInstance();
         $index = $plugin->getIndex();
         $plugin->set('index', new Index(['templateDirectories' => [__DIR__ . '/../fixtures/no-such-folder']]));
 
@@ -195,7 +204,7 @@ describe('TS-5 use a share link', function() {
 
         expect($html)->toContain('Nothing to show yet.')
             ->and($html)->not->toContain('no-such-folder')
-            ->and($html)->not->toContain('component-library/make')
+            ->and($html)->not->toContain('component-viewer/make')
             ->and($html)->not->toContain('data-cl-preview');
     });
 

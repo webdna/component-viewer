@@ -7,17 +7,17 @@
 {% extends '_layouts/basecp' %}
 
 {% set title = component
-    ? (component.name ?? component.handle) ~ ' – ' ~ 'Component Library'|t('component-library')
-    : 'Component Library'|t('component-library') %}
+    ? (component.name ?? component.handle) ~ ' – ' ~ 'Component Viewer'|t('component-viewer')
+    : 'Component Viewer'|t('component-viewer') %}
 {% set bodyClass = 'cl-workspace-page' %}
 
 {% block body %}
-    {% embed 'component-library/viewer/_workspace' %}
+    {% embed 'component-viewer/viewer/_workspace' %}
         {% block actions %}
-            {% if currentUser.can('manageComponentLibraryShares') %}
-                <a class="btn" href="{{ url('component-library/shares') }}">{{ 'Share links'|t('component-library') }}</a>
+            {% if currentUser.can('manageComponentViewerShares') %}
+                <a class="btn" href="{{ url('component-viewer/shares') }}">{{ 'Share links'|t('component-viewer') }}</a>
             {% endif %}
-            <a class="btn" href="{{ url('dashboard') }}">{{ 'Control panel'|t('component-library') }}</a>
+            <a class="btn" href="{{ url('dashboard') }}">{{ 'Control panel'|t('component-viewer') }}</a>
         {% endblock %}
     {% endembed %}
 {% endblock %}

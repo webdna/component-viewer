@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use craft\elements\User;
 use markhuot\craftpest\test\TestCase;
-use webdna\componentlibrary\ComponentLibrary;
+use webdna\componentviewer\ComponentViewer;
 
 it('binds tests to the craft-pest test case', function() {
     // Fails if Pest never loaded tests/Pest.php, which it only does when run as profile §4 says.
@@ -12,8 +12,8 @@ it('binds tests to the craft-pest test case', function() {
 });
 
 it('boots Craft with the plugin installed', function() {
-    expect(Craft::$app->getPlugins()->getPlugin('component-library'))
-        ->toBeInstanceOf(ComponentLibrary::class);
+    expect(Craft::$app->getPlugins()->getPlugin('component-viewer'))
+        ->toBeInstanceOf(ComponentViewer::class);
 });
 
 it('has the fixtures from tests/fixtures/setup.sh', function() {
@@ -22,7 +22,7 @@ it('has the fixtures from tests/fixtures/setup.sh', function() {
 
     $permissions = Craft::$app->getUserPermissions()->getPermissionsByGroupId($group->id);
     sort($permissions);
-    expect($permissions)->toBe(['accesscp', strtolower(ComponentLibrary::PERMISSION_VIEW)]);
+    expect($permissions)->toBe(['accesscp', strtolower(ComponentViewer::PERMISSION_VIEW)]);
 
     $user = User::find()->username('clviewer')->one();
     expect($user)->not->toBeNull()
