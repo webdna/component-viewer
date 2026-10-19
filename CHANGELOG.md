@@ -1,8 +1,9 @@
 # Changelog
 
-## Unreleased
+## 2.0.0 - 2026-10-19
 
 ### Changed
+- First stable release of v2, licensed under the Craft License.
 - Renamed from Component Library to **Component Viewer**, because the Plugin Store already has a
   plugin with the `component-library` handle. The package is now `webdna/component-viewer`, the
   handle `component-viewer`, the namespace `webdna\componentviewer`, the config file
