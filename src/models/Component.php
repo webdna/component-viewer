@@ -1,0 +1,140 @@
+<?php
+
+namespace webdna\componentviewer\models;
+
+use InvalidArgumentException;
+
+/**
+ * A component's self-description, as declared by its `component` tag (BR-5) or by a legacy
+ * `.config.json` beside it (BR-15).
+ *
+ * Every field is optional in the tag. Where the file lives, and the handle derived from its path
+ * when the tag gives none, belong to the index (BR-13), which fills the location fields through
+ * with(). A component straight from the tag has none of them.
+ *
+ * A problem carries the check code it reports as (BR-31): CL001 a tag or stories file that doesn't
+ * parse, or a handle templates can't include, CL005 a legacy config that couldn't be read, CL006 an
+ * unresolved legacy placeholder, CL007 a tag and a config on one file.
+ *
+ * @phpstan-type Problem array{code:string,path:string,line:int|null,message:string}
+ */
+final class Component
+{
+    public const STATUSES = ['prototype', 'wip', 'ready', 'deprecated'];
+
+    /** BR-41: the preview backgrounds, the default first. */
+    public const BACKGROUNDS = ['site', 'light', 'dark'];
+
+    /**
+     * BR-17's owned-name pattern. The tag may leave off the leading `@`. `D`, because a bare `$`
+     * also matches before a trailing newline.
+     */
+    public const HANDLE_PATTERN = '/^@[A-Za-z0-9_-]+(:[A-Za-z0-9_-]+)+$/D';
+
+    private const KEYS = ['name', 'handle', 'status', 'notes', 'viewClass', 'background', 'props'];
+
+    /**
+     * @param array<string,Prop> $props Keyed by prop name, in declared order
+     * @param string|null $path Absolute path of the component file
+     * @param string|null $root The root it was found in (BR-11)
+     * @param array<string,Story> $stories Keyed by name, in file order
+     * @param string|null $storiesPath Absolute path of its stories file, if it has one
+     * @param string|null $overrides The file in an earlier root this one replaces, e.g. as a site version (BR-13)
+     * @param list<string> $duplicates Later files in the same root that claimed this handle and lost (BR-13)
+     * @param list<Problem> $errors Why the file, its stories or its legacy config couldn't be read
+     * @param string|null $configPath Absolute path of the legacy `.config.json` it was read from (BR-12)
+     * @param list<Problem> $warnings What still indexes, but the check reports
+     * @param string|null $background The preview background it opens on (BR-41), `site` when null
+     */
+    public function __construct(
+        public readonly ?string $name = null,
+        public readonly ?string $handle = null,
+        public readonly ?string $status = null,
+        public readonly ?string $notes = null,
+        public readonly ?string $viewClass = null,
+        public readonly array $props = [],
+        public readonly ?string $path = null,
+        public readonly ?string $root = null,
+        public readonly array $stories = [],
+        public readonly ?string $storiesPath = null,
+        public readonly ?string $overrides = null,
+        public readonly array $duplicates = [],
+        public readonly array $errors = [],
+        public readonly ?string $configPath = null,
+        public readonly array $warnings = [],
+        public readonly ?string $background = null,
+    ) {
+    }
+
+    /**
+     * A copy with the given fields changed.
+     *
+     * @param array<string,mixed> $changes Constructor arguments by name
+     */
+    public function with(array $changes): self
+    {
+        return new self(...array_merge(get_object_vars($this), $changes));
+    }
+
+    /**
+     * Builds a component from the tag's literal hash.
+     *
+     * @param array<int|string,mixed> $definition
+     * @throws InvalidArgumentException naming the offending key
+     */
+    public static function fromDefinition(array $definition): self
+    {
+        if ($definition !== [] && array_is_list($definition)) {
+            throw new InvalidArgumentException('Its argument must be a hash, not a list');
+        }
+
+        $unknown = array_diff(array_keys($definition), self::KEYS);
+        if ($unknown !== []) {
+            throw new InvalidArgumentException(sprintf('Unknown key "%s". Keys are %s', reset($unknown), implode(', ', self::KEYS)));
+        }
+
+        foreach (['name', 'handle', 'status', 'notes', 'viewClass', 'background'] as $key) {
+            if (isset($definition[$key]) && !is_string($definition[$key])) {
+                throw new InvalidArgumentException("\"$key\" must be a string");
+            }
+        }
+
+        $handle = $definition['handle'] ?? null;
+        if ($handle !== null) {
+            $handle = '@' . ltrim($handle, '@');
+            if (!preg_match(self::HANDLE_PATTERN, $handle)) {
+                throw new InvalidArgumentException("\"handle\" must look like @category:name");
+            }
+        }
+
+        $status = $definition['status'] ?? null;
+        if ($status !== null && !in_array($status, self::STATUSES, true)) {
+            throw new InvalidArgumentException(sprintf('"status" must be one of %s', implode(', ', self::STATUSES)));
+        }
+
+        $background = $definition['background'] ?? null;
+        if ($background !== null && !in_array($background, self::BACKGROUNDS, true)) {
+            throw new InvalidArgumentException(sprintf('"background" must be one of %s', implode(', ', self::BACKGROUNDS)));
+        }
+
+        $declared = $definition['props'] ?? [];
+        if (!is_array($declared) || ($declared !== [] && array_is_list($declared))) {
+            throw new InvalidArgumentException('"props" must be a hash of prop name to declaration');
+        }
+
+        $props = [];
+        foreach ($declared as $propName => $declaration) {
+            $props[(string)$propName] = Prop::fromDeclaration((string)$propName, $declaration);
+        }
+
+        return new self(
+            $definition['name'] ?? null,
+            $handle,
+            $status,
+            $definition['notes'] ?? null,
+            $definition['viewClass'] ?? null,
+            $props,
+            background: $background,
+        );
+    }
+}

@@ -1,0 +1,137 @@
+{# Share links (§6, journey 2): the create form, the list, and the copy prompts (BR-45). #}
+{% extends '_layouts/cp' %}
+{% import '_includes/forms' as forms %}
+
+{% set title = 'Share links'|t('component-viewer') %}
+{% set selectedSubnavItem = 'shares' %}
+
+{% set statusLabels = {
+    active: 'Active'|t('component-viewer'),
+    expired: 'Expired'|t('component-viewer'),
+} %}
+{# Craft's status colours: green, red. A revoked link is deleted, so it has no status. #}
+{% set statusClasses = {active: 'enabled', expired: 'expired'} %}
+
+{% block content %}
+    {# BR-45: the new address, once, for the copy prompt below. #}
+    {% if newUrl %}
+        <div class="hidden" data-cl-share-url="{{ newUrl }}"></div>
+    {% endif %}
+
+    <form method="post" accept-charset="UTF-8" id="cl-new-share">
+        {{ csrfInput() }}
+        {{ actionInput('component-viewer/shares/create') }}
+
+        <h2>{{ 'New share link'|t('component-viewer') }}</h2>
+
+        {{ forms.textField({
+            id: 'cl-share-label',
+            name: 'label',
+            label: 'Label'|t('component-viewer'),
+            instructions: 'Who or what it’s for. It’s shown on the link’s pages.'|t('component-viewer'),
+            value: share.label,
+            maxlength: constant('webdna\\componentviewer\\models\\ShareForm::LABEL_MAX'),
+            required: true,
+            errors: share.getErrors('label'),
+        }) }}
+
+        {{ forms.textField({
+            id: 'cl-share-expiry',
+            name: 'expiry',
+            type: 'date',
+            label: 'Expires'|t('component-viewer'),
+            instructions: 'The link stops working at the end of this day (UTC). At most three months away.'|t('component-viewer'),
+            value: share.expiry,
+            min: minExpiry,
+            max: maxExpiry,
+            required: true,
+            errors: share.getErrors('expiry'),
+        }) }}
+
+        <button type="submit" class="btn submit">{{ 'Create share link'|t('component-viewer') }}</button>
+    </form>
+
+    <hr>
+
+    {% if rows is empty %}
+        <div class="zilch">
+            <p>{{ 'No share links yet'|t('component-viewer') }}</p>
+            {# Craft's .zilch enlarges its text; its button stays at the CP's own size. #}
+            <a class="btn" href="#cl-share-label" style="font-size: 14px">{{ 'New share link'|t('component-viewer') }}</a>
+        </div>
+    {% else %}
+        <div class="tableview">
+            <table class="data fullwidth">
+                <thead>
+                    <tr>
+                        <th scope="col">{{ 'Label'|t('component-viewer') }}</th>
+                        <th scope="col">{{ 'Created by'|t('component-viewer') }}</th>
+                        <th scope="col">{{ 'Expires'|t('component-viewer') }}</th>
+                        <th scope="col">{{ 'Status'|t('component-viewer') }}</th>
+                        <th scope="col">{{ 'Last used'|t('component-viewer') }}</th>
+                        <td class="thin"></td>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                        <tr data-cl-share="{{ row.id }}">
+                            <th scope="row">{{ row.label }}</th>
+                            <td>{{ row.creator }}</td>
+                            {# End of the chosen day in UTC, so shown in UTC to keep that day. #}
+                            <td>{{ row.expiresAt|date('short', 'UTC') }}</td>
+                            <td data-cl-share-state="{{ row.status }}">
+                                <span class="status {{ statusClasses[row.status] }}" aria-hidden="true"></span>{{ statusLabels[row.status] }}
+                            </td>
+                            <td>{{ row.lastUsedAt ? row.lastUsedAt|timestamp('short') : 'Never'|t('component-viewer') }}</td>
+                            <td class="thin nowrap">
+                                {% if row.copyable %}
+                                    <button type="button" class="btn small" data-cl-copy-share="{{ row.id }}"
+                                        aria-label="{{ 'Copy link “{label}”'|t('component-viewer', {label: row.label}) }}">
+                                        {{- 'Copy link'|t('component-viewer') -}}
+                                    </button>
+                                {% endif %}
+                                {# v0.27: revoking deletes the link, on any row. #}
+                                <button type="button" class="btn small formsubmit"
+                                    data-form="false"
+                                    data-action="component-viewer/shares/revoke"
+                                    data-param="id"
+                                    data-value="{{ row.id }}"
+                                    data-confirm="{{ 'Revoke “{label}”? The link is deleted and stops working straight away, even for anyone who has it open.'|t('component-viewer', {label: row.label}) }}"
+                                    aria-label="{{ 'Revoke link “{label}”'|t('component-viewer', {label: row.label}) }}">
+                                    {{- 'Revoke link'|t('component-viewer') -}}
+                                </button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+
+    {#
+     # BR-45: both addresses open in Craft's copy prompt, as its Copy impersonation URL action does.
+     # A row's comes from the url action (POST, CSRF, both permissions), never from this page.
+     #}
+    {% js %}
+(() => {
+    const label = {{ 'Anyone with this address can open the library, with no login, until it expires or you revoke it.'|t('component-viewer')|json_encode|raw }};
+    // Craft sizes the input by character count. Here it fills the modal, whose width the label sets.
+    const prompt = (url) => {
+        const $modal = Craft.ui.createCopyTextPrompt({label, value: url});
+        $modal.find('.copytext').css('display', 'flex');
+        $modal.find('.copytext input').css({flex: '1 1 auto', minWidth: 0});
+    };
+    const created = document.querySelector('[data-cl-share-url]');
+    if (created) {
+        prompt(created.dataset.clShareUrl);
+    }
+    for (const button of document.querySelectorAll('[data-cl-copy-share]')) {
+        button.addEventListener('click', () => {
+            Craft.sendActionRequest('POST', 'component-viewer/shares/url', {data: {id: button.dataset.clCopyShare}})
+                .then((response) => prompt(response.data.url))
+                .catch(({response}) => Craft.cp.displayError(response?.data?.message));
+        });
+    }
+})();
+    {% endjs %}
+{% endblock %}

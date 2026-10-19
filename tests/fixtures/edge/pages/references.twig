@@ -1,0 +1,12 @@
+{# TS-11: references the check reads. Lines 2, 5 and 6 are CL003, line 4 is CL008, the rest are fine. #}
+{% include '@ui:missing' %}
+{% include '@ui:gone' ignore missing %}
+{% include '@blocks:' ~ block.type %}
+{{ include('@ui:absent') }}
+{% embed '@ui:hollow' %}{% block body %}{% endblock %}{% endembed %}
+{% include "_sites/#{currentSite.handle}/head.twig" %}
+{% include '@ui:good' %}
+{% include 'plain/path.twig' %}
+{% include '@ns/file.twig' %}
+{{ include('@ui:vanished', ignore_missing = true) }}
+{% embed '@ui:hidden' ignore missing %}{% endembed %}

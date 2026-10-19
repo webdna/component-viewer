@@ -1,0 +1,18 @@
+# Run from the sandbox root, where the plugin sits at plugins/component-viewer (profile §4).
+includes:
+    - ../../vendor/craftcms/phpstan/phpstan.neon
+
+parameters:
+    level: 5
+    paths:
+        - src
+        - shim
+        - tests
+    # tests/Pest.php defines FIXTURES and the tag helpers the test files share.
+    scanFiles:
+        - tests/Pest.php
+    ignoreErrors:
+        # Pest binds each test closure to a TestCase at runtime (tests/Pest.php).
+        -
+            message: '#^Undefined variable: \$this$#'
+            path: tests/*

@@ -1,0 +1,7 @@
+{% story 'Default' %}{% endstory %}
+
+{% story 'Secondary' with { label: 'Cancel', style: 'secondary' } %}{% endstory %}
+
+{% story 'In a toolbar' with { label: 'Undo' } %}
+<div class="toolbar">{% include '@ui:good' with props only %}</div>
+{% endstory %}
