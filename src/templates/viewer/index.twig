@@ -1,0 +1,23 @@
+{#
+ # The CP viewer (§6): the preview workspace full screen, on Craft's bare CP page (its styles and
+ # scripts, no CP nav or header, BR-37). The header links back to the CP and, with the share
+ # permission, to the share links. The partials take the viewer's state, so the share viewer
+ # reuses them.
+ #}
+{% extends '_layouts/basecp' %}
+
+{% set title = component
+    ? (component.name ?? component.handle) ~ ' – ' ~ 'Component Viewer'|t('component-viewer')
+    : 'Component Viewer'|t('component-viewer') %}
+{% set bodyClass = 'cl-workspace-page' %}
+
+{% block body %}
+    {% embed 'component-viewer/viewer/_workspace' %}
+        {% block actions %}
+            {% if currentUser.can('manageComponentViewerShares') %}
+                <a class="btn" href="{{ url('component-viewer/shares') }}">{{ 'Share links'|t('component-viewer') }}</a>
+            {% endif %}
+            <a class="btn" href="{{ url('dashboard') }}">{{ 'Control panel'|t('component-viewer') }}</a>
+        {% endblock %}
+    {% endembed %}
+{% endblock %}

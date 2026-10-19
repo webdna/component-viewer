@@ -1,0 +1,11 @@
+{# Prints string props with |raw, like LLL's dialog `body` (TS-7). HTML may come from the file only. #}
+{% component {
+    name: 'Raw prop',
+    status: 'wip',
+    props: {
+        body: { type: 'text', default: '<em>From the file</em>' },
+        data: { type: 'json', default: { title: 'Hi' } },
+    },
+} %}
+<div class="raw">{{ body|raw }}</div>
+<ul class="data">{% for key, value in data %}<li data-key="{{ key|raw }}">{{ value|raw }}</li>{% endfor %}</ul>

@@ -1,0 +1,39 @@
+{# A v1 config: a Twig template that prints JSON (BR-15). The captured block proves it's rendered. #}
+{% set intro %}
+	<strong>Rendered</strong> by Twig
+{% endset %}
+{{ raw({
+	name: "Legacy button",
+	handle: "ui:legacy-button",
+	status: "ready",
+	viewClass: "p-4",
+	context: {
+		label: "Buy now",
+		body: intro|trim,
+		count: 3,
+		disabled: false,
+		style: "outline",
+		colour: "red",
+		icon: "{include:@ui:good}",
+		href: "#",
+	},
+	variables: {
+		label: "string",
+		body: "text",
+		count: "number",
+		disabled: "checkbox",
+		style: {
+			type: 'select',
+			options: [
+				{value: 'solid', label: 'Solid'},
+				{value: 'outline', label: 'Outline'},
+			]
+		},
+		colour: "colour",
+		icon: "string",
+	},
+	variants: [
+		{name: "Solid", handle: "ui:legacy-button--solid", context: {style: "solid"}},
+		{name: "Sold out", context: {disabled: true, label: "Sold out"}},
+	]
+}|json_encode) }}

@@ -1,0 +1,21 @@
+/*
+ * The share pages, outside the CP layout: only what the CP's own layout styles would otherwise
+ * supply. The workspace itself is viewer.css, as in the CP.
+ */
+
+/* The message pages only: the workspace page's white body is viewer.css's, as in the CP. */
+body.cl-share:not(.cl-workspace-page) {
+    background: var(--body-bg);
+    min-height: 100vh;
+}
+
+.cl-share-message {
+    margin: 10vh auto 0;
+    max-width: 32rem;
+    padding: 0 16px;
+}
+
+.cl-share-message h1 {
+    font-size: 1.25rem;
+    margin-bottom: var(--s);
+}

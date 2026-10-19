@@ -1,0 +1,34 @@
+{#
+ # The share viewer (§6 Screens): the CP viewer's workspace (BR-37) on a page of its own, in the
+ # CP's look (CpStylesAsset) with none of its navigation or scripts. viewer.js drives it as it
+ # does in the CP. The header is the link's label and expiry. No paths or roots appear (showPaths
+ # is off, BR-29).
+ #
+ # Test hook (§7): data-cl-share-state.
+ #}
+{% set heading = '{label} · expires {date}'|t('component-viewer', {
+    label: share.label,
+    date: expires|date('long', 'UTC'),
+}) %}
+<!DOCTYPE html>
+<html lang="{{ craft.app.language }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>{{ (component ? (component.name ?? component.handle) ~ ' – ') ~ 'Component Viewer'|t('component-viewer') }}</title>
+    {{ head() }}
+</head>
+<body class="ltr cl-share cl-workspace-page">
+{{ beginBody() }}
+{% embed 'component-viewer/viewer/_workspace' with {
+    pageHeading: heading,
+    workspaceAttributes: {data: {'cl-share-state': 'active'}},
+} %}
+    {% block actions %}
+        <span class="light">{{ 'Component Viewer'|t('component-viewer') }}</span>
+    {% endblock %}
+{% endembed %}
+{{ endBody() }}
+</body>
+</html>

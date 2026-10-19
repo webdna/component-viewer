@@ -1,0 +1,37 @@
+<?php
+
+namespace webdna\componentviewer\records;
+
+use craft\db\ActiveRecord;
+use craft\records\User;
+use yii\db\ActiveQueryInterface;
+
+/**
+ * A share link. Status is derived from expiresAt, never stored, and revoking deletes the row (spec §4).
+ *
+ * @property int $id
+ * @property string $label
+ * @property string $tokenHash
+ * @property string|null $tokenEncrypted
+ * @property string $expiresAt
+ * @property int $createdById
+ * @property string|null $lastUsedAt
+ * @property string $dateCreated
+ * @property string $dateUpdated
+ * @property string $uid
+ * @property-read User $createdBy
+ */
+class ShareRecord extends ActiveRecord
+{
+    public const TABLE = '{{%componentviewer_shares}}';
+
+    public static function tableName(): string
+    {
+        return self::TABLE;
+    }
+
+    public function getCreatedBy(): ActiveQueryInterface
+    {
+        return $this->hasOne(User::class, ['id' => 'createdById']);
+    }
+}

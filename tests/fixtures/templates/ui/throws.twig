@@ -1,0 +1,6 @@
+{# Fails while rendering (TS-10): max() of an empty list throws, on line 6. It indexes cleanly. #}
+{% component {
+    name: 'Throws',
+    status: 'wip',
+} %}
+<p>{{ max([]) }}</p>

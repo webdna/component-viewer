@@ -1,7 +1,16 @@
 {
-    "name": "webdna/component-library",
-    "description": "Component library module",
-    "type": "craft-module",
+    "name": "webdna/component-viewer",
+    "description": "Browse, try out and share a site's Twig components from the control panel.",
+    "type": "craft-plugin",
+    "keywords": [
+        "craft",
+        "cms",
+        "craftcms",
+        "craft-plugin",
+        "component-viewer",
+        "components",
+        "twig"
+    ],
     "license": "proprietary",
     "authors": [
         {
@@ -10,14 +19,34 @@
         }
     ],
     "require": {
-        "craftcms/cms": "^3.7|^4.0.0|^5.0.0"
+        "php": "^8.2",
+        "craftcms/cms": "^5.0"
     },
     "autoload": {
         "psr-4": {
-            "webdna\\componentlibrary\\": "src/"
+            "webdna\\componentviewer\\": "src/",
+            "webdna\\componentlibrary\\": "shim/"
         }
     },
+    "support": {
+        "issues": "https://github.com/webdna/component-viewer/issues",
+        "source": "https://github.com/webdna/component-viewer",
+        "docs": "https://github.com/webdna/component-viewer/blob/main/README.md"
+    },
+    "extra": {
+        "name": "Component Viewer",
+        "handle": "component-viewer",
+        "developer": "webdna",
+        "developerUrl": "https://webdna.co.uk",
+        "documentationUrl": "https://github.com/webdna/component-viewer/blob/main/README.md",
+        "changelogUrl": "https://raw.githubusercontent.com/webdna/component-viewer/main/CHANGELOG.md",
+        "class": "webdna\\componentviewer\\ComponentViewer"
+    },
     "config": {
+        "sort-packages": true,
+        "platform": {
+            "php": "8.2"
+        },
         "allow-plugins": {
             "craftcms/plugin-installer": true,
             "yiisoft/yii2-composer": true

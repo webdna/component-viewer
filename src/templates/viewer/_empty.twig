@@ -1,0 +1,21 @@
+{#
+ # §3 first run: no components yet. The team gets the folders searched, the command and the
+ # format guide. A share link gets one line: its readers can't add components, and the folders
+ # show only with showPaths (BR-29).
+ #}
+<div class="cl-empty" data-cl-empty>
+    {% if showPaths %}
+        <h2>{{ 'No components yet'|t('component-viewer') }}</h2>
+        <p>{{ 'The library looked in these folders:'|t('component-viewer') }}</p>
+        <ul class="cl-roots">
+            {% for root in roots %}
+                <li><code>{{ root }}</code></li>
+            {% endfor %}
+        </ul>
+        <p>{{ 'Create one with this command, then reload the page:'|t('component-viewer') }}</p>
+        <pre class="cl-code"><code>php craft component-viewer/make ui/button</code></pre>
+        <p><a href="{{ formatGuide }}" rel="noopener" target="_blank">{{ 'How to write a component'|t('component-viewer') }}</a></p>
+    {% else %}
+        <p class="zilch">{{ 'Nothing to show yet.'|t('component-viewer') }}</p>
+    {% endif %}
+</div>
