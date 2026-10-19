@@ -17,9 +17,9 @@ use craft\web\twig\TemplateLoaderException;
 use craft\web\View;
 use Twig\Loader\LoaderInterface;
 use Twig\Source;
-use webdna\componentlibrary\ComponentLibrary;
-use webdna\componentlibrary\services\Index;
-use webdna\componentlibrary\twig\Loader;
+use webdna\componentviewer\ComponentViewer;
+use webdna\componentviewer\services\Index;
+use webdna\componentviewer\twig\Loader;
 use yii\base\Event;
 
 const NAMESPACE_ROOT = __DIR__ . '/../fixtures/namespace';
@@ -76,7 +76,7 @@ final class SpyLoader implements LoaderInterface
 }
 
 beforeEach(function() {
-    $this->index = ComponentLibrary::getInstance()->getIndex();
+    $this->index = ComponentViewer::getInstance()->getIndex();
     $this->index->invalidate();
     $this->index->reset();
     $this->devMode = Craft::$app->getConfig()->getGeneral()->devMode;
@@ -310,7 +310,7 @@ describe('index use (TS-13, BR-14, BR-33)', function() {
         copy(FIXTURES . '/ui/good.twig', "$root/ui/good.twig");
         copy(FIXTURES . '/pages/fifty.twig', "$root/pages/fifty.twig");
 
-        $plugin = ComponentLibrary::getInstance();
+        $plugin = ComponentViewer::getInstance();
         $index = new Index(['templateDirectories' => [$root]]);
         $index->invalidate();
         $plugin->set('index', $index);

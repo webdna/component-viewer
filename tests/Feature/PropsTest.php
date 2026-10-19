@@ -13,17 +13,17 @@ declare(strict_types=1);
 use craft\helpers\FileHelper;
 use craft\helpers\Json;
 use Twig\Error\SyntaxError;
-use webdna\componentlibrary\ComponentLibrary;
-use webdna\componentlibrary\console\controllers\CheckController;
-use webdna\componentlibrary\services\Index;
-use webdna\componentlibrary\services\Shares;
+use webdna\componentviewer\ComponentViewer;
+use webdna\componentviewer\console\controllers\CheckController;
+use webdna\componentviewer\services\Index;
+use webdna\componentviewer\services\Shares;
 
 const ICONS = __DIR__ . '/../fixtures/icons';
-const ICON_VIEWER = 'admin/component-library/@ui:icon-button';
+const ICON_VIEWER = 'admin/component-viewer/@ui:icon-button';
 
 beforeEach(function() {
     $this->withExceptionHandling();
-    $this->plugin = ComponentLibrary::getInstance();
+    $this->plugin = ComponentViewer::getInstance();
     $this->original = $this->plugin->getIndex();
     $this->tmp = null;
     $token = $this->plugin->getRenderer()->createToken('user:' . Craft::$app->getUsers()->getUserByUsernameOrEmail('admin')?->id);
@@ -46,7 +46,7 @@ afterEach(function() {
 /** The CL009 lines of a check over the given index. */
 function iconProblems(Index $index): array
 {
-    $plugin = ComponentLibrary::getInstance();
+    $plugin = ComponentViewer::getInstance();
     $plugin->set('index', $index);
     $problems = (new CheckController('check', $plugin))->problems();
 
@@ -157,13 +157,13 @@ describe('BR-43 the viewers', function() {
     });
 
     it('says so for a component with no props', function() {
-        $html = $this->actingAs('admin')->get('admin/component-library/@ui:throws')->assertOk()->content;
+        $html = $this->actingAs('admin')->get('admin/component-viewer/@ui:throws')->assertOk()->content;
 
         expect($html)->toContain('This component has no props.');
     });
 
     it('shows the same Props tab on a share link', function() {
-        $form = webdna\componentlibrary\models\ShareForm::blank();
+        $form = webdna\componentviewer\models\ShareForm::blank();
         $form->label = 'Acme';
         $token = $this->plugin->getShares()->create($form, (int)Craft::$app->getUsers()->getUserByUsernameOrEmail('admin')?->id);
         $html = $this->get(Shares::URL_PATH . "$token/@ui:icon-button")->assertOk()->content;

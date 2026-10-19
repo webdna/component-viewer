@@ -1,6 +1,6 @@
 <?php
 
-namespace webdna\componentlibrary\models;
+namespace webdna\componentviewer\models;
 
 use Craft;
 use craft\base\Model;
@@ -32,8 +32,8 @@ class ShareForm extends Model
     public function attributeLabels(): array
     {
         return [
-            'label' => Craft::t('component-library', 'Label'),
-            'expiry' => Craft::t('component-library', 'Expires'),
+            'label' => Craft::t('component-viewer', 'Label'),
+            'expiry' => Craft::t('component-viewer', 'Expires'),
         ];
     }
 
@@ -55,7 +55,7 @@ class ShareForm extends Model
 
         // Both bounds are Y-m-d, so a string comparison is a date comparison once the shape is checked.
         if (!self::isDate($value) || $value < $min || $value > $max) {
-            $this->addError($attribute, Craft::t('component-library', 'Choose a date from {min} to {max}.', [
+            $this->addError($attribute, Craft::t('component-viewer', 'Choose a date from {min} to {max}.', [
                 'min' => $min,
                 'max' => $max,
             ]));

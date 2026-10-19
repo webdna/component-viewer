@@ -1,5 +1,5 @@
 {#
- # The plugin's bare preview layout (BR-25), used when config/component-library.php sets no
+ # The plugin's bare preview layout (BR-25), used when config/component-viewer.php sets no
  # `layout`. A site's own layout fills the same two blocks, v1's contract: `component`, and
  # `viewClass` for the classes of the element around it.
  #}
@@ -9,7 +9,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex">
-    <title>{{ 'Component preview'|t('component-library') }}</title>
+    <title>{{ 'Component preview'|t('component-viewer') }}</title>
 </head>
 <body>
 <div class="{% block viewClass %}{% endblock %}">

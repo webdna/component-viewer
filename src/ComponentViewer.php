@@ -1,6 +1,6 @@
 <?php
 
-namespace webdna\componentlibrary;
+namespace webdna\componentviewer;
 
 use Craft;
 use craft\base\Element;
@@ -16,20 +16,20 @@ use craft\services\UserPermissions;
 use craft\utilities\ClearCaches;
 use craft\web\UrlManager;
 use craft\web\View;
-use webdna\componentlibrary\services\Index;
-use webdna\componentlibrary\services\Renderer;
-use webdna\componentlibrary\services\Resolver;
-use webdna\componentlibrary\services\Shares;
-use webdna\componentlibrary\services\Viewer;
-use webdna\componentlibrary\twig\Extension;
-use webdna\componentlibrary\twig\Loader;
+use webdna\componentviewer\services\Index;
+use webdna\componentviewer\services\Renderer;
+use webdna\componentviewer\services\Resolver;
+use webdna\componentviewer\services\Shares;
+use webdna\componentviewer\services\Viewer;
+use webdna\componentviewer\twig\Extension;
+use webdna\componentviewer\twig\Loader;
 use yii\base\Event;
 use yii\base\InvalidConfigException;
 
 /**
- * Component Library plugin
+ * Component Viewer plugin
  *
- * @method static ComponentLibrary getInstance()
+ * @method static ComponentViewer getInstance()
  * @property-read Index $index
  * @property-read Resolver $resolver
  * @property-read Renderer $renderer
@@ -39,7 +39,7 @@ use yii\base\InvalidConfigException;
  * @copyright webdna
  * @license proprietary
  */
-class ComponentLibrary extends Plugin
+class ComponentViewer extends Plugin
 {
     /**
      * View the library in the control panel (BR-1).
@@ -50,23 +50,33 @@ class ComponentLibrary extends Plugin
      * (`web/twig/variables/Cp.php`). A permission of our own would sit behind that one, so a user
      * given only ours would see a section that refuses them. `accessCp` does not grant it.
      */
-    public const PERMISSION_VIEW = 'accessPlugin-component-library';
+    public const PERMISSION_VIEW = 'accessPlugin-component-viewer';
 
     /**
      * Create and revoke share links (BR-1), nested under PERMISSION_VIEW.
      */
-    public const PERMISSION_MANAGE_SHARES = 'manageComponentLibraryShares';
+    public const PERMISSION_MANAGE_SHARES = 'manageComponentViewerShares';
 
     public string $schemaVersion = '2.0.2';
     public bool $hasCpSection = true;
 
     /**
      * The index takes its roots (BR-11) and icons folder (BR-44), and the renderer its layout (BR-25), from
-     * config/component-library.php.
+     * config/component-viewer.php. A site that still has the file under the plugin's old name,
+     * config/component-library.php, keeps working, with a deprecation warning to rename it.
      */
     public static function config(): array
     {
-        $config = Craft::$app->getConfig()->getConfigFromFile('component-library');
+        $configService = Craft::$app->getConfig();
+        $config = $configService->getConfigFromFile('component-viewer');
+
+        if ($config === [] && is_file($configService->getConfigFilePath('component-library'))) {
+            $config = $configService->getConfigFromFile('component-library');
+            Craft::$app->getDeprecator()->log(
+                'component-viewer:config-file',
+                'Rename config/component-library.php to config/component-viewer.php. The plugin was renamed from Component Library to Component Viewer.',
+            );
+        }
 
         return [
             'components' => [
@@ -93,12 +103,12 @@ class ComponentLibrary extends Plugin
         // BR-4: v1 was a module, and v1 installs list it in config/app.php. Loaded that way the
         // class would boot without its table or permissions, so refuse outright. Only Craft's
         // plugin loader sets packageName (from Composer), so its absence means a module load.
+        // v1's own class name, webdna\componentlibrary\ComponentLibrary, is caught by the shim in
+        // shim/ComponentLibrary.php, which gives the same instruction.
         if ($this->packageName === null) {
             throw new InvalidConfigException(
-                'Component Library 2 is a Craft plugin, not a module. Remove ' .
-                "'component-library' => " . self::class . "::class from 'modules', and " .
-                "'component-library' from 'bootstrap', in config/app.php, then run " .
-                '`php craft plugin/install component-library`.'
+                'Component Viewer is a Craft plugin, not a module. Remove it from \'modules\' and ' .
+                '\'bootstrap\' in config/app.php, then run `php craft plugin/install component-viewer`.'
             );
         }
 
@@ -152,12 +162,12 @@ class ComponentLibrary extends Plugin
         if (Craft::$app->getUser()->checkPermission(self::PERMISSION_MANAGE_SHARES)) {
             $item['subnav'] = [
                 'library' => [
-                    'label' => Craft::t('component-library', 'Library'),
-                    'url' => 'component-library',
+                    'label' => Craft::t('component-viewer', 'Library'),
+                    'url' => 'component-viewer',
                 ],
                 'shares' => [
-                    'label' => Craft::t('component-library', 'Share links'),
-                    'url' => 'component-library/shares',
+                    'label' => Craft::t('component-viewer', 'Share links'),
+                    'url' => 'component-viewer/shares',
                 ],
             ];
         }
@@ -171,10 +181,10 @@ class ComponentLibrary extends Plugin
             UrlManager::class,
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
             function(RegisterUrlRulesEvent $event): void {
-                $event->rules['component-library'] = 'component-library/viewer/index';
-                $event->rules['component-library/shares'] = 'component-library/shares/index';
+                $event->rules['component-viewer'] = 'component-viewer/viewer/index';
+                $event->rules['component-viewer/shares'] = 'component-viewer/shares/index';
                 // Owned handles only (BR-17), so `shares` and any other word can never be one.
-                $event->rules['component-library/<handle:@[A-Za-z0-9_:-]+>'] = 'component-library/viewer/index';
+                $event->rules['component-viewer/<handle:@[A-Za-z0-9_:-]+>'] = 'component-viewer/viewer/index';
             },
         );
     }
@@ -189,8 +199,11 @@ class ComponentLibrary extends Plugin
             UrlManager::class,
             UrlManager::EVENT_REGISTER_SITE_URL_RULES,
             function(RegisterUrlRulesEvent $event): void {
-                $event->rules[Shares::URL_PATH . '<shareToken:[^/]+>'] = 'component-library/share-viewer/index';
-                $event->rules[Shares::URL_PATH . '<shareToken:[^/]+>/<handle:[^/]+>'] = 'component-library/share-viewer/index';
+                // Links sent before the rename from Component Library still open (LEGACY_URL_PATH).
+                foreach ([Shares::URL_PATH, Shares::LEGACY_URL_PATH] as $path) {
+                    $event->rules[$path . '<shareToken:[^/]+>'] = 'component-viewer/share-viewer/index';
+                    $event->rules[$path . '<shareToken:[^/]+>/<handle:[^/]+>'] = 'component-viewer/share-viewer/index';
+                }
             },
         );
     }
@@ -241,7 +254,7 @@ class ComponentLibrary extends Plugin
             function(RegisterCacheOptionsEvent $event): void {
                 $event->options[] = [
                     'key' => Index::CACHE_TAG,
-                    'label' => Craft::t('component-library', 'Component library index'),
+                    'label' => Craft::t('component-viewer', 'Component viewer index'),
                     'action' => fn() => $this->getIndex()->invalidate(),
                 ];
             },
@@ -271,7 +284,7 @@ class ComponentLibrary extends Plugin
             function(RegisterUserPermissionsEvent $event): void {
                 $nested = [
                     self::PERMISSION_MANAGE_SHARES => [
-                        'label' => Craft::t('component-library', 'Create and revoke share links'),
+                        'label' => Craft::t('component-viewer', 'Create and revoke share links'),
                     ],
                 ];
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace webdna\componentlibrary\twig;
+namespace webdna\componentviewer\twig;
 
 use Twig\Error\SyntaxError;
 use Twig\Node\Expression\ArrayExpression;

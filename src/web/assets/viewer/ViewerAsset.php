@@ -1,6 +1,6 @@
 <?php
 
-namespace webdna\componentlibrary\web\assets\viewer;
+namespace webdna\componentviewer\web\assets\viewer;
 
 use craft\web\AssetBundle;
 use craft\web\assets\cp\CpAsset;

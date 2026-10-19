@@ -16,8 +16,8 @@ use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
 use Twig\Loader\ArrayLoader;
-use webdna\componentlibrary\models\Story;
-use webdna\componentlibrary\twig\Extension;
+use webdna\componentviewer\models\Story;
+use webdna\componentviewer\twig\Extension;
 
 /**
  * @param array<string,string> $extra More templates, by name

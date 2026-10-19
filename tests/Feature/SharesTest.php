@@ -15,19 +15,19 @@ use craft\helpers\Db;
 use craft\mail\Mailer;
 use craft\queue\Queue as CraftQueue;
 use craft\services\Gc;
-use webdna\componentlibrary\ComponentLibrary;
-use webdna\componentlibrary\controllers\SharesController;
-use webdna\componentlibrary\models\ShareForm;
-use webdna\componentlibrary\records\ShareRecord;
-use webdna\componentlibrary\services\Shares;
+use webdna\componentviewer\ComponentViewer;
+use webdna\componentviewer\controllers\SharesController;
+use webdna\componentviewer\models\ShareForm;
+use webdna\componentviewer\records\ShareRecord;
+use webdna\componentviewer\services\Shares;
 use yii\base\Event;
 use yii\mail\MailEvent;
 
-const SHARES_PAGE = 'admin/component-library/shares';
+const SHARES_PAGE = 'admin/component-viewer/shares';
 
 beforeEach(function() {
     $this->withExceptionHandling();
-    $this->shares = ComponentLibrary::getInstance()->getShares();
+    $this->shares = ComponentViewer::getInstance()->getShares();
     // The list and its empty state are about this test's rows only.
     ShareRecord::deleteAll();
     // craft-pest keeps one session for the run, so an unread address would leak into the next test.
@@ -36,7 +36,7 @@ beforeEach(function() {
 
 function sharesPost(array $body, string $action = 'create'): array
 {
-    return ['action' => "component-library/shares/$action"] + $body;
+    return ['action' => "component-viewer/shares/$action"] + $body;
 }
 
 function shareRow(string $expires = '+14 days', string $label = 'Acme', ?int $creator = null): ShareRecord
@@ -93,14 +93,14 @@ describe('TS-4 create', function() {
         $this->actingAs('admin');
         $response = $this->post(SHARES_PAGE, sharesPost(['label' => 'Acme', 'expiry' => ShareForm::day(14)]));
         $response->assertStatus(302);
-        expect(parse_url((string)$response->headers->get('Location'), PHP_URL_PATH))->toBe('/admin/component-library/shares');
+        expect(parse_url((string)$response->headers->get('Location'), PHP_URL_PATH))->toBe('/admin/component-viewer/shares');
 
         expect(ShareRecord::find()->count())->toBe(1);
         $row = onlyShare();
 
         $url = shownShareUrl($this->get(SHARES_PAGE)->assertOk()->content);
         $primary = rtrim((string)Craft::$app->getSites()->getPrimarySite()->getBaseUrl(), '/');
-        expect($url)->toMatch('#^' . preg_quote($primary, '#') . '/component-library/share/[A-Za-z0-9_-]{43}$#');
+        expect($url)->toMatch('#^' . preg_quote($primary, '#') . '/component-viewer/share/[A-Za-z0-9_-]{43}$#');
 
         $token = substr($url, -43);
         expect($row->tokenHash)->toMatch('/^[0-9a-f]{64}$/')
@@ -214,7 +214,7 @@ describe('revoke', function() {
     it('deletes a link at once, previews included', function() {
         $share = shareRow();
         $other = shareRow(label: 'Other');
-        $renderer = ComponentLibrary::getInstance()->getRenderer();
+        $renderer = ComponentViewer::getInstance()->getRenderer();
         expect($renderer->scopeIsValid("share:$share->id"))->toBeTrue();
 
         $this->actingAs('admin')->post(SHARES_PAGE, sharesPost(['id' => $share->id], 'revoke'))->assertStatus(302);
@@ -232,7 +232,7 @@ describe('revoke', function() {
 
         $html = $this->actingAs('admin')->get(SHARES_PAGE)->assertOk()->content;
 
-        expect(substr_count($html, 'data-action="component-library/shares/revoke"'))->toBe(2)
+        expect(substr_count($html, 'data-action="component-viewer/shares/revoke"'))->toBe(2)
             ->and($html)->toContain('data-value="' . $active->id . '"')
             ->and($html)->toContain('data-value="' . $old->id . '"')
             ->and($html)->toContain('data-confirm="Revoke “Live”? The link is deleted')
@@ -251,8 +251,8 @@ describe('revoke', function() {
 it('derives the status from the clock', function(string $expires, string $status) {
     $share = shareRow($expires);
 
-    expect(ComponentLibrary::getInstance()->getShares()->status($share))->toBe($status)
-        ->and(ComponentLibrary::getInstance()->getShares()->active()->andWhere(['id' => $share->id])->exists())
+    expect(ComponentViewer::getInstance()->getShares()->status($share))->toBe($status)
+        ->and(ComponentViewer::getInstance()->getShares()->active()->andWhere(['id' => $share->id])->exists())
         ->toBe($status === Shares::STATUS_ACTIVE);
 })->with([
     'active' => ['+1 hour', Shares::STATUS_ACTIVE],
@@ -262,7 +262,7 @@ it('derives the status from the clock', function(string $expires, string $status
 // §4 lastUsedAt
 it('records use at most once a minute', function() {
     $share = shareRow();
-    $shares = ComponentLibrary::getInstance()->getShares();
+    $shares = ComponentViewer::getInstance()->getShares();
 
     $shares->markUsed($share);
     $first = $share->refresh() ? $share->lastUsedAt : null;

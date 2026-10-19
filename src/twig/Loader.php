@@ -1,20 +1,20 @@
 <?php
 
-namespace webdna\componentlibrary\twig;
+namespace webdna\componentviewer\twig;
 
 use Craft;
 use craft\web\twig\TemplateLoaderException;
 use Twig\Loader\LoaderInterface;
 use Twig\Source;
-use webdna\componentlibrary\ComponentLibrary;
-use webdna\componentlibrary\models\Component;
+use webdna\componentviewer\ComponentViewer;
+use webdna\componentviewer\models\Component;
 
 /**
  * Resolves component handles (`@ui:button`) for one Twig environment, and hands every other name,
  * untouched, to the loader Craft gave that environment (BR-17, BR-18).
  *
  * It wraps, never replaces. v1 swapped the loader of whichever environment existed at init for the
- * whole app. ComponentLibrary wraps each site and CP environment as Craft creates it, so Twig
+ * whole app. ComponentViewer wraps each site and CP environment as Craft creates it, so Twig
  * namespaces, plain paths and every CP and plugin template resolve exactly as without the plugin.
  *
  * A handle resolves through the index for Craft's current site, never through the request. The
@@ -43,7 +43,7 @@ final class Loader implements LoaderInterface
             return $this->inner->exists($name);
         }
 
-        return ComponentLibrary::getInstance()->getIndex()->get($name)?->path !== null;
+        return ComponentViewer::getInstance()->getIndex()->get($name)?->path !== null;
     }
 
     public function getSourceContext(string $name): Source
@@ -85,7 +85,7 @@ final class Loader implements LoaderInterface
      */
     private function path(string $handle): string
     {
-        $path = ComponentLibrary::getInstance()->getIndex()->get($handle)?->path;
+        $path = ComponentViewer::getInstance()->getIndex()->get($handle)?->path;
 
         if ($path === null) {
             throw new TemplateLoaderException($handle, Craft::t('app', 'Unable to find the template “{template}”.', ['template' => $handle]));

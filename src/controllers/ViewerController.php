@@ -1,17 +1,17 @@
 <?php
 
-namespace webdna\componentlibrary\controllers;
+namespace webdna\componentviewer\controllers;
 
 use Craft;
 use craft\helpers\UrlHelper;
 use craft\web\Controller;
-use webdna\componentlibrary\ComponentLibrary;
-use webdna\componentlibrary\web\assets\viewer\ViewerAsset;
+use webdna\componentviewer\ComponentViewer;
+use webdna\componentviewer\web\assets\viewer\ViewerAsset;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
 
 /**
- * The CP viewer (§6): `admin/component-library[/<handle>]?story=&site=&props=&device=&orientation=&bg=`.
+ * The CP viewer (§6): `admin/component-viewer[/<handle>]?story=&site=&props=&device=&orientation=&bg=`.
  *
  * The address holds the whole view, so a copied link reopens it (AC-2). `site` only picks the
  * preview's base URL and whose index is listed, and only once Craft returns a site for it (BR-22).
@@ -21,27 +21,27 @@ class ViewerController extends Controller
     public function beforeAction($action): bool
     {
         // BR-2: enforced here, not only by Craft's plugin-handle gate, which covers
-        // admin/component-library/… but not admin/actions/component-library/….
+        // admin/component-viewer/… but not admin/actions/component-viewer/….
         $this->requireCpRequest();
-        $this->requirePermission(ComponentLibrary::PERMISSION_VIEW);
+        $this->requirePermission(ComponentViewer::PERMISSION_VIEW);
 
         return parent::beforeAction($action);
     }
 
     public function actionIndex(?string $handle = null): Response
     {
-        $plugin = ComponentLibrary::getInstance();
+        $plugin = ComponentViewer::getInstance();
         $viewer = $plugin->getViewer();
         $request = $this->request;
 
         $site = $viewer->site($request->getQueryParam('site'));
         $token = $plugin->getRenderer()->createToken('user:' . Craft::$app->getUser()->getId());
-        $url = fn(string $handle, array $params) => UrlHelper::cpUrl("component-library/$handle", $params);
+        $url = fn(string $handle, array $params) => UrlHelper::cpUrl("component-viewer/$handle", $params);
         $state = $viewer->state($site, $handle, $request->getQueryParam('story'), $request->getQueryParam('props'), $token, $url,
             $request->getQueryParam('device'), $request->getQueryParam('orientation'), $request->getQueryParam('bg'));
 
         if ($state === null) {
-            throw new NotFoundHttpException(Craft::t('component-library', 'There’s no component {handle} on {site}.', [
+            throw new NotFoundHttpException(Craft::t('component-viewer', 'There’s no component {handle} on {site}.', [
                 'handle' => $handle,
                 'site' => $site->getName(),
             ]));
@@ -49,7 +49,7 @@ class ViewerController extends Controller
 
         $this->view->registerAssetBundle(ViewerAsset::class);
 
-        return $this->renderTemplate('component-library/viewer/index', $state + [
+        return $this->renderTemplate('component-viewer/viewer/index', $state + [
             'showPaths' => true,
             'formatGuide' => $viewer::FORMAT_GUIDE,
         ]);

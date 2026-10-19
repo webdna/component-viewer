@@ -13,9 +13,9 @@ declare(strict_types=1);
 use craft\db\Table;
 use craft\helpers\Db;
 use craft\web\View;
-use webdna\componentlibrary\ComponentLibrary;
-use webdna\componentlibrary\records\ShareRecord;
-use webdna\componentlibrary\services\Renderer;
+use webdna\componentviewer\ComponentViewer;
+use webdna\componentviewer\records\ShareRecord;
+use webdna\componentviewer\services\Renderer;
 use yii\base\Event;
 use yii\base\InvalidArgumentException;
 use yii\web\User as YiiUser;
@@ -24,12 +24,12 @@ const LAYOUTS = __DIR__ . '/../fixtures/layouts';
 
 beforeEach(function() {
     $this->withExceptionHandling();
-    $this->renderer = ComponentLibrary::getInstance()->getRenderer();
+    $this->renderer = ComponentViewer::getInstance()->getRenderer();
 });
 
 function renderer(): Renderer
 {
-    return ComponentLibrary::getInstance()->getRenderer();
+    return ComponentViewer::getInstance()->getRenderer();
 }
 
 function userId(string $username): int
@@ -76,7 +76,7 @@ function previewUri(?string $token, array $query = [], string $site = ''): strin
 
 function propsFor(string $handle, array $request = [], ?string $story = null): array
 {
-    $component = ComponentLibrary::getInstance()->getIndex()->get($handle);
+    $component = ComponentViewer::getInstance()->getIndex()->get($handle);
     $story = $component->stories[$story ?? array_key_first($component->stories)];
 
     return renderer()->props($component, $story, $request);
@@ -115,7 +115,7 @@ describe('tokens (BR-20)', function() {
 // TN-1
 describe('without a valid token', function() {
     it('refuses a render with no token', function() {
-        $this->get('actions/component-library/render/index?component=@ui:good')
+        $this->get('actions/component-viewer/render/index?component=@ui:good')
             ->assertStatus(403)->assertSee('data-cl-error')->assertDontSee('btn--primary');
     });
 
@@ -175,7 +175,7 @@ describe('scope recheck', function() {
         $share->expiresAt = Db::prepareDateForDb(new DateTime('+1 day'));
         $share->save(false);
         $this->get(previewUri($token, ['component' => '@ui:good']))->assertOk();
-        ComponentLibrary::getInstance()->getShares()->revoke((int)$share->id);
+        ComponentViewer::getInstance()->getShares()->revoke((int)$share->id);
         $this->get(previewUri($token, ['component' => '@ui:good']))->assertStatus(403)->assertSee('Preview expired');
     });
 
@@ -187,7 +187,7 @@ describe('scope recheck', function() {
         $this->get(previewUri($shareToken, ['component' => '@ui:throws', 'scope' => userScope()]))
             ->assertStatus(500)->assertDontSee('max()');
 
-        $this->get('actions/component-library/render/index?' . http_build_query(['component' => '@ui:good', 'scope' => userScope()]))
+        $this->get('actions/component-viewer/render/index?' . http_build_query(['component' => '@ui:good', 'scope' => userScope()]))
             ->assertStatus(403)->assertDontSee('btn--primary');
     });
 });
@@ -269,7 +269,7 @@ describe('layouts', function() {
         $view = Craft::$app->getView();
         $view->setTemplateMode(View::TEMPLATE_MODE_SITE);
         $path = $view->getTemplatesPath();
-        $good = ComponentLibrary::getInstance()->getIndex()->get('@ui:good');
+        $good = ComponentViewer::getInstance()->getIndex()->get('@ui:good');
 
         try {
             $view->setTemplatesPath(realpath(LAYOUTS));
@@ -302,12 +302,12 @@ describe('layouts', function() {
             Craft::$app->set('view', $view);
         }
     })->with([
-        'component-library/_render/layout',
-        'component-library/_render/page',
-        'component-library/_render/error',
-        'component-library/viewer/index',
-        'component-library/shares/index',
-        'component-library/site/_render/layout',
+        'component-viewer/_render/layout',
+        'component-viewer/_render/page',
+        'component-viewer/_render/error',
+        'component-viewer/viewer/index',
+        'component-viewer/shares/index',
+        'component-viewer/site/_render/layout',
     ]);
 
     it('picks a layout per site, with the bare layout for a site not listed', function() {
@@ -457,7 +457,7 @@ describe('readable errors', function() {
             ->assertSee('@ui:throws, line 6');
 
         expect($response->content)->not->toContain(Craft::getAlias('@root'))
-            ->and($response->content)->not->toContain('/plugins/component-library/');
+            ->and($response->content)->not->toContain('/plugins/component-viewer/');
     });
 
     it('shows only a sentence in share scope', function() {

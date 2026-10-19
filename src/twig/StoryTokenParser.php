@@ -1,6 +1,6 @@
 <?php
 
-namespace webdna\componentlibrary\twig;
+namespace webdna\componentviewer\twig;
 
 use Twig\Error\SyntaxError;
 use Twig\Node\BlockNode;
@@ -12,7 +12,7 @@ use Twig\Token;
 use Twig\TokenParser\AbstractTokenParser;
 use Twig\TokenStream;
 use WeakMap;
-use webdna\componentlibrary\models\Story;
+use webdna\componentviewer\models\Story;
 
 /**
  * Parses `{% story 'Name' with { … } %}…{% endstory %}` in a `.stories.twig` file (BR-8, BR-9).

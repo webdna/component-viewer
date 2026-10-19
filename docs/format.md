@@ -14,7 +14,7 @@ templates/_components/
       dialog.stories.twig
 ```
 
-`php craft component-library/make ui/button` writes the first pair. `--folder` writes the second
+`php craft component-viewer/make ui/button` writes the first pair. `--folder` writes the second
 layout.
 
 ## The `component` tag
@@ -199,14 +199,14 @@ never listed as a component, and only the library's preview renders it.
 ## Legacy `.config.json` files
 
 A site upgraded from v1 can keep its `<name>.config.json` files by setting `'legacy' => true` in
-`config/component-library.php` (see [Upgrading from v1](upgrading-from-v1.md)). Their `variants`
+`config/component-viewer.php` (see [Upgrading from v1](upgrading-from-v1.md)). Their `variants`
 become stories, and a `readme.md` beside them becomes the notes. When a file has both a config and
 a `component` tag, the tag wins and the check warns. Delete the config once the tag is in.
 
 ## The check
 
 ```bash
-php craft component-library/check [--strict]
+php craft component-viewer/check [--strict]
 ```
 
 It prints one line per problem, `<code> <path>:<line> <message>`, then `<n> problems`. Paths are

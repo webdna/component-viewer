@@ -1,10 +1,10 @@
 <?php
 
-namespace webdna\componentlibrary\services;
+namespace webdna\componentviewer\services;
 
 use Craft;
 use craft\helpers\FileHelper;
-use webdna\componentlibrary\ComponentLibrary;
+use webdna\componentviewer\ComponentViewer;
 use yii\base\Component as BaseComponent;
 
 /**
@@ -12,7 +12,7 @@ use yii\base\Component as BaseComponent;
  * such as mw-core's Handlebars service (BR-19). A documented, stable public API.
  *
  * ```php
- * ComponentLibrary::getInstance()->getResolver()->resolve('cards/price.hbs', 'second');
+ * ComponentViewer::getInstance()->getResolver()->resolve('cards/price.hbs', 'second');
  * ```
  */
 class Resolver extends BaseComponent
@@ -45,7 +45,7 @@ class Resolver extends BaseComponent
             $siteHandle = $site->handle;
         }
 
-        $index = $this->index ?? ComponentLibrary::getInstance()->getIndex();
+        $index = $this->index ?? ComponentViewer::getInstance()->getIndex();
         $roots = $index->roots($siteHandle);
         $sites = $index->sitesFolder();
         $siteRoot = $sites !== null ? end($roots) : null;

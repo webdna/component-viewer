@@ -1,11 +1,11 @@
 <?php
 
-namespace webdna\componentlibrary\controllers;
+namespace webdna\componentviewer\controllers;
 
 use Craft;
 use craft\web\Controller;
-use webdna\componentlibrary\ComponentLibrary;
-use webdna\componentlibrary\models\ShareForm;
+use webdna\componentviewer\ComponentViewer;
+use webdna\componentviewer\models\ShareForm;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
 
@@ -15,14 +15,14 @@ use yii\web\Response;
 class SharesController extends Controller
 {
     /** The flash that carries a new link's address to the one page that shows it (BR-27). */
-    public const FLASH_URL = 'component-library-share-url';
+    public const FLASH_URL = 'component-viewer-share-url';
 
     public function beforeAction($action): bool
     {
         // BR-2: both permissions, checked here and not in the template.
         $this->requireCpRequest();
-        $this->requirePermission(ComponentLibrary::PERMISSION_VIEW);
-        $this->requirePermission(ComponentLibrary::PERMISSION_MANAGE_SHARES);
+        $this->requirePermission(ComponentViewer::PERMISSION_VIEW);
+        $this->requirePermission(ComponentViewer::PERMISSION_MANAGE_SHARES);
 
         // BR-3: CSRF validation stays on. parent::beforeAction() is where Yii checks the token.
         return parent::beforeAction($action);
@@ -31,8 +31,8 @@ class SharesController extends Controller
     /** A failed create comes back here with its form, so the errors and values show. */
     public function actionIndex(?ShareForm $share = null): Response
     {
-        return $this->renderTemplate('component-library/shares/index', [
-            'rows' => ComponentLibrary::getInstance()->getShares()->rows(),
+        return $this->renderTemplate('component-viewer/shares/index', [
+            'rows' => ComponentViewer::getInstance()->getShares()->rows(),
             'share' => $share ?? ShareForm::blank(),
             // Read and removed in one go, so a reload never shows it again.
             'newUrl' => Craft::$app->getSession()->getFlash(self::FLASH_URL, null, true),
@@ -45,7 +45,7 @@ class SharesController extends Controller
     {
         $this->requirePostRequest();
 
-        $shares = ComponentLibrary::getInstance()->getShares();
+        $shares = ComponentViewer::getInstance()->getShares();
         $form = new ShareForm([
             'label' => (string)$this->request->getBodyParam('label', ''),
             'expiry' => (string)$this->request->getBodyParam('expiry', ''),
@@ -53,14 +53,14 @@ class SharesController extends Controller
 
         $token = $shares->create($form, (int)Craft::$app->getUser()->getId());
         if ($token === null) {
-            return $this->asModelFailure($form, Craft::t('component-library', 'Couldn’t create the share link.'), 'share');
+            return $this->asModelFailure($form, Craft::t('component-viewer', 'Couldn’t create the share link.'), 'share');
         }
 
         Craft::$app->getSession()->setFlash(self::FLASH_URL, $shares->url($token));
 
         return $this->asSuccess(
-            Craft::t('component-library', 'Share link created.'),
-            redirect: 'component-library/shares',
+            Craft::t('component-viewer', 'Share link created.'),
+            redirect: 'component-viewer/shares',
         );
     }
 
@@ -74,9 +74,9 @@ class SharesController extends Controller
     {
         $this->requirePostRequest();
 
-        $url = ComponentLibrary::getInstance()->getShares()->copyUrl((int)$this->request->getRequiredBodyParam('id'));
+        $url = ComponentViewer::getInstance()->getShares()->copyUrl((int)$this->request->getRequiredBodyParam('id'));
         if ($url === null) {
-            throw new NotFoundHttpException(Craft::t('component-library', 'There’s no such share link.'));
+            throw new NotFoundHttpException(Craft::t('component-viewer', 'There’s no such share link.'));
         }
 
         return $this->asJson(['url' => $url]);
@@ -87,13 +87,13 @@ class SharesController extends Controller
         $this->requirePostRequest();
 
         $id = (int)$this->request->getRequiredBodyParam('id');
-        if (!ComponentLibrary::getInstance()->getShares()->revoke($id)) {
-            throw new NotFoundHttpException(Craft::t('component-library', 'There’s no such share link.'));
+        if (!ComponentViewer::getInstance()->getShares()->revoke($id)) {
+            throw new NotFoundHttpException(Craft::t('component-viewer', 'There’s no such share link.'));
         }
 
         return $this->asSuccess(
-            Craft::t('component-library', 'Share link revoked.'),
-            redirect: 'component-library/shares',
+            Craft::t('component-viewer', 'Share link revoked.'),
+            redirect: 'component-viewer/shares',
         );
     }
 }

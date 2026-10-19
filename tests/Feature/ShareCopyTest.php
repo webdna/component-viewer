@@ -9,17 +9,17 @@ declare(strict_types=1);
 
 use craft\elements\User;
 use craft\helpers\Db;
-use webdna\componentlibrary\ComponentLibrary;
-use webdna\componentlibrary\controllers\SharesController;
-use webdna\componentlibrary\models\ShareForm;
-use webdna\componentlibrary\records\ShareRecord;
+use webdna\componentviewer\ComponentViewer;
+use webdna\componentviewer\controllers\SharesController;
+use webdna\componentviewer\models\ShareForm;
+use webdna\componentviewer\records\ShareRecord;
 
-const COPY_PAGE = 'admin/component-library/shares';
-const COPY_ACTION = 'admin/actions/component-library/shares/url';
+const COPY_PAGE = 'admin/component-viewer/shares';
+const COPY_ACTION = 'admin/actions/component-viewer/shares/url';
 
 beforeEach(function() {
     $this->withExceptionHandling();
-    $this->shares = ComponentLibrary::getInstance()->getShares();
+    $this->shares = ComponentViewer::getInstance()->getShares();
     ShareRecord::deleteAll();
     Craft::$app->getSession()->removeFlash(SharesController::FLASH_URL);
 
@@ -39,7 +39,7 @@ describe('TS-18 copy link', function() {
         $html = $this->actingAs('admin')->get(COPY_PAGE)->assertOk()->content;
 
         expect($html)->toContain('data-cl-copy-share="' . $share->id . '"')
-            ->and(strpos($html, 'data-cl-copy-share'))->toBeLessThan((int)strpos($html, 'data-action="component-library/shares/revoke"'));
+            ->and(strpos($html, 'data-cl-copy-share'))->toBeLessThan((int)strpos($html, 'data-action="component-viewer/shares/revoke"'));
     });
 
     it('returns the address the create showed', function() {
@@ -106,10 +106,10 @@ describe('TN-22 the url action', function() {
 
 describe('TS-4 the create prompt', function() {
     it('hands the new address to the copy prompt once', function() {
-        $this->actingAs('admin')->post(COPY_PAGE, ['action' => 'component-library/shares/create', 'label' => 'Acme', 'expiry' => ShareForm::day(14)]);
+        $this->actingAs('admin')->post(COPY_PAGE, ['action' => 'component-viewer/shares/create', 'label' => 'Acme', 'expiry' => ShareForm::day(14)]);
 
         $first = $this->get(COPY_PAGE)->assertOk()->content;
-        expect($first)->toMatch('#data-cl-share-url="[^"]+/component-library/share/[A-Za-z0-9_-]{43}"#')
+        expect($first)->toMatch('#data-cl-share-url="[^"]+/component-viewer/share/[A-Za-z0-9_-]{43}"#')
             ->and($first)->toContain('Craft.ui.createCopyTextPrompt')
             ->and($this->get(COPY_PAGE)->assertOk()->content)->not->toContain('data-cl-share-url=');
     });

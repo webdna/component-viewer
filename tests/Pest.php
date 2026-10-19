@@ -15,10 +15,10 @@ use PHPUnit\Util\ExcludeList;
 use Twig\Environment;
 use Twig\Node\ModuleNode;
 use Twig\Source;
-use webdna\componentlibrary\models\Component;
-use webdna\componentlibrary\models\Story;
-use webdna\componentlibrary\twig\ComponentNode;
-use webdna\componentlibrary\twig\StoryNode;
+use webdna\componentviewer\models\Component;
+use webdna\componentviewer\models\Story;
+use webdna\componentviewer\twig\ComponentNode;
+use webdna\componentviewer\twig\StoryNode;
 use yii\BaseYii;
 
 uses(TestCase::class, RefreshesDatabase::class)->in(__DIR__);

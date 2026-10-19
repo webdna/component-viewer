@@ -1,12 +1,12 @@
 <?php
 
-namespace webdna\componentlibrary\console\controllers;
+namespace webdna\componentviewer\console\controllers;
 
 use craft\console\Controller;
 use craft\helpers\FileHelper;
-use webdna\componentlibrary\ComponentLibrary;
-use webdna\componentlibrary\services\Index;
-use webdna\componentlibrary\twig\StoryTokenParser;
+use webdna\componentviewer\ComponentViewer;
+use webdna\componentviewer\services\Index;
+use webdna\componentviewer\twig\StoryTokenParser;
 use yii\console\ExitCode;
 
 /**
@@ -14,7 +14,7 @@ use yii\console\ExitCode;
  * *Default* story, in the first root or the one asked for.
  *
  * ```
- * craft component-library/make <category>/<name> [--root=<n>] [--folder]
+ * craft component-viewer/make <category>/<name> [--root=<n>] [--folder]
  * ```
  *
  * Roots are numbered from 1 in `templateDirectories` order. A site folder isn't one of them: a site
@@ -53,7 +53,7 @@ class MakeController extends Controller
         }
         [$category, $name] = $segments;
 
-        $index = ComponentLibrary::getInstance()->getIndex();
+        $index = ComponentViewer::getInstance()->getIndex();
         $roots = $this->roots($index);
         $number = $this->root ?? '1';
         if (!ctype_digit($number) || (int)$number < 1 || (int)$number > count($roots)) {

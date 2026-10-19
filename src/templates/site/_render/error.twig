@@ -27,7 +27,7 @@
         {% if detail.template %}
             <p class="cl-error__where">
                 {%- if detail.line -%}
-                    {{ '{template}, line {line}'|t('component-library', { template: detail.template, line: detail.line }) }}
+                    {{ '{template}, line {line}'|t('component-viewer', { template: detail.template, line: detail.line }) }}
                 {%- else -%}
                     {{ detail.template }}
                 {%- endif -%}

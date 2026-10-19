@@ -1,6 +1,6 @@
 <?php
 
-namespace webdna\componentlibrary\twig;
+namespace webdna\componentviewer\twig;
 
 use InvalidArgumentException;
 use Twig\Error\SyntaxError;
@@ -9,7 +9,7 @@ use Twig\Token;
 use Twig\TokenParser\AbstractTokenParser;
 use Twig\TokenStream;
 use WeakMap;
-use webdna\componentlibrary\models\Component;
+use webdna\componentviewer\models\Component;
 
 /**
  * Parses `{% component { … } %}` (BR-5, BR-6).

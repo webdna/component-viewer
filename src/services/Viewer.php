@@ -1,14 +1,14 @@
 <?php
 
-namespace webdna\componentlibrary\services;
+namespace webdna\componentviewer\services;
 
 use Closure;
 use Craft;
 use craft\models\Site;
-use webdna\componentlibrary\ComponentLibrary;
-use webdna\componentlibrary\models\Component;
-use webdna\componentlibrary\models\Prop;
-use webdna\componentlibrary\models\Story;
+use webdna\componentviewer\ComponentViewer;
+use webdna\componentviewer\models\Component;
+use webdna\componentviewer\models\Prop;
+use webdna\componentviewer\models\Story;
 use yii\base\Component as BaseComponent;
 use yii\base\InvalidArgumentException;
 
@@ -137,7 +137,7 @@ class Viewer extends BaseComponent
         $current = $this->story($component, $story);
         $overrides = $this->overrides($component, $props);
         $backgrounds = self::background($component, $background);
-        $previewUrl = ComponentLibrary::getInstance()->getRenderer()
+        $previewUrl = ComponentViewer::getInstance()->getRenderer()
             ->previewUrl($site, $token, (string)$component->handle, $current->name, $overrides ?: null, self::backgroundParams($backgrounds)['bg'] ?? null);
 
         return array_merge($state, [
@@ -270,7 +270,7 @@ class Viewer extends BaseComponent
     public function overrides(Component $component, mixed $raw): array
     {
         try {
-            $decoded = ComponentLibrary::getInstance()->getRenderer()->decodeProps($raw);
+            $decoded = ComponentViewer::getInstance()->getRenderer()->decodeProps($raw);
         } catch (InvalidArgumentException) {
             return [];
         }
@@ -323,9 +323,9 @@ class Viewer extends BaseComponent
     public function sources(Component $component): array
     {
         $files = array_filter([
-            Craft::t('component-library', 'Component') => $component->path,
-            Craft::t('component-library', 'Examples') => $component->storiesPath,
-            Craft::t('component-library', 'Legacy settings') => $component->configPath,
+            Craft::t('component-viewer', 'Component') => $component->path,
+            Craft::t('component-viewer', 'Examples') => $component->storiesPath,
+            Craft::t('component-viewer', 'Legacy settings') => $component->configPath,
         ]);
 
         $sources = [];
@@ -370,7 +370,7 @@ class Viewer extends BaseComponent
 
     private function index(): Index
     {
-        return $this->index ?? ComponentLibrary::getInstance()->getIndex();
+        return $this->index ?? ComponentViewer::getInstance()->getIndex();
     }
 
     /**

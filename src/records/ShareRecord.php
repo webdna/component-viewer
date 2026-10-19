@@ -1,6 +1,6 @@
 <?php
 
-namespace webdna\componentlibrary\records;
+namespace webdna\componentviewer\records;
 
 use craft\db\ActiveRecord;
 use craft\records\User;
@@ -23,7 +23,7 @@ use yii\db\ActiveQueryInterface;
  */
 class ShareRecord extends ActiveRecord
 {
-    public const TABLE = '{{%componentlibrary_shares}}';
+    public const TABLE = '{{%componentviewer_shares}}';
 
     public static function tableName(): string
     {

@@ -1,4 +1,4 @@
-# Component Library
+# Component Viewer
 
 A Craft CMS 5 plugin for browsing, trying out and sharing a site's Twig components.
 
@@ -17,11 +17,11 @@ Requires Craft `^5.0` and PHP `^8.2`.
 ## Install
 
 ```bash
-composer require webdna/component-library:^2.0
-php craft plugin/install component-library
+composer require webdna/component-viewer:^2.0
+php craft plugin/install component-viewer
 ```
 
-Then grant **Access Component Library** to the user groups that should see it. Control-panel
+Then grant **Access Component Viewer** to the user groups that should see it. Control-panel
 access alone isn't enough. [Setup](docs/setup.md) covers the config file, the preview layout and
 the permissions.
 
@@ -48,8 +48,8 @@ Include it as `{% include '@ui:button' with { label: 'Send' } %}`, or by its pat
 ## Commands
 
 ```bash
-php craft component-library/make ui/button           # a new component and its stories file
-php craft component-library/check [--strict]         # lists broken components, exits 1 if any
+php craft component-viewer/make ui/button           # a new component and its stories file
+php craft component-viewer/check [--strict]         # lists broken components, exits 1 if any
 ```
 
 ## Documentation

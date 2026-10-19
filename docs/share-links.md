@@ -1,6 +1,6 @@
 # Share links
 
-A share link opens the whole component library for someone with no account, such as a client
+A share link opens the whole component viewer for someone with no account, such as a client
 reviewing a design. It looks like the control-panel library and does everything it does, apart
 from managing links. It works until its expiry date, or until someone revokes it.
 
@@ -9,7 +9,7 @@ Creating and revoking links needs the **Create and revoke share links** permissi
 
 ## Create a link
 
-1. In the control panel, open **Component Library → Share links**. It's also in the library's
+1. In the control panel, open **Component Viewer → Share links**. It's also in the library's
    header.
 2. Under **New share link**, enter a **Label** saying who or what it's for, such as
    *Acme: homepage review*. The label heads every page the link opens, so the recipient sees it.
@@ -27,7 +27,7 @@ Nothing is emailed. Send the address yourself, the way you'd send any link.
 
 ## What the recipient sees
 
-The link opens `https://<your primary site>/component-library/share/<code>`, headed with the label
+The link opens `https://<your primary site>/component-viewer/share/<code>`, headed with the label
 and the expiry date. With no login, the recipient can:
 
 - browse and search every component

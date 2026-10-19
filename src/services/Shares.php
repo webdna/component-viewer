@@ -1,14 +1,14 @@
 <?php
 
-namespace webdna\componentlibrary\services;
+namespace webdna\componentviewer\services;
 
 use Craft;
 use craft\db\ActiveQuery;
 use craft\helpers\DateTimeHelper;
 use craft\helpers\Db;
 use DateTime;
-use webdna\componentlibrary\models\ShareForm;
-use webdna\componentlibrary\records\ShareRecord;
+use webdna\componentviewer\models\ShareForm;
+use webdna\componentviewer\records\ShareRecord;
 use yii\base\Component;
 
 /**
@@ -25,7 +25,10 @@ class Shares extends Component
     public const STATUS_EXPIRED = 'expired';
 
     /** The share viewer's path on the primary site. 4.2 routes it. */
-    public const URL_PATH = 'component-library/share/';
+    public const URL_PATH = 'component-viewer/share/';
+
+    /** The path share links were sent with before the plugin was renamed from Component Library. Still routed. */
+    public const LEGACY_URL_PATH = 'component-library/share/';
 
     /** 32 bytes, base64url without padding. */
     public const TOKEN_PATTERN = '/^[A-Za-z0-9_-]{43}$/D';

@@ -1,13 +1,13 @@
 # Setup
 
-This guide covers a site that has never had the component library. Upgrading a site that runs
+This guide covers a site that has never had the component viewer. Upgrading a site that runs
 v1? Follow [Upgrading from v1](upgrading-from-v1.md) instead.
 
 ## 1. Install
 
 ```bash
-composer require webdna/component-library:^2.0
-php craft plugin/install component-library
+composer require webdna/component-viewer:^2.0
+php craft plugin/install component-viewer
 ```
 
 Install it as a plugin. Don't list it in `config/app.php` as a module: loaded that way, it throws
@@ -17,7 +17,7 @@ an error naming the line to remove.
 
 Everything is optional. With no file at all, the library looks for components in
 `templates/_components` and previews them in a bare page with no styles. To change that, create
-`config/component-library.php`:
+`config/component-viewer.php`:
 
 ```php
 <?php
@@ -103,11 +103,11 @@ site's URL must be reachable from the viewer's browser.
 
 ## 4. Permissions
 
-In **Settings → Users → User groups**, under *Component Library*:
+In **Settings → Users → User groups**, under *Component Viewer*:
 
 | Permission | Grants |
 |---|---|
-| **Access Component Library** | The library in the control panel. Control-panel access alone does not grant it. |
+| **Access Component Viewer** | The library in the control panel. Control-panel access alone does not grant it. |
 | **Create and revoke share links** | The *Share links* screen. Nested under the one above. |
 
 Admins hold both.
@@ -115,7 +115,7 @@ Admins hold both.
 ## 5. Your first component
 
 ```bash
-php craft component-library/make ui/button
+php craft component-viewer/make ui/button
 ```
 
 This writes `ui/button.twig` and `ui/button.stories.twig` into the first folder in
@@ -131,15 +131,15 @@ should clear it. Either of these works:
 
 ```bash
 php craft clear-caches/all
-php craft clear-caches/component-library-index
+php craft clear-caches/component-viewer-index
 ```
 
-It's also under **Utilities → Caches → Component library index**.
+It's also under **Utilities → Caches → Component viewer index**.
 
 ## 7. Check in automated builds
 
 ```bash
-php craft component-library/check
+php craft component-viewer/check
 ```
 
 It lists every broken component and every include of a handle that doesn't exist, then exits 1 if

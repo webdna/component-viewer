@@ -1,6 +1,6 @@
 <?php
 
-namespace webdna\componentlibrary\legacy;
+namespace webdna\componentviewer\legacy;
 
 use Craft;
 use craft\web\View;
@@ -8,9 +8,9 @@ use InvalidArgumentException;
 use JsonException;
 use Throwable;
 use Twig\Error\Error as TwigError;
-use webdna\componentlibrary\models\Component;
-use webdna\componentlibrary\models\Prop;
-use webdna\componentlibrary\models\Story;
+use webdna\componentviewer\models\Component;
+use webdna\componentviewer\models\Prop;
+use webdna\componentviewer\models\Story;
 
 /**
  * Reads a v1 `<name>.config.json` into the same Component a tag declares (BR-15, BR-16), so a

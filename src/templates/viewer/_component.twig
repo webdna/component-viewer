@@ -16,38 +16,38 @@
 {% set name = component.name ?? component.handle %}
 {% set problems = component.errors|merge(component.warnings) %}
 {% set deviceLabels = {
-    desktop: 'Desktop'|t('component-library'),
-    tablet: 'Tablet'|t('component-library'),
-    phone: 'Phone'|t('component-library'),
+    desktop: 'Desktop'|t('component-viewer'),
+    tablet: 'Tablet'|t('component-viewer'),
+    phone: 'Phone'|t('component-viewer'),
 } %}
 {% set labels = {
     devices: deviceLabels,
-    landscape: '{device}, landscape'|t('component-library'),
-    frameTitle: 'Preview of {component}, example “{story}”, {device}'|t('component-library'),
+    landscape: '{device}, landscape'|t('component-viewer'),
+    frameTitle: 'Preview of {component}, example “{story}”, {device}'|t('component-viewer'),
 } %}
 {% set deviceLabel = deviceOrientation == 'landscape'
     ? labels.landscape|replace({'{device}': deviceLabels[device]})
     : deviceLabels[device] %}
 {% set frameTitle = labels.frameTitle|replace({'{component}': name, '{story}': story.name, '{device}': deviceLabel}) %}
 {% set backgroundLabels = {
-    site: 'Theme'|t('component-library'),
-    light: 'Light'|t('component-library'),
-    dark: 'Dark'|t('component-library'),
+    site: 'Theme'|t('component-viewer'),
+    light: 'Light'|t('component-viewer'),
+    dark: 'Dark'|t('component-viewer'),
 } %}
 {% set tabs = {
-    'cl-settings': {label: 'Settings'|t('component-library'), url: '#cl-settings'},
-    'cl-examples': {label: 'Examples'|t('component-library'), url: '#cl-examples'},
-    'cl-props': {label: 'Props'|t('component-library'), url: '#cl-props'},
-    'cl-source': {label: 'Source'|t('component-library'), url: '#cl-source'},
-    'cl-notes': {label: 'Notes'|t('component-library'), url: '#cl-notes'},
+    'cl-settings': {label: 'Settings'|t('component-viewer'), url: '#cl-settings'},
+    'cl-examples': {label: 'Examples'|t('component-viewer'), url: '#cl-examples'},
+    'cl-props': {label: 'Props'|t('component-viewer'), url: '#cl-props'},
+    'cl-source': {label: 'Source'|t('component-viewer'), url: '#cl-source'},
+    'cl-notes': {label: 'Notes'|t('component-viewer'), url: '#cl-notes'},
 } %}
 {# Craft's own preview art, from its published CP folder (BR-38). #}
 {% set art = view.getAssetManager().getPublishedUrl('@app/web/assets/cp/dist', true) ~ '/images/preview' %}
 
 <div class="cl-viewer" data-cl-viewer="{{ config|json_encode }}" data-cl-labels="{{ labels|json_encode }}">
-    <section class="cl-ws-preview" aria-label="{{ 'Preview'|t('component-library') }}">
+    <section class="cl-ws-preview" aria-label="{{ 'Preview'|t('component-viewer') }}">
         <div class="cl-pane-header cl-preview-toolbar">
-            <div class="cl-devices" role="group" aria-label="{{ 'Device'|t('component-library') }}">
+            <div class="cl-devices" role="group" aria-label="{{ 'Device'|t('component-viewer') }}">
                 {% for option, label in deviceLabels %}
                     {% set on = option == device %}
                     <button type="button" class="btn cl-device-btn" title="{{ label }}" data-cl-device="{{ option }}"
@@ -57,15 +57,15 @@
                     </button>
                 {% endfor %}
             </div>
-            <button type="button" class="btn cl-icon-btn" title="{{ 'Rotate'|t('component-library') }}" data-cl-rotate
+            <button type="button" class="btn cl-icon-btn" title="{{ 'Rotate'|t('component-viewer') }}" data-cl-rotate
                     aria-pressed="{{ deviceOrientation == 'landscape' ? 'true' : 'false' }}" {{ device == 'desktop' ? 'disabled' }}>
                 <span class="cl-icon" aria-hidden="true">{{ iconSvg('rotate') }}</span>
-                <span class="visually-hidden">{{ 'Rotate'|t('component-library') }}</span>
+                <span class="visually-hidden">{{ 'Rotate'|t('component-viewer') }}</span>
             </button>
 
             {# BR-41: a Mode dropdown, laid out like the site switch. viewer.js applies a change at once. #}
             <div class="cl-mode">
-                <label for="cl-background">{{ 'Mode'|t('component-library') }}</label>
+                <label for="cl-background">{{ 'Mode'|t('component-viewer') }}</label>
                 <div class="select">
                     <select id="cl-background" data-cl-background>
                         {% for option, label in backgroundLabels %}
@@ -84,7 +84,7 @@
                     {% for name, value in siteForm.hidden %}
                         {{ hiddenInput(name, value) }}
                     {% endfor %}
-                    <label for="cl-site">{{ 'Site'|t('component-library') }}</label>
+                    <label for="cl-site">{{ 'Site'|t('component-viewer') }}</label>
                     <div class="select">
                         <select id="cl-site" name="site">
                             {% for option in sites %}
@@ -98,19 +98,19 @@
                     <input type="hidden" name="device" value="{{ device }}" data-cl-site-device {{ device == 'desktop' ? 'disabled' }}>
                     <input type="hidden" name="orientation" value="{{ deviceOrientation }}" data-cl-site-orientation {{ device == 'desktop' ? 'disabled' }}>
                     <input type="hidden" name="bg" value="{{ background }}" data-cl-site-background {{ background == defaultBackground ? 'disabled' }}>
-                    <button type="submit" class="btn" data-cl-site-submit>{{ 'Switch site'|t('component-library') }}</button>
+                    <button type="submit" class="btn" data-cl-site-submit>{{ 'Switch site'|t('component-viewer') }}</button>
                 </form>
             {% endif %}
 
             <div class="cl-toolbar-end">
-                <button type="button" class="btn cl-icon-btn" title="{{ 'Refresh'|t('component-library') }}" data-cl-refresh>
+                <button type="button" class="btn cl-icon-btn" title="{{ 'Refresh'|t('component-viewer') }}" data-cl-refresh>
                     <span class="cl-icon" aria-hidden="true">{{ iconSvg('arrows-rotate') }}</span>
-                    <span class="visually-hidden">{{ 'Refresh'|t('component-library') }}</span>
+                    <span class="visually-hidden">{{ 'Refresh'|t('component-viewer') }}</span>
                 </button>
                 <a class="btn cl-icon-btn" href="{{ previewUrl }}" target="_blank" rel="noopener"
-                   title="{{ 'Open in a new tab'|t('component-library') }}" data-cl-open>
+                   title="{{ 'Open in a new tab'|t('component-viewer') }}" data-cl-open>
                     <span class="cl-icon" aria-hidden="true">{{ iconSvg('arrow-up-right-from-square') }}</span>
-                    <span class="visually-hidden">{{ 'Open in a new tab'|t('component-library') }}</span>
+                    <span class="visually-hidden">{{ 'Open in a new tab'|t('component-viewer') }}</span>
                 </a>
             </div>
         </div>
@@ -131,31 +131,31 @@
 
     {# BR-40: shown while the drawer is open. aria-valuenow is its share of the height, set by viewer.js. #}
     <div class="cl-ws-divider" role="separator" tabindex="0" aria-orientation="horizontal" aria-controls="cl-drawer-content"
-         aria-label="{{ 'Resize the details'|t('component-library') }}"
+         aria-label="{{ 'Resize the details'|t('component-viewer') }}"
          aria-valuemin="0" aria-valuemax="100" aria-valuenow="40"
-         title="{{ 'Drag, or use the arrow keys. Double-click to reset.'|t('component-library') }}" data-cl-divider></div>
+         title="{{ 'Drag, or use the arrow keys. Double-click to reset.'|t('component-viewer') }}" data-cl-divider></div>
 
     {#
      # The drawer starts closed, as in v1, and viewer.js restores it as it was left (BR-40). A tab
      # opens it on that tab, the open tab closes it again, and the toggle does either.
      #}
-    <section id="cl-drawer" class="cl-drawer cl-drawer-closed" aria-label="{{ 'Settings and details'|t('component-library') }}" data-cl-drawer>
+    <section id="cl-drawer" class="cl-drawer cl-drawer-closed" aria-label="{{ 'Settings and details'|t('component-viewer') }}" data-cl-drawer>
         <div class="cl-pane-header cl-drawer-bar">
             {% include '_includes/tabs' with {
-                tablistLabel: 'Component details'|t('component-library'),
+                tablistLabel: 'Component details'|t('component-viewer'),
                 containerAttributes: {id: 'cl-tabs'},
             } %}
             <button type="button" class="btn chromeless cl-icon-btn cl-drawer-toggle" aria-controls="cl-drawer-content" aria-expanded="false"
-                    title="{{ 'Show details'|t('component-library') }}" data-cl-drawer-toggle
-                    data-show-label="{{ 'Show details'|t('component-library') }}" data-hide-label="{{ 'Hide details'|t('component-library') }}">
+                    title="{{ 'Show details'|t('component-viewer') }}" data-cl-drawer-toggle
+                    data-show-label="{{ 'Show details'|t('component-viewer') }}" data-hide-label="{{ 'Hide details'|t('component-viewer') }}">
                 <span class="cl-icon" aria-hidden="true">{{ iconSvg('chevron-up') }}</span>
-                <span class="visually-hidden" data-cl-drawer-toggle-label>{{ 'Show details'|t('component-library') }}</span>
+                <span class="visually-hidden" data-cl-drawer-toggle-label>{{ 'Show details'|t('component-viewer') }}</span>
             </button>
         </div>
 
         <div id="cl-drawer-content" class="cl-pane-content">
             {% if problems %}
-                <div class="cl-problems" role="note" aria-label="{{ 'Problems'|t('component-library') }}">
+                <div class="cl-problems" role="note" aria-label="{{ 'Problems'|t('component-viewer') }}">
                     <ul>
                         {% for problem in problems %}
                             <li>
@@ -170,7 +170,7 @@
 
             <div id="cl-settings" role="tabpanel" aria-labelledby="tab-cl-settings" class="cl-panel">
                 {% if controls is empty %}
-                    <p class="zilch">{{ 'This component has no settings.'|t('component-library') }}</p>
+                    <p class="zilch">{{ 'This component has no settings.'|t('component-viewer') }}</p>
                 {% else %}
                     <div class="cl-fields">
                         {% for control in controls %}
@@ -210,26 +210,26 @@
                             {% endswitch %}
                         {% endfor %}
                     </div>
-                    <button type="button" class="btn" data-cl-reset>{{ 'Reset settings'|t('component-library') }}</button>
+                    <button type="button" class="btn" data-cl-reset>{{ 'Reset settings'|t('component-viewer') }}</button>
                 {% endif %}
             </div>
 
             {# BR-43: the whole API from the tag, code-only props included. Escaped output only. #}
             <div id="cl-props" role="tabpanel" aria-labelledby="tab-cl-props" class="cl-panel hidden">
                 {% if component.props is empty %}
-                    <p class="zilch">{{ 'This component has no props.'|t('component-library') }}</p>
+                    <p class="zilch">{{ 'This component has no props.'|t('component-viewer') }}</p>
                 {% else %}
                     <div class="cl-props-scroll" tabindex="0">
                         <table class="data fullwidth cl-props" data-cl-props>
                             <thead>
                                 <tr>
-                                    <th scope="col">{{ 'Name'|t('component-library') }}</th>
-                                    <th scope="col">{{ 'Type'|t('component-library') }}</th>
-                                    <th scope="col">{{ 'Default'|t('component-library') }}</th>
-                                    <th scope="col">{{ 'Options'|t('component-library') }}</th>
-                                    <th scope="col">{{ 'Required'|t('component-library') }}</th>
-                                    <th scope="col">{{ 'Description'|t('component-library') }}</th>
-                                    <th scope="col">{{ 'In the viewer'|t('component-library') }}</th>
+                                    <th scope="col">{{ 'Name'|t('component-viewer') }}</th>
+                                    <th scope="col">{{ 'Type'|t('component-viewer') }}</th>
+                                    <th scope="col">{{ 'Default'|t('component-viewer') }}</th>
+                                    <th scope="col">{{ 'Options'|t('component-viewer') }}</th>
+                                    <th scope="col">{{ 'Required'|t('component-viewer') }}</th>
+                                    <th scope="col">{{ 'Description'|t('component-viewer') }}</th>
+                                    <th scope="col">{{ 'In the viewer'|t('component-viewer') }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -240,16 +240,16 @@
                                         <td>{% if prop.default is null %}—{% else %}<code>{{ prop.default|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE')) }}</code>{% endif %}</td>
                                         <td>
                                             {%- if prop.type == 'icon' -%}
-                                                {{ '{count} icons'|t('component-library', {count: iconNames|length}) }}
+                                                {{ '{count} icons'|t('component-viewer', {count: iconNames|length}) }}
                                             {%- elseif prop.options -%}
                                                 {{ prop.options|keys|join(', ') }}
                                             {%- else -%}
                                                 —
                                             {%- endif -%}
                                         </td>
-                                        <td>{{ prop.required ? 'Yes'|t('component-library') : 'No'|t('component-library') }}</td>
+                                        <td>{{ prop.required ? 'Yes'|t('component-viewer') : 'No'|t('component-viewer') }}</td>
                                         <td>{{ prop.description ?? '' }}</td>
-                                        <td>{{ prop.control ? 'Control'|t('component-library') : 'Code only'|t('component-library') }}</td>
+                                        <td>{{ prop.control ? 'Control'|t('component-viewer') : 'Code only'|t('component-viewer') }}</td>
                                     </tr>
                                 {% endfor %}
                             </tbody>
@@ -282,7 +282,7 @@
                 {% if component.notes %}
                     <div class="readable">{{ component.notes|md }}</div>
                 {% else %}
-                    <p class="zilch">{{ 'This component has no notes.'|t('component-library') }}</p>
+                    <p class="zilch">{{ 'This component has no notes.'|t('component-viewer') }}</p>
                 {% endif %}
             </div>
         </div>

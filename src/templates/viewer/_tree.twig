@@ -4,15 +4,15 @@
  #}
 {% if tree %}
     <div class="cl-search">
-        <label for="cl-search" class="visually-hidden">{{ 'Search components'|t('component-library') }}</label>
+        <label for="cl-search" class="visually-hidden">{{ 'Search components'|t('component-viewer') }}</label>
         <input type="search" id="cl-search" class="text fullwidth" autocomplete="off"
-               placeholder="{{ 'Search'|t('component-library') }}" aria-describedby="cl-search-status"
+               placeholder="{{ 'Search'|t('component-viewer') }}" aria-describedby="cl-search-status"
                data-cl-search>
         <p id="cl-search-status" class="visually-hidden" role="status" data-cl-search-status></p>
-        <p class="light cl-no-match hidden" data-cl-no-match>{{ 'No components match.'|t('component-library') }}</p>
+        <p class="light cl-no-match hidden" data-cl-no-match>{{ 'No components match.'|t('component-viewer') }}</p>
     </div>
 
-    <nav aria-label="{{ 'Components'|t('component-library') }}">
+    <nav aria-label="{{ 'Components'|t('component-viewer') }}">
         <ul>
             {% for category, members in tree %}
                 <li class="heading" data-cl-category><span>{{ category }}</span></li>

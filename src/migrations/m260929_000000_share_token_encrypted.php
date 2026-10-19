@@ -1,9 +1,9 @@
 <?php
 
-namespace webdna\componentlibrary\migrations;
+namespace webdna\componentviewer\migrations;
 
 use craft\db\Migration;
-use webdna\componentlibrary\records\ShareRecord;
+use webdna\componentviewer\records\ShareRecord;
 
 /**
  * Adds the encrypted token that *Copy link* reads (BR-45). Links made before it have none, so

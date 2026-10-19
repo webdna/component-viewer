@@ -1,6 +1,6 @@
 <?php
 
-namespace webdna\componentlibrary\controllers;
+namespace webdna\componentviewer\controllers;
 
 use Craft;
 use craft\db\Query;
@@ -10,10 +10,10 @@ use craft\helpers\Json;
 use craft\web\Controller;
 use DateTime;
 use Throwable;
-use webdna\componentlibrary\ComponentLibrary;
-use webdna\componentlibrary\models\Component;
-use webdna\componentlibrary\models\Story;
-use webdna\componentlibrary\services\Renderer;
+use webdna\componentviewer\ComponentViewer;
+use webdna\componentviewer\models\Component;
+use webdna\componentviewer\models\Story;
+use webdna\componentviewer\services\Renderer;
 use yii\base\InvalidArgumentException;
 use yii\web\Response;
 
@@ -39,20 +39,20 @@ class RenderController extends Controller
         Craft::$app->getUser()->setIdentity(null);
         Craft::$app->getView()->getTwig()->resetGlobals();
 
-        $renderer = ComponentLibrary::getInstance()->getRenderer();
+        $renderer = ComponentViewer::getInstance()->getRenderer();
         foreach ($renderer->headers() as $name => $value) {
             $this->response->headers->set($name, $value);
         }
 
         $scope = $this->scope();
         if ($scope === null || !$renderer->scopeIsValid($scope)) {
-            return $this->page(403, $renderer->errorPage(Craft::t('component-library', 'Preview expired, reload the page.')));
+            return $this->page(403, $renderer->errorPage(Craft::t('component-viewer', 'Preview expired, reload the page.')));
         }
 
         $component = $this->component();
         $story = $component === null ? null : $this->story($component);
         if ($component === null || $story === null) {
-            return $this->page(404, $renderer->errorPage(Craft::t('component-library', 'There’s no such component or example.')));
+            return $this->page(404, $renderer->errorPage(Craft::t('component-viewer', 'There’s no such component or example.')));
         }
 
         try {
@@ -68,8 +68,8 @@ class RenderController extends Controller
 
             // BR-26: detail for the team only, never on a share link.
             return $this->page(500, Renderer::isUserScope($scope)
-                ? $renderer->errorPage(Craft::t('component-library', 'This component couldn’t be shown.'), $renderer->describe($e))
-                : $renderer->errorPage(Craft::t('component-library', 'This component couldn’t be shown.')));
+                ? $renderer->errorPage(Craft::t('component-viewer', 'This component couldn’t be shown.'), $renderer->describe($e))
+                : $renderer->errorPage(Craft::t('component-viewer', 'This component couldn’t be shown.')));
         }
     }
 
@@ -110,7 +110,7 @@ class RenderController extends Controller
             return null;
         }
 
-        return ComponentLibrary::getInstance()->getIndex()->get($handle);
+        return ComponentViewer::getInstance()->getIndex()->get($handle);
     }
 
     /** The named story, or the first when none is named. */

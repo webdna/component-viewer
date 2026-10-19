@@ -1,11 +1,11 @@
 <?php
 
-namespace webdna\componentlibrary\twig;
+namespace webdna\componentviewer\twig;
 
 use Twig\Attribute\YieldReady;
 use Twig\Compiler;
 use Twig\Node\Node;
-use webdna\componentlibrary\models\Component;
+use webdna\componentviewer\models\Component;
 
 /**
  * A parsed `{% component %}` tag. It compiles to nothing (BR-7): the declaration is for the
