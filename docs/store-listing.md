@@ -29,37 +29,37 @@ share links and permissions; see `docs/upgrading-from-v1.md`.
 
 ## Long description
 
-> Component Viewer lets your team browse, try out and share a site's Twig components — without
-> building a separate pattern library or running a second toolchain.
->
-> ### Browse and try out every component
->
-> In the control panel, browse every component the site has, by category or by search. Try each
-> one with its settings and its named examples, previewed in the site's own styling on a desktop,
-> tablet or phone.
->
-> ### Share it with a client
->
-> A share link lets a client review the same library with no account. Each link has a label and
-> an expiry, and can be revoked at any moment.
->
-> ### Components describe themselves
->
-> A `{% component %}` block at the top of a component's own file declares its name, status and
-> props, and renders nothing on the live site. Named examples live in a `.stories.twig` file
-> beside it. Include a component as `{% include '@ui:button' %}`, or by its path as before.
->
-> ### The live site can't tell it's there
->
-> Apart from being faster: the component list is built once and cached, and every existing way
-> of including a component keeps working. Multi-site projects get each site's own version of a
-> component.
->
-> ### For developers
->
-> - `component-viewer/make ui/button` scaffolds a component and its stories file.
-> - `component-viewer/check --strict` lists broken components and exits non-zero, for CI.
-> - Access is a separate permission, off by default; control-panel access alone isn't enough.
+Component Viewer lets your team browse, try out and share a site's Twig components — without
+building a separate pattern library or running a second toolchain.
+
+### Browse and try out every component
+
+In the control panel, browse every component the site has, by category or by search. Try each
+one with its settings and its named examples, previewed in the site's own styling on a desktop,
+tablet or phone.
+
+### Share it with a client
+
+A share link lets a client review the same library with no account. Each link has a label and
+an expiry, and can be revoked at any moment.
+
+### Components describe themselves
+
+A `{% component %}` block at the top of a component's own file declares its name, status and
+props, and renders nothing on the live site. Named examples live in a `.stories.twig` file
+beside it. Include a component as `{% include '@ui:button' %}`, or by its path as before.
+
+### The live site can't tell it's there
+
+Apart from being faster: the component list is built once and cached, and every existing way
+of including a component keeps working. Multi-site projects get each site's own version of a
+component.
+
+### For developers
+
+- `component-viewer/make ui/button` scaffolds a component and its stories file.
+- `component-viewer/check --strict` lists broken components and exits non-zero, for CI.
+- Access is a separate permission, off by default; control-panel access alone isn't enough.
 
 ## Screenshots
 
