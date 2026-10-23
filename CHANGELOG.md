@@ -9,6 +9,9 @@
   plugin's handle. Nothing in the file changes; `config/component-library.php` is still read, with
   its deprecation warning.
 
+### Changed
+- New plugin icon: a white glyph on a black circle, with a white icon mask for the control panel nav.
+
 ## 2.0.0 - 2026-10-19
 
 ### Changed
