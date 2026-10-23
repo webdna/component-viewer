@@ -16,6 +16,7 @@ use craft\services\UserPermissions;
 use craft\utilities\ClearCaches;
 use craft\web\UrlManager;
 use craft\web\View;
+use webdna\componentviewer\models\Settings;
 use webdna\componentviewer\services\Index;
 use webdna\componentviewer\services\Renderer;
 use webdna\componentviewer\services\Resolver;
@@ -61,37 +62,16 @@ class ComponentViewer extends Plugin
     public bool $hasCpSection = true;
 
     /**
-     * The index takes its roots (BR-11) and icons folder (BR-44), and the renderer its layout (BR-25), from
-     * config/component-viewer.php. A site that still has the file under the plugin's old name,
-     * config/component-library.php, keeps working, with a deprecation warning to rename it.
+     * The services. The index's roots (BR-11) and icons folder (BR-44) and the renderer's layout
+     * (BR-25) come from the settings, which init() applies once Craft has set them.
      */
     public static function config(): array
     {
-        $configService = Craft::$app->getConfig();
-        $config = $configService->getConfigFromFile('component-viewer');
-
-        if ($config === [] && is_file($configService->getConfigFilePath('component-library'))) {
-            $config = $configService->getConfigFromFile('component-library');
-            Craft::$app->getDeprecator()->log(
-                'component-viewer:config-file',
-                'Rename config/component-library.php to config/component-viewer.php. The plugin was renamed from Component Library to Component Viewer.',
-            );
-        }
-
         return [
             'components' => [
-                'index' => array_filter([
-                    'class' => Index::class,
-                    'templateDirectories' => $config['templateDirectories'] ?? null,
-                    'sites' => $config['sites'] ?? null,
-                    'legacy' => $config['legacy'] ?? null,
-                    'icons' => $config['icons'] ?? null,
-                ], fn($value) => $value !== null),
+                'index' => Index::class,
                 'resolver' => Resolver::class,
-                'renderer' => array_filter([
-                    'class' => Renderer::class,
-                    'layout' => $config['layout'] ?? null,
-                ], fn($value) => $value !== null),
+                'renderer' => Renderer::class,
                 'viewer' => Viewer::class,
                 'shares' => Shares::class,
             ],
@@ -114,6 +94,7 @@ class ComponentViewer extends Plugin
 
         parent::init();
 
+        $this->configureServices();
         $this->registerPermissions();
         $this->registerCpRoutes();
         $this->registerSiteRoutes();
@@ -124,6 +105,60 @@ class ComponentViewer extends Plugin
         // Site and CP template modes both, since a component compiles wherever it's included.
         Craft::$app->getView()->registerTwigExtension(new Extension());
         $this->registerLoader();
+    }
+
+    /**
+     * config/component-viewer.php. Craft reads it as the plugin's settings, so a plugin without a
+     * settings model logs "Attempting to set settings on a plugin that doesn't have settings" on
+     * every request.
+     */
+    protected function createSettingsModel(): Settings
+    {
+        return new Settings();
+    }
+
+    public function getSettings(): Settings
+    {
+        /** @var Settings $settings */
+        $settings = parent::getSettings();
+
+        return $settings;
+    }
+
+    /**
+     * Hands the settings to the services that read them; a setting left null keeps the service's
+     * default. A site that still has the file under the plugin's old name, config/component-library.php,
+     * keeps working, with a deprecation warning to rename it.
+     */
+    private function configureServices(): void
+    {
+        $settings = $this->getSettings();
+        $configService = Craft::$app->getConfig();
+
+        if (
+            $configService->getConfigFromFile('component-viewer') === [] &&
+            is_file($configService->getConfigFilePath('component-library'))
+        ) {
+            $settings->setAttributes($configService->getConfigFromFile('component-library'), false);
+            Craft::$app->getDeprecator()->log(
+                'component-viewer:config-file',
+                'Rename config/component-library.php to config/component-viewer.php. The plugin was renamed from Component Library to Component Viewer.',
+            );
+        }
+
+        $set = fn(array $values) => array_filter($values, fn($value) => $value !== null);
+
+        $this->set('index', $set([
+            'class' => Index::class,
+            'templateDirectories' => $settings->templateDirectories,
+            'sites' => $settings->sites,
+            'legacy' => $settings->legacy,
+            'icons' => $settings->icons,
+        ]));
+        $this->set('renderer', $set([
+            'class' => Renderer::class,
+            'layout' => $settings->layout,
+        ]));
     }
 
     public function getIndex(): Index

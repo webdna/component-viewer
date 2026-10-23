@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.1 - 2026-10-23
+
+### Fixed
+- Craft no longer logs "Attempting to set settings on a plugin that doesn't have settings:
+  component-viewer" on every request and console command. `config/component-viewer.php` is now read
+  as the plugin's settings (a `Settings` model), which is how Craft treats a file named after a
+  plugin's handle. Nothing in the file changes; `config/component-library.php` is still read, with
+  its deprecation warning.
+
 ## 2.0.0 - 2026-10-19
 
 ### Changed
